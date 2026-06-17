@@ -4,6 +4,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { SITE_TITLE } from '../consts';
 import { getCollection } from 'astro:content';
+import AuthorLink from '../components/AuthorLink.astro';
 import { url } from '../utils/paths';
 
 const research = (await getCollection('research')).sort(
@@ -28,6 +29,16 @@ const research = (await getCollection('research')).sort(
 						<a class="pub-title" href={url(`/publications/${entry.id}/`)} style="display: block;">
 							{entry.data.title}
 						</a>
+
+						{entry.data.authors.length > 0 && (
+							<div class="pub-authors">
+								{entry.data.authors.map((a, i) => (
+									<>
+										<AuthorLink nameOrSlug={a} />{i < entry.data.authors.length - 1 ? ', ' : ''}
+									</>
+								))}
+							</div>
+						)}
 
 						<p class="pub-venue" style="margin: 0.25rem 0 0.5rem;">
 							{entry.data.description}
