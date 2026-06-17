@@ -1,140 +1,203 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
-import { getCollection } from 'astro:content';
-import { url } from '../utils/paths';
+import BaseHead from "../components/BaseHead.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
+import { getCollection } from "astro:content";
+import { url } from "../utils/paths";
 
-const posts = (await getCollection('blog')).sort(
-	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
-).slice(0, 3);
+const posts = (await getCollection("blog"))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 3);
 
-const allResearch = (await getCollection('research')).sort(
-	(a, b) => (a.data.order - b.data.order) || (b.data.date.valueOf() - a.data.date.valueOf()),
+const allResearch = (await getCollection("research")).sort(
+  (a, b) =>
+    a.data.order - b.data.order ||
+    b.data.date.valueOf() - a.data.date.valueOf(),
 );
-const selectedResearch = (allResearch.filter((r) => r.data.selected).length > 0
-	? allResearch.filter((r) => r.data.selected)
-	: allResearch
+const selectedResearch = (
+  allResearch.filter((r) => r.data.selected).length > 0
+    ? allResearch.filter((r) => r.data.selected)
+    : allResearch
 ).slice(0, 3);
 ---
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-		<style>
-			.hero {
-				display: flex;
-				align-items: center;
-				gap: 4rem;
-				padding: 4rem 0;
-				margin-bottom: 2rem;
-			}
-			.hero-content { flex: 3; }
-			.hero-image { 
-				flex: 2; 
-				text-align: center;
-                position: relative;
-			}
-			.hero-image img {
-				width: 280px;
-				height: 280px;
-				object-fit: cover;
-				border-radius: 50%;
-				border: 6px solid var(--color-bg);
-				box-shadow: 0 0 0 1px var(--color-border), var(--shadow-lg);
-			}
-            
-            .pub-mini-item {
-                margin-bottom: 1.5rem;
-                padding-bottom: 1.5rem;
-                border-bottom: 1px solid var(--color-border);
+  <head>
+    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+    <style>
+      .hero {
+        display: flex;
+        align-items: center;
+        gap: 4rem;
+        padding: 4rem 0;
+        margin-bottom: 2rem;
+      }
+      .hero-content {
+        flex: 3;
+      }
+      .hero-image {
+        flex: 2;
+        text-align: center;
+        position: relative;
+      }
+      .hero-image img {
+        width: 280px;
+        height: 280px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 6px solid var(--color-bg);
+        box-shadow:
+          0 0 0 1px var(--color-border),
+          var(--shadow-lg);
+      }
+
+      .pub-mini-item {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--color-border);
+      }
+      .pub-mini-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+      }
+      .pub-title {
+        font-weight: 700;
+        color: var(--color-text-main);
+        display: block;
+        margin-bottom: 0.25rem;
+        font-family: var(--font-serif);
+        font-size: 1.1rem;
+      }
+      .pub-meta {
+        font-size: 0.9rem;
+        color: var(--color-text-muted);
+      }
+
+      .hero-buttons {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      @media (max-width: 768px) {
+        .hero {
+          flex-direction: column-reverse;
+          text-align: center;
+          padding: 2rem 0;
+          gap: 2rem;
+        }
+        .hero-image img {
+          width: 200px;
+          height: 200px;
+        }
+        .hero-buttons {
+          justify-content: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <Header />
+    <main>
+      <section class="hero">
+        <div class="hero-content">
+          <h1 style="margin-bottom: 0.5rem; font-size: 3rem;">Sergio Eraso</h1>
+          <h2
+            style="font-weight: 400; color: var(--color-text-muted); margin-bottom: 1.5rem; font-family: var(--font-sans); text-transform: uppercase; letter-spacing: 0.05em; font-size: 1rem; border-bottom: none; padding-bottom: 0; display: block; margin-top: 0;"
+          >
+            PhD Student in Physics<br />
+            Massachusetts Institute of Technology
+          </h2>
+          <p style="font-size: 1.1rem; line-height: 1.7; margin-bottom: 2rem;">
+            I'm a physicist working on <strong
+              >nonequilibrium statistical physics and biophysics</strong
+            >. I build models, simulations, and tools to understand how simple
+            local rules produce predictable large-scale behavior in complex
+            systems — and I'm increasingly applying that toolkit to problems
+            beyond academia.
+          </p>
+          <div class="hero-buttons">
+            <a href={url("/publications")} class="btn">View Research</a>
+            <a href={url("/projects")} class="btn btn-outline">Projects</a>
+          </div>
+        </div>
+        <div class="hero-image">
+          <img
+            src={url("/profile1.jpeg")}
+            width={280}
+            height={280}
+            alt="Sergio Eraso"
+            fetchpriority="high"
+            decoding="async"
+          />
+        </div>
+      </section>
+
+      <hr style="margin: 3rem 0; border-top: 1px solid var(--color-border);" />
+
+      <div class="grid-2" style="gap: 4rem; margin-top: 0;">
+        <section>
+          <h2 style="margin-top: 0;">Selected Research</h2>
+          <div class="publication-list">
+            {
+              selectedResearch.length > 0 ? (
+                selectedResearch.map((entry) => (
+                  <div class="pub-mini-item">
+                    <a
+                      class="pub-title"
+                      href={url(`/publications/${entry.id}/`)}
+                      style="display: block;"
+                    >
+                      {entry.data.title}
+                    </a>
+                    <div class="pub-meta">
+                      <span style="font-style: italic; color: var(--color-accent);">
+                        {entry.data.venue || "In preparation"}
+                      </span>
+                      <span>, {entry.data.date.getFullYear()}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p>No research entries yet.</p>
+              )
             }
-            .pub-mini-item:last-child { border-bottom: none; margin-bottom: 0; }
-            .pub-title { font-weight: 700; color: var(--color-text-main); display: block; margin-bottom: 0.25rem; font-family: var(--font-serif); font-size: 1.1rem; }
-            .pub-meta { font-size: 0.9rem; color: var(--color-text-muted); }
+          </div>
+          <div style="margin-top: 1.5rem;">
+            <a href={url("/publications")} style="font-weight: 600;"
+              >View all research &rarr;</a
+            >
+          </div>
+        </section>
 
-			.hero-buttons {
-				display: flex;
-				gap: 1rem;
-				flex-wrap: wrap;
-			}
-			@media (max-width: 768px) {
-				.hero { flex-direction: column-reverse; text-align: center; padding: 2rem 0; gap: 2rem; }
-                .hero-image img { width: 200px; height: 200px; }
-                .hero-buttons { justify-content: center; }
-			}
-		</style>
-	</head>
-	<body>
-		<Header />
-		<main>
-			<section class="hero">
-				<div class="hero-content">
-					<h1 style="margin-bottom: 0.5rem; font-size: 3rem;">Sergio Eraso</h1>
-					<h2 style="font-weight: 400; color: var(--color-text-muted); margin-bottom: 1.5rem; font-family: var(--font-sans); text-transform: uppercase; letter-spacing: 0.05em; font-size: 1rem; border-bottom: none; padding-bottom: 0; display: block; margin-top: 0;">
-						PhD Student in Physics<br/>
-						Massachusetts Institute of Technology
-					</h2>
-					<p style="font-size: 1.1rem; line-height: 1.7; margin-bottom: 2rem;">
-						I'm a physicist working on <strong>nonequilibrium statistical physics and biophysics</strong>. I build models, simulations, and tools to understand how simple local rules produce predictable large-scale behavior in complex systems — and I'm increasingly applying that toolkit to problems beyond academia.
-					</p>
-					<div class="hero-buttons">
-						<a href={url('/publications')} class="btn">View Research</a>
-						<a href={url('/projects')} class="btn btn-outline">Projects</a>
-					</div>
-				</div>
-				<div class="hero-image">
-					<img src={url('/profile.svg')} width={280} height={280} alt="Sergio Eraso" fetchpriority="high" decoding="async" />
-				</div>
-			</section>
-
-			<hr style="margin: 3rem 0; border-top: 1px solid var(--color-border);" />
-
-			<div class="grid-2" style="gap: 4rem; margin-top: 0;">
-                <section>
-                    <h2 style="margin-top: 0;">Selected Research</h2>
-                    <div class="publication-list">
-                        {selectedResearch.length > 0 ? selectedResearch.map((entry) => (
-                            <div class="pub-mini-item">
-                                <a class="pub-title" href={url(`/publications/${entry.id}/`)} style="display: block;">{entry.data.title}</a>
-                                <div class="pub-meta">
-                                    <span style="font-style: italic; color: var(--color-accent);">
-                                        {entry.data.venue || 'In preparation'}
-                                    </span>
-                                    <span>, {entry.data.date.getFullYear()}</span>
-                                </div>
-                            </div>
-                        )) : <p>No research entries yet.</p>}
-                    </div>
-                    <div style="margin-top: 1.5rem;">
-                        <a href={url('/publications')} style="font-weight: 600;">View all research &rarr;</a>
-                    </div>
-                </section>
-
-                <section>
-                    <h2 style="margin-top: 0;">Latest Posts</h2>
-                    <ul style="list-style: none; padding: 0;">
-                        {posts.map((post) => (
-                            <li style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px dashed var(--color-border);">
-                                <a href={url(`/blog/${post.id}/`)} style="display: block; font-family: var(--font-serif); font-size: 1.1rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.25rem;">
-                                    {post.data.title}
-                                </a>
-                                <small style="color: var(--color-text-muted); text-transform: uppercase; font-size: 0.8rem;">
-                                    {post.data.pubDate.toLocaleDateString('en-us', {
-                                        year: 'numeric',
-                                        month: 'short',
-                                        day: 'numeric',
-                                    })}
-                                </small>
-                            </li>
-                        ))}
-                    </ul>
-                    <a href={url('/blog')} style="font-weight: 600;">View Blog &rarr;</a>
-                </section>
-            </div>
-		</main>
-		<Footer />
-	</body>
+        <section>
+          <h2 style="margin-top: 0;">Latest Posts</h2>
+          <ul style="list-style: none; padding: 0;">
+            {
+              posts.map((post) => (
+                <li style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px dashed var(--color-border);">
+                  <a
+                    href={url(`/blog/${post.id}/`)}
+                    style="display: block; font-family: var(--font-serif); font-size: 1.1rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.25rem;"
+                  >
+                    {post.data.title}
+                  </a>
+                  <small style="color: var(--color-text-muted); text-transform: uppercase; font-size: 0.8rem;">
+                    {post.data.pubDate.toLocaleDateString("en-us", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </small>
+                </li>
+              ))
+            }
+          </ul>
+          <a href={url("/blog")} style="font-weight: 600;">View Blog &rarr;</a>
+        </section>
+      </div>
+    </main>
+    <Footer />
+  </body>
 </html>
