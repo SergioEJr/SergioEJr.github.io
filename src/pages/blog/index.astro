@@ -217,10 +217,12 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 			.j-filter.active { color: #fff; background: var(--f-color); border-color: var(--f-color); }
 
 			.j-body { display: grid; grid-template-columns: 1fr; gap: 2.5rem; }
+			.j-notes-side { align-self: start; }
 			@media (min-width: 880px) {
 				.j-body:has(#j-notes-side:not([hidden])) { grid-template-columns: 200px 1fr; }
+				/* Only stick when it's actually a side column; on stacked layouts it scrolls normally */
+				.j-notes-side { position: sticky; top: 8.5rem; }
 			}
-			.j-notes-side { align-self: start; position: sticky; top: 8.5rem; }
 			.j-side-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-muted); margin-bottom: 0.75rem; }
 			.j-topic {
 				display: flex; justify-content: space-between; width: 100%;
