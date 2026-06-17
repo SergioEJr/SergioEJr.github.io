@@ -23,6 +23,7 @@ const { title, description, date, repo, link } = project.data;
 	id={project.id}
 	headings={headings}
 	toc={headings.length > 1}
+	noHero={true}
 >
 	{(repo || link) && (
 		<p class="project-links">

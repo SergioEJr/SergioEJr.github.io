@@ -10,7 +10,7 @@ export const SITE_TAGLINE = 'The academic and personal portfolio of Sergio Eraso
 
 // Link to a CV/resume PDF. The button (footer + navbar icon) only appears once
 // the file actually exists at public/resume.pdf (see src/utils/cv.ts).
-export const CV_URL = '/resume.pdf';
+export const CV_URL = '/resume_public.pdf';
 
 export const CONTACT = {
   organization: 'Sergio Eraso',

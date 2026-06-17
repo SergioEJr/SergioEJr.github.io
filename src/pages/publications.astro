@@ -49,6 +49,12 @@ const research = (await getCollection('research')).sort(
 								</a>
 							)}
 
+							{entry.data.poster && (
+								<a href={url(entry.data.poster)} target="_blank" rel="noopener noreferrer" class="btn-outline" style="padding: 2px 8px; font-size: 0.8rem;">
+									Poster ↗
+								</a>
+							)}
+
 							{entry.data.bibtex && (
 								<details name="bibtex" style="display: inline-block;">
 									<summary style="font-size: 0.8rem; cursor: pointer; color: var(--color-accent);">BibTeX</summary>
