@@ -178,11 +178,11 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 
 		<style>
 			#journal { max-width: var(--max-width); }
-			.j-head { padding: 1rem 0 1.25rem; }
+			.j-head { padding: 1rem 0 1.25rem; position: relative; z-index: 1; }
 			.j-filters-bar {
 				position: sticky;
 				top: 4.5rem; /* height of the navbar */
-				z-index: 40; /* below navbar (100) and mobile menu (200) */
+				z-index: 30; /* above the page content/title, below navbar (100) and mobile menu (200) */
 				background: var(--color-bg);
 				padding: 0.85rem 0;
 				margin-bottom: 2.25rem;

@@ -94,16 +94,22 @@ main {
 	max-width: var(--max-width);
 	margin: 0 auto;
 	padding: 3rem 1rem;
-	animation: pageFadeIn 0.28s ease both;
 }
 
-@keyframes pageFadeIn {
-	from { opacity: 0; }
-	to { opacity: 1; }
+/* Smooth, flicker-free cross-page fade using the browser's native
+   cross-document View Transitions. Unsupported browsers just navigate
+   normally (no flicker, no fade). */
+@view-transition {
+	navigation: auto;
 }
-
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation-duration: 0.25s;
+}
 @media (prefers-reduced-motion: reduce) {
-	main { animation: none; }
+	@view-transition {
+		navigation: none;
+	}
 }
 
 h1,
