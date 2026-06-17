@@ -1,0 +1,28 @@
+{
+  "name": "sergioejr-site",
+  "type": "module",
+  "version": "1.0.0",
+  "packageManager": "pnpm@11.3.0",
+  "description": "Personal website of Sergio Eraso. Built on the astro-theme-scholars theme by Jiaxin Peng (MIT License).",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@astrojs/check": "0.9.6",
+    "@astrojs/sitemap": "^3.6.0",
+    "astro": "5.16.4",
+    "astro-icon": "^1.1.5",
+    "astro-seo": "^0.8.4",
+    "sitemap": "^8.0.1",
+    "typescript": "^5.9.3",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@iconify/json": "^2.2.399",
+    "unocss": "^66.5.4"
+  }
+}
