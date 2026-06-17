@@ -1,0 +1,238 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+import { SITE_TITLE } from '../../consts';
+import { getCollection } from 'astro:content';
+import { url } from '../../utils/paths';
+
+type Cat = 'all' | 'news' | 'math' | 'physics' | 'notes';
+
+const CATS: Record<Cat, { label: string; color: string; title: string; subtitle: string }> = {
+	news: { label: 'News', color: '#3b82f6', title: 'News & Updates', subtitle: 'Announcements, milestones, and what I’m up to.' },
+	math: { label: 'Math', color: '#8b5cf6', title: 'On Mathematics', subtitle: 'Small results, tricks, and ideas worth remembering.' },
+	physics: { label: 'Physics', color: '#10b981', title: 'On Physics', subtitle: 'Intuition and notes on physical systems.' },
+	notes: { label: 'Notes', color: '#f59e0b', title: 'Things I’m learning', subtitle: 'A growing notebook of guides and explainers, written plainly.' },
+	all: { label: 'All', color: 'var(--color-accent)', title: 'The Journal', subtitle: 'Tech, math, physics & notes — all in one place.' },
+};
+const FILTER_ORDER: Cat[] = ['news', 'math', 'physics', 'notes', 'all'];
+
+const posts = (await getCollection('blog')).sort(
+	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+
+const counts: Record<string, number> = { all: posts.length, news: 0, math: 0, physics: 0, notes: 0 };
+for (const p of posts) counts[p.data.category] = (counts[p.data.category] || 0) + 1;
+
+// Topics for the Notes view
+const topicCounts = new Map<string, number>();
+for (const p of posts) {
+	if (p.data.category === 'notes' && p.data.topic) {
+		topicCounts.set(p.data.topic, (topicCounts.get(p.data.topic) || 0) + 1);
+	}
+}
+const topics = [...topicCounts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+
+const catColor = (c: string) => (CATS as any)[c]?.color ?? 'var(--color-accent)';
+const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`Journal | ${SITE_TITLE}`} description="Writing on tech, math, physics, and notes." />
+	</head>
+	<body>
+		<Header />
+		<main id="journal" style="--cat-color: var(--color-accent);">
+			<!-- Header (updated client-side per filter) -->
+			<header class="j-head">
+				<div class="j-eyebrow"><span id="j-eyebrow-label">All</span> · <span id="j-eyebrow-count">{counts.all}</span> pieces</div>
+				<h1 id="j-title">{CATS.all.title}</h1>
+				<p id="j-subtitle" class="j-subtitle">{CATS.all.subtitle}</p>
+
+				<div class="j-filters">
+					{FILTER_ORDER.map((c) => (
+						<button
+							class:list={['j-filter', { active: c === 'all' }]}
+							data-filter={c}
+							style={`--f-color:${CATS[c].color}`}
+						>
+							{CATS[c].label}
+						</button>
+					))}
+				</div>
+			</header>
+
+			<div class="j-body">
+				<!-- Notes topics sidebar (shown only in Notes view) -->
+				{topics.length > 0 && (
+					<aside id="j-notes-side" class="j-notes-side" hidden>
+						<div class="j-side-label">Topics</div>
+						<button class="j-topic active" data-topic="all">All <span>{counts.notes}</span></button>
+						{topics.map(([t, n]) => (
+							<button class="j-topic" data-topic={t}>{t} <span>{n}</span></button>
+						))}
+					</aside>
+				)}
+
+				<div class="j-list">
+					{posts.map((post, i) => (
+						<article
+							class="j-post"
+							data-category={post.data.category}
+							data-topic={post.data.topic ?? ''}
+							style={`--cat-color:${catColor(post.data.category)}`}
+						>
+							<div class="j-index">{String(i + 1).padStart(2, '0')}</div>
+							<div class="j-main">
+								<div class="j-cat" style={`color:${catColor(post.data.category)}`}>● {catLabel(post.data.category)}</div>
+								<h2 class="j-post-title">
+									<a href={url(`/blog/${post.id}/`)}>{post.data.title}</a>
+								</h2>
+								<p class="j-desc">{post.data.description}</p>
+								<div class="j-meta">
+									<FormattedDate date={post.data.pubDate} />
+									{post.data.topic && <span class="j-topic-tag">{post.data.topic}</span>}
+									{post.data.tags && post.data.tags.length > 0 && (
+										<span class="j-tags">{post.data.tags.map((t) => `#${t}`).join('  ')}</span>
+									)}
+								</div>
+							</div>
+						</article>
+					))}
+				</div>
+			</div>
+		</main>
+		<Footer />
+
+		<script is:inline define:vars={{ cats: CATS }}>
+			const root = document.getElementById('journal');
+			const titleEl = document.getElementById('j-title');
+			const subEl = document.getElementById('j-subtitle');
+			const eyeLabel = document.getElementById('j-eyebrow-label');
+			const eyeCount = document.getElementById('j-eyebrow-count');
+			const side = document.getElementById('j-notes-side');
+			const posts = Array.from(document.querySelectorAll('.j-post'));
+			const filters = Array.from(document.querySelectorAll('.j-filter'));
+			const topicBtns = Array.from(document.querySelectorAll('.j-topic'));
+
+			let activeCat = 'all';
+			let activeTopic = 'all';
+
+			function apply() {
+				const meta = cats[activeCat];
+				root.style.setProperty('--cat-color', meta.color);
+				titleEl.textContent = meta.title;
+				subEl.textContent = meta.subtitle;
+				eyeLabel.textContent = meta.label;
+
+				if (side) side.hidden = activeCat !== 'notes';
+
+				let visible = 0;
+				posts.forEach((el) => {
+					const cat = el.getAttribute('data-category');
+					const topic = el.getAttribute('data-topic');
+					let show = activeCat === 'all' || cat === activeCat;
+					if (show && activeCat === 'notes' && activeTopic !== 'all') {
+						show = topic === activeTopic;
+					}
+					el.style.display = show ? '' : 'none';
+					if (show) visible++;
+				});
+				eyeCount.textContent = String(visible);
+			}
+
+			filters.forEach((btn) => {
+				btn.addEventListener('click', () => {
+					filters.forEach((b) => b.classList.remove('active'));
+					btn.classList.add('active');
+					activeCat = btn.getAttribute('data-filter');
+					activeTopic = 'all';
+					topicBtns.forEach((b) => b.classList.toggle('active', b.getAttribute('data-topic') === 'all'));
+					apply();
+				});
+			});
+
+			topicBtns.forEach((btn) => {
+				btn.addEventListener('click', () => {
+					topicBtns.forEach((b) => b.classList.remove('active'));
+					btn.classList.add('active');
+					activeTopic = btn.getAttribute('data-topic');
+					apply();
+				});
+			});
+
+			apply();
+		</script>
+
+		<style>
+			#journal { max-width: var(--max-width); }
+			.j-head { padding: 1rem 0 2.5rem; border-bottom: 1px solid var(--color-border); margin-bottom: 2.5rem; }
+			.j-eyebrow {
+				display: inline-block;
+				font-size: 0.8rem;
+				text-transform: uppercase;
+				letter-spacing: 0.08em;
+				color: var(--cat-color);
+				font-weight: 700;
+				margin-bottom: 0.75rem;
+			}
+			#j-title { font-family: var(--font-serif); font-size: 3rem; margin: 0 0 0.5rem; line-height: 1.1; }
+			.j-subtitle { color: var(--color-text-muted); font-size: 1.15rem; max-width: 640px; margin: 0 0 1.75rem; }
+			.j-filters { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+			.j-filter {
+				background: transparent;
+				border: 1px solid var(--color-border);
+				color: var(--color-text-muted);
+				padding: 0.35rem 1rem;
+				border-radius: 999px;
+				font-size: 0.8rem;
+				font-weight: 700;
+				text-transform: uppercase;
+				letter-spacing: 0.05em;
+				cursor: pointer;
+				transition: all 0.2s ease;
+			}
+			.j-filter:hover { color: var(--f-color); border-color: var(--f-color); }
+			.j-filter.active { color: #fff; background: var(--f-color); border-color: var(--f-color); }
+
+			.j-body { display: grid; grid-template-columns: 1fr; gap: 2.5rem; }
+			@media (min-width: 880px) {
+				.j-body:has(#j-notes-side:not([hidden])) { grid-template-columns: 200px 1fr; }
+			}
+			.j-notes-side { align-self: start; position: sticky; top: 90px; }
+			.j-side-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-muted); margin-bottom: 0.75rem; }
+			.j-topic {
+				display: flex; justify-content: space-between; width: 100%;
+				background: transparent; border: none; cursor: pointer;
+				color: var(--color-text-muted); padding: 0.5rem 0.75rem; border-radius: 8px;
+				font-size: 0.95rem; text-align: left;
+			}
+			.j-topic span { color: var(--color-text-muted); opacity: 0.7; }
+			.j-topic:hover { background: var(--color-bg-offset); color: var(--color-text-main); }
+			.j-topic.active { background: var(--color-accent-light); color: var(--color-text-main); font-weight: 600; }
+
+			.j-list { display: flex; flex-direction: column; }
+			.j-post {
+				display: grid; grid-template-columns: 3rem 1fr; gap: 1rem;
+				padding: 1.75rem 0; border-bottom: 1px solid var(--color-border);
+			}
+			.j-index { font-variant-numeric: tabular-nums; color: var(--color-text-muted); opacity: 0.5; font-size: 0.9rem; padding-top: 0.3rem; }
+			.j-cat { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
+			.j-post-title { font-family: var(--font-serif); font-size: 1.6rem; line-height: 1.2; margin: 0 0 0.5rem; }
+			.j-post-title a { color: var(--color-text-main); text-decoration: none; box-shadow: inset 0 -2px 0 0 transparent; transition: box-shadow 0.2s; }
+			.j-post-title a:hover { box-shadow: inset 0 -2px 0 0 var(--cat-color); }
+			.j-desc { color: var(--color-text-muted); margin: 0 0 0.75rem; max-width: 680px; }
+			.j-meta { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; font-size: 0.82rem; color: var(--color-text-muted); font-style: italic; }
+			.j-topic-tag { font-style: normal; padding: 0.1rem 0.6rem; border-radius: 999px; background: var(--color-bg-offset); border: 1px solid var(--color-border); }
+			.j-tags { font-style: normal; letter-spacing: 0.02em; opacity: 0.8; }
+			@media (max-width: 600px) {
+				#j-title { font-size: 2.2rem; }
+				.j-post { grid-template-columns: 1fr; }
+				.j-index { display: none; }
+			}
+		</style>
+	</body>
+</html>

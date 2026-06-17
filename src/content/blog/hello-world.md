@@ -2,6 +2,7 @@
 title: 'Hello, world'
 description: 'A first post — what this blog is for, with a quick demo of math and code.'
 pubDate: '2026-06-10'
+category: news
 authors:
   - sergio-eraso
 toc: false

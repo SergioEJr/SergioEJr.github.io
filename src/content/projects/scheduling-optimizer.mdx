@@ -1,0 +1,33 @@
+---
+title: Constrained Scheduling Optimizer
+description: A public scheduling tool for university residence-life staff that cut rota construction from hours to seconds.
+date: 2021-08-01
+status: Completed
+tags: ["Python", "Optimization", "Local search"]
+featured: true
+order: 2
+# repo: https://github.com/SergioEJr/...  # ← add the repo URL
+---
+
+I built a public scheduling tool for Emory University's Residence Life staff,
+reducing manual rota construction from hours to seconds.
+
+## The problem
+
+Staff scheduling looks simple until you write down the rules: people have
+availability windows, every shift needs coverage, and the workload should be
+*fair*. Done by hand, it took hours and still left someone unhappy.
+
+## The approach
+
+I modeled availability, coverage, and fairness as a **constrained combinatorial
+optimization problem** and solved it with **warm-start stochastic local search** —
+start from a reasonable guess, then make small improving swaps until the schedule
+satisfies the constraints and balances the load.
+
+## Outcome
+
+- Cut schedule construction from hours to seconds.
+- Shipped as a tool non-technical staff could actually use.
+
+*Add the repository link and a screenshot here.*

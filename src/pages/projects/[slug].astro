@@ -1,0 +1,46 @@
+---
+import { type CollectionEntry, getCollection, render } from 'astro:content';
+import BlogPost from '../../layouts/BlogPost.astro';
+
+export async function getStaticPaths() {
+	const projects = await getCollection('projects');
+	return projects.map((project) => ({
+		params: { slug: project.id },
+		props: project,
+	}));
+}
+type Props = CollectionEntry<'projects'>;
+
+const project = Astro.props;
+const { Content, headings } = await render(project);
+const { title, description, date, repo, link } = project.data;
+---
+
+<BlogPost
+	title={title}
+	description={description}
+	pubDate={date}
+	id={project.id}
+	headings={headings}
+	toc={headings.length > 1}
+>
+	{(repo || link) && (
+		<p class="project-links">
+			{link && (
+				<a class="btn" href={link} target="_blank" rel="noopener noreferrer">Visit ↗</a>
+			)}
+			{repo && (
+				<a class="btn btn-outline" href={repo} target="_blank" rel="noopener noreferrer">Code ↗</a>
+			)}
+		</p>
+	)}
+	<Content />
+</BlogPost>
+
+<style>
+	.project-links {
+		display: flex;
+		gap: 0.75rem;
+		margin-bottom: 2rem;
+	}
+</style>

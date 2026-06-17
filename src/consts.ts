@@ -5,8 +5,12 @@ export const SITE_TITLE = 'Sergio Eraso';
 export const SITE_DESCRIPTION =
   'Sergio Eraso — physicist working on nonequilibrium statistical physics and biophysics, building models, simulations, and tools for complex systems.';
 
-// Link to a CV/resume PDF to show a "CV" link in the nav. Leave empty to hide it.
-export const CV_URL = '';
+// Short tagline shown in the footer (kept separate so it doesn't repeat the name).
+export const SITE_TAGLINE = 'The academic and personal portfolio of Sergio Eraso.';
+
+// Link to a CV/resume PDF. The button (footer + navbar icon) only appears once
+// the file actually exists at public/resume.pdf (see src/utils/cv.ts).
+export const CV_URL = '/resume.pdf';
 
 export const CONTACT = {
   organization: 'Sergio Eraso',

@@ -3,75 +3,20 @@ import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
-import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
-import bibFileRaw from '../data/publications.bib?raw';
 import { url } from '../utils/paths';
 
 const posts = (await getCollection('blog')).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
 ).slice(0, 3);
 
-interface Author {
-	first: string;
-	last: string;
-}
-
-interface BibEntry {
-	type: string;
-	key: string;
-	fields: Record<string, string>;
-	authors: Author[];
-}
-
-function parseBibTeX(input: string): BibEntry[] {
-    const entries: BibEntry[] = [];
-    const rawEntries = input.split(/@(\w+)\s*\{/g).slice(1);
-
-    for (let i = 0; i < rawEntries.length; i += 2) {
-        const type = rawEntries[i].trim();
-        const body = rawEntries[i+1];
-        if (!body) continue;
-
-        const keyMatch = body.match(/^\s*([^,]+),/);
-        const key = keyMatch ? keyMatch[1].trim() : 'unknown';
-        
-        const fields: Record<string, string> = { title: "Untitled", year: "0000" };
-        const fieldRegex = /(\w+)\s*=\s*(?:\{((?:[^{}]|{[^{}]*})*)\}|"((?:[^"]|\\")*)"|(\d+))/g;
-        
-        let match;
-        while ((match = fieldRegex.exec(body)) !== null) {
-            const fieldKey = match[1].toLowerCase();
-            const val = match[2] || match[3] || match[4] || "";
-            fields[fieldKey] = val.replace(/\s+/g, ' ').trim();
-        }
-
-        let authors: Author[] = [];
-        if (fields.author) {
-            authors = fields.author.split(/\s+and\s+/i).map(str => {
-                const parts = str.split(',');
-                if (parts.length > 1) {
-                    return { first: parts[1].trim(), last: parts[0].trim() };
-                } else {
-                    const names = str.trim().split(' ');
-                    const last = names.pop() || "";
-                    const first = names.join(' ');
-                    return { first, last };
-                }
-            });
-        }
-        entries.push({ type, key, fields, authors });
-    }
-    return entries;
-}
-
-const publications = parseBibTeX(bibFileRaw).sort((a, b) => {
-    return (parseInt(b.fields.year) || 0) - (parseInt(a.fields.year) || 0);
-}).slice(0, 3);
-
-const formatAuthor = (auth: Author) => {
-    return auth.first ? `${auth.first} ${auth.last}` : auth.last;
-};
+const allResearch = (await getCollection('research')).sort(
+	(a, b) => (a.data.order - b.data.order) || (b.data.date.valueOf() - a.data.date.valueOf()),
+);
+const selectedResearch = (allResearch.filter((r) => r.data.selected).length > 0
+	? allResearch.filter((r) => r.data.selected)
+	: allResearch
+).slice(0, 3);
 ---
 
 <!doctype html>
@@ -149,24 +94,22 @@ const formatAuthor = (auth: Author) => {
 
 			<div class="grid-2" style="gap: 4rem; margin-top: 0;">
                 <section>
-                    <h2 style="margin-top: 0;">Selected Publications</h2>
+                    <h2 style="margin-top: 0;">Selected Research</h2>
                     <div class="publication-list">
-                        {publications.length > 0 ? publications.map((pub) => (
+                        {selectedResearch.length > 0 ? selectedResearch.map((entry) => (
                             <div class="pub-mini-item">
-                                <span class="pub-title">{pub.fields.title.replace(/[{}]/g, '')}</span>
+                                <a class="pub-title" href={url(`/publications/${entry.id}/`)} style="display: block;">{entry.data.title}</a>
                                 <div class="pub-meta">
-                                    {pub.authors.map(a => formatAuthor(a)).join(', ')}
-                                    <br/>
                                     <span style="font-style: italic; color: var(--color-accent);">
-                                        {(pub.fields.journal || pub.fields.booktitle || pub.fields.publisher || "Preprint").replace(/[{}]/g, '')}
+                                        {entry.data.venue || 'In preparation'}
                                     </span>
-                                    {pub.fields.year && <span>, {pub.fields.year}</span>}
+                                    <span>, {entry.data.date.getFullYear()}</span>
                                 </div>
                             </div>
-                        )) : <p>No publications found.</p>}
+                        )) : <p>No research entries yet.</p>}
                     </div>
                     <div style="margin-top: 1.5rem;">
-                        <a href={url('/publications')} style="font-weight: 600;">View Full List &rarr;</a>
+                        <a href={url('/publications')} style="font-weight: 600;">View all research &rarr;</a>
                     </div>
                 </section>
 

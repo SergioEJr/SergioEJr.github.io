@@ -1,0 +1,68 @@
+---
+import { type CollectionEntry, getCollection, render } from 'astro:content';
+import BlogPost from '../../layouts/BlogPost.astro';
+
+export async function getStaticPaths() {
+	const research = await getCollection('research');
+	return research.map((entry) => ({
+		params: { slug: entry.id },
+		props: entry,
+	}));
+}
+type Props = CollectionEntry<'research'>;
+
+const entry = Astro.props;
+const { Content, headings } = await render(entry);
+const { title, description, date, venue, paper, bibtex } = entry.data;
+---
+
+<BlogPost
+	title={title}
+	description={description}
+	pubDate={date}
+	id={entry.id}
+	headings={headings}
+	toc={headings.length > 1}
+>
+	<div class="research-links">
+		{venue && <span class="venue">{venue}</span>}
+		{paper && (
+			<a class="btn" href={paper} target="_blank" rel="noopener noreferrer">Paper ↗</a>
+		)}
+		{bibtex && (
+			<details class="bibtex">
+				<summary>BibTeX</summary>
+				<pre>{bibtex}</pre>
+			</details>
+		)}
+	</div>
+	<Content />
+</BlogPost>
+
+<style>
+	.research-links {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 1rem;
+		margin-bottom: 2rem;
+	}
+	.venue {
+		font-style: italic;
+		color: var(--color-text-muted);
+	}
+	.bibtex summary {
+		cursor: pointer;
+		font-weight: 600;
+		color: var(--color-accent);
+	}
+	.bibtex pre {
+		margin-top: 0.75rem;
+		padding: 1rem;
+		background: var(--color-bg-offset);
+		border: 1px solid var(--color-border);
+		border-radius: 8px;
+		overflow-x: auto;
+		font-size: 0.85rem;
+	}
+</style>
