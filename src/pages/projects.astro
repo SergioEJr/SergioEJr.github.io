@@ -3,11 +3,12 @@ import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { SITE_TITLE } from '../consts';
-import AuthorLink from '../components/AuthorLink.astro';
-import projectsData from '../data/projects.json';
+import { getCollection } from 'astro:content';
 import { url } from '../utils/paths';
 
-const projects = projectsData.sort((a, b) => b.year - a.year);
+const projects = (await getCollection('projects')).sort(
+	(a, b) => (a.data.order - b.data.order) || (b.data.date.valueOf() - a.data.date.valueOf()),
+);
 ---
 
 <!doctype html>
@@ -48,6 +49,8 @@ const projects = projectsData.sort((a, b) => b.year - a.year);
 			.project-card {
 				display: flex;
 				flex-direction: column;
+				text-decoration: none;
+				color: inherit;
 				background-color: var(--color-bg-offset);
 				border: 1px solid var(--color-border);
 				border-radius: 16px;
@@ -171,52 +174,34 @@ const projects = projectsData.sort((a, b) => b.year - a.year);
 			
 			<div class="projects-grid">
 				{projects.length > 0 ? projects.map((project) => (
-					<article class="project-card">
+					<a class="project-card" href={url(`/projects/${project.id}/`)}>
 						<div class="project-image">
 							<img
 								src={url(`/projects/${project.id}.png`)}
-								alt={project.title}
+								alt={project.data.title}
 							/>
-							<span class="project-badge">{project.status}</span>
+							<span class="project-badge">{project.data.status}</span>
 						</div>
 
 						<div class="project-content-wrapper">
 							<div class="project-header">
-								<span class="project-year">{project.year > 0 ? project.year : 'Classical'}</span>
-								<h3>
-									{project.link ? (
-										<a href={project.link} target="_blank">{project.title}</a>
-									) : (
-										project.title
-									)}
-								</h3>
+								<span class="project-year">{project.data.date.getFullYear()}</span>
+								<h3>{project.data.title}</h3>
 							</div>
-							
-							<p class="project-description">{project.description}</p>
-							
-							{project.authors && project.authors.length > 0 && (
+
+							<p class="project-description">{project.data.description}</p>
+
+							{project.data.tags.length > 0 && (
 								<div class="project-meta">
-									<span class="meta-label">By:</span>
-									<span class="author-names">
-										{project.authors.map((authorId, i) => (
-											<span>
-												<AuthorLink nameOrSlug={authorId} />
-												{i < project.authors!.length - 1 ? ', ' : ''}
-											</span>
-										))}
-									</span>
+									<span class="author-names">{project.data.tags.join(' · ')}</span>
 								</div>
 							)}
 
-							{project.link && (
-								<a href={project.link} target="_blank" class="read-more">
-									Read More &rarr;
-								</a>
-							)}
+							<span class="read-more">Read more &rarr;</span>
 						</div>
-					</article>
+					</a>
 				)) : (
-                    <p>No projects found in <code>src/data/projects.json</code>.</p>
+                    <p>No projects yet. Add Markdown files in <code>src/content/projects/</code>.</p>
                 )}
 			</div>
 		</main>

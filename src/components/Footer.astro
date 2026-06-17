@@ -4,14 +4,15 @@ import {
   CONTACT,
   CV_URL,
   FOOTER_CREDIT,
-  SITE_DESCRIPTION,
+  SITE_TAGLINE,
   SITE_TITLE,
   SOCIAL_LINKS,
 } from '../consts';
+import { CV_AVAILABLE } from '../utils/cv';
 import Search from './Search.astro';
 import { url } from '../utils/paths';
 
-const cvHref = CV_URL ? url(CV_URL) : null;
+const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
 ---
 
 <footer class="site-footer">
@@ -19,7 +20,7 @@ const cvHref = CV_URL ? url(CV_URL) : null;
         <div class="footer-col brand-col">
             <h3>{SITE_TITLE}</h3>
             <p>
-                {SITE_DESCRIPTION}
+                {SITE_TAGLINE}
             </p>
             <div class="copyright">
                 &copy; {today.getFullYear()} {SITE_TITLE}.<br/>All rights reserved.
@@ -30,10 +31,10 @@ const cvHref = CV_URL ? url(CV_URL) : null;
             <h4>Quick Links</h4>
             <ul>
                 <li><a href={url('/')}>Home</a></li>
-                <li><a href={url('/publications')}>Publications</a></li>
+                <li><a href={url('/about')}>About</a></li>
+                <li><a href={url('/publications')}>Research</a></li>
                 <li><a href={url('/projects')}>Projects</a></li>
-                <li><a href={url('/team')}>Team</a></li>
-                <li><a href={url('/blog')}>News</a></li>
+                <li><a href={url('/blog')}>Journal</a></li>
                 {cvHref && <li><a href={cvHref} target="_blank">Download CV</a></li>}
             </ul>
         </div>

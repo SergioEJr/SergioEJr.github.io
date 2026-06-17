@@ -2,10 +2,11 @@ import type { APIRoute } from "astro";
 import { getCollection } from "astro:content";
 import { generateOgImage } from "../utils/generateOgImage";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
-import projectsData from "../data/projects.json";
 
 export async function getStaticPaths() {
     const posts = await getCollection('blog');
+    const projects = await getCollection('projects');
+    const research = await getCollection('research');
 
     // Base static pages
     const staticPages = [
@@ -23,12 +24,17 @@ export async function getStaticPaths() {
         props: { title: post.data.title, subtitle: 'Blog Post' },
     }));
 
-    const projectPages = projectsData.map((project) => ({
+    const projectPages = projects.map((project) => ({
         params: { route: `projects/${project.id}` },
-        props: { title: project.title, subtitle: 'Research Project' },
+        props: { title: project.data.title, subtitle: 'Project' },
     }));
 
-    return [...staticPages, ...blogPages, ...projectPages];
+    const researchPages = research.map((entry) => ({
+        params: { route: `publications/${entry.id}` },
+        props: { title: entry.data.title, subtitle: 'Research' },
+    }));
+
+    return [...staticPages, ...blogPages, ...projectPages, ...researchPages];
 }
 
 export const GET: APIRoute = async ({ props }) => {
