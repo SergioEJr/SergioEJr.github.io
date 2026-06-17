@@ -47,6 +47,7 @@ const projects = (await getCollection('projects')).sort(
 				margin-bottom: 4rem;
 			}
 			.project-card {
+				position: relative;
 				display: flex;
 				flex-direction: column;
 				text-decoration: none;
@@ -58,6 +59,30 @@ const projects = (await getCollection('projects')).sort(
 				transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 				box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
 			}
+			/* Whole card clickable via the title's stretched link */
+			.card-link { color: inherit; text-decoration: none; }
+			.card-link::after {
+				content: "";
+				position: absolute;
+				inset: 0;
+				z-index: 1;
+			}
+			.project-footer {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				gap: 1rem;
+				margin-top: auto;
+			}
+			/* Repo icon sits above the stretched link so it stays separately clickable */
+			.repo-icon {
+				position: relative;
+				z-index: 2;
+				display: inline-flex;
+				color: var(--color-text-muted);
+				transition: color 0.2s ease, transform 0.2s ease;
+			}
+			.repo-icon:hover { color: var(--color-accent); transform: translateY(-1px); }
 			.project-card:hover {
 				transform: translateY(-6px);
 				box-shadow: var(--shadow-lg);
@@ -174,7 +199,7 @@ const projects = (await getCollection('projects')).sort(
 			
 			<div class="projects-grid">
 				{projects.length > 0 ? projects.map((project) => (
-					<a class="project-card" href={url(`/projects/${project.id}/`)}>
+					<article class="project-card">
 						<div class="project-image">
 							<img
 								src={url(`/projects/${project.id}.png`)}
@@ -186,7 +211,7 @@ const projects = (await getCollection('projects')).sort(
 						<div class="project-content-wrapper">
 							<div class="project-header">
 								<span class="project-year">{project.data.date.getFullYear()}</span>
-								<h3>{project.data.title}</h3>
+								<h3><a class="card-link" href={url(`/projects/${project.id}/`)}>{project.data.title}</a></h3>
 							</div>
 
 							<p class="project-description">{project.data.description}</p>
@@ -197,9 +222,16 @@ const projects = (await getCollection('projects')).sort(
 								</div>
 							)}
 
-							<span class="read-more">Read more &rarr;</span>
+							<div class="project-footer">
+								<span class="read-more">Read more &rarr;</span>
+								{project.data.repo && (
+									<a class="repo-icon" href={project.data.repo} target="_blank" rel="noopener noreferrer" aria-label="GitHub repository" title="GitHub repository">
+										<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+									</a>
+								)}
+							</div>
 						</div>
-					</a>
+					</article>
 				)) : (
                     <p>No projects yet. Add Markdown files in <code>src/content/projects/</code>.</p>
                 )}

@@ -49,6 +49,7 @@ const research = defineCollection({
 		date: z.coerce.date(),
 		venue: z.string().optional(), // e.g. journal / conference / "In preparation"
 		paper: z.string().url().optional(), // arXiv or journal link
+		poster: z.string().optional(), // path to a poster PDF in the repo, e.g. /posters/foo.pdf
 		bibtex: z.string().optional(),
 		authors: z.array(z.string()).default([]),
 		tags: z.array(z.string()).default([]),

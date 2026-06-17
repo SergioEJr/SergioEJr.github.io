@@ -51,7 +51,9 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 				<div class="j-eyebrow"><span id="j-eyebrow-label">All</span> · <span id="j-eyebrow-count">{counts.all}</span> pieces</div>
 				<h1 id="j-title">{CATS.all.title}</h1>
 				<p id="j-subtitle" class="j-subtitle">{CATS.all.subtitle}</p>
+			</header>
 
+			<div class="j-filters-bar">
 				<div class="j-filters">
 					{FILTER_ORDER.map((c) => (
 						<button
@@ -63,7 +65,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 						</button>
 					))}
 				</div>
-			</header>
+			</div>
 
 			<div class="j-body">
 				<!-- Notes topics sidebar (shown only in Notes view) -->
@@ -118,8 +120,15 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 			const filters = Array.from(document.querySelectorAll('.j-filter'));
 			const topicBtns = Array.from(document.querySelectorAll('.j-topic'));
 
+			const list = document.querySelector('.j-list');
 			let activeCat = 'all';
 			let activeTopic = 'all';
+
+			function fadeApply() {
+				if (!list) { apply(); return; }
+				list.style.opacity = '0';
+				setTimeout(() => { apply(); list.style.opacity = ''; }, 160);
+			}
 
 			function apply() {
 				const meta = cats[activeCat];
@@ -151,7 +160,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 					activeCat = btn.getAttribute('data-filter');
 					activeTopic = 'all';
 					topicBtns.forEach((b) => b.classList.toggle('active', b.getAttribute('data-topic') === 'all'));
-					apply();
+					fadeApply();
 				});
 			});
 
@@ -160,7 +169,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 					topicBtns.forEach((b) => b.classList.remove('active'));
 					btn.classList.add('active');
 					activeTopic = btn.getAttribute('data-topic');
-					apply();
+					fadeApply();
 				});
 			});
 
@@ -169,7 +178,16 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 
 		<style>
 			#journal { max-width: var(--max-width); }
-			.j-head { padding: 1rem 0 2.5rem; border-bottom: 1px solid var(--color-border); margin-bottom: 2.5rem; }
+			.j-head { padding: 1rem 0 1.25rem; }
+			.j-filters-bar {
+				position: sticky;
+				top: 4.5rem; /* height of the navbar */
+				z-index: 40; /* below navbar (100) and mobile menu (200) */
+				background: var(--color-bg);
+				padding: 0.85rem 0;
+				margin-bottom: 2.25rem;
+				border-bottom: 1px solid var(--color-border);
+			}
 			.j-eyebrow {
 				display: inline-block;
 				font-size: 0.8rem;
@@ -202,7 +220,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 			@media (min-width: 880px) {
 				.j-body:has(#j-notes-side:not([hidden])) { grid-template-columns: 200px 1fr; }
 			}
-			.j-notes-side { align-self: start; position: sticky; top: 90px; }
+			.j-notes-side { align-self: start; position: sticky; top: 8.5rem; }
 			.j-side-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-muted); margin-bottom: 0.75rem; }
 			.j-topic {
 				display: flex; justify-content: space-between; width: 100%;
@@ -214,7 +232,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 			.j-topic:hover { background: var(--color-bg-offset); color: var(--color-text-main); }
 			.j-topic.active { background: var(--color-accent-light); color: var(--color-text-main); font-weight: 600; }
 
-			.j-list { display: flex; flex-direction: column; }
+			.j-list { display: flex; flex-direction: column; transition: opacity 0.16s ease; }
 			.j-post {
 				display: grid; grid-template-columns: 3rem 1fr; gap: 1rem;
 				padding: 1.75rem 0; border-bottom: 1px solid var(--color-border);
