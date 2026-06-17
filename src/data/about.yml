@@ -1,0 +1,59 @@
+hero:
+  title: About
+  description: >
+    Physicist, builder, and educator. I turn hard, messy problems into models you
+    can actually compute with — and I care about explaining the results clearly.
+
+profile:
+  - label: Current Role
+    value: PhD Student in Physics, MIT (Dean of Science Fellow)
+  - label: Research Areas
+    value: Nonequilibrium statistical physics, biophysics, active matter
+  - label: Advisor
+    value: Mehran Kardar
+  - label: Based in
+    value: Cambridge, MA
+
+experience:
+  - role: Graduate Researcher
+    organization: MIT Department of Physics
+    period: 2023 — Present
+    bullets:
+      - Study how local, stochastic rules produce predictable large-scale order in living systems.
+      - Build and run mathematical models and simulations on computing clusters.
+      - Apply statistical inference to connect models with experimental data.
+  - role: Instructor (short course)
+    organization: Tecnológico de Monterrey
+    period: 2025
+    bullets:
+      - Designed and taught a week-long computational statistical-physics course.
+      - Built notebook-based labs on simulation, entropy, and phase transitions.
+
+service:
+  - role: Graduate-student representative
+    organization: MIT Physics Education Committee
+    period: 2025 — Present
+  - role: Executive board
+    organization: MIT Latino Graduate Student Association
+    period: 2025 — Present
+  - Research mentor — MIT Directed Reading Program & Illinois Mentor Matching Engine
+
+education:
+  - degree: Ph.D., Physics
+    institution: Massachusetts Institute of Technology
+    year: 2023 — present
+  - degree: B.S., Physics & Mathematics (magna cum laude)
+    institution: Emory University
+    year: 2023
+
+sections:
+  - title: Skills
+    items:
+      - title: Programming
+        description: Python, Julia, Mathematica, LaTeX; NumPy, SciPy, matplotlib, multiprocessing, Git
+      - title: Modeling & simulation
+        description: Stochastic processes & SDEs, Fokker–Planck and master equations, Monte Carlo, dynamical systems
+      - title: Statistics & computation
+        description: Statistical inference, maximum-likelihood estimation, hypothesis testing, simulated annealing, genetic algorithms
+      - title: Languages
+        description: Spanish (native), English (fluent), Korean (basic)
