@@ -51,6 +51,7 @@
 html {
 	box-sizing: border-box;
 	scroll-behavior: smooth;
+	background-color: var(--color-bg);
 }
 
 /* Minimal Scrollbar for Browser and Modals */
