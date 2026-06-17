@@ -238,12 +238,15 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 			.j-post {
 				display: grid; grid-template-columns: 3rem 1fr; gap: 1rem;
 				padding: 1.75rem 0; border-bottom: 1px solid var(--color-border);
+				transition: border-color 0.2s ease;
 			}
+			/* On hover, tint the post's separator with the category color */
+			.j-post:hover { border-bottom-color: var(--cat-color); }
 			.j-index { font-variant-numeric: tabular-nums; color: var(--color-text-muted); opacity: 0.5; font-size: 0.9rem; padding-top: 0.3rem; }
 			.j-cat { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
 			.j-post-title { font-family: var(--font-serif); font-size: 1.6rem; line-height: 1.2; margin: 0 0 0.5rem; }
-			.j-post-title a { color: var(--color-text-main); text-decoration: none; box-shadow: inset 0 -2px 0 0 transparent; transition: box-shadow 0.2s; }
-			.j-post-title a:hover { box-shadow: inset 0 -2px 0 0 var(--cat-color); }
+			.j-post-title a { color: var(--color-text-main); text-decoration: none; transition: color 0.2s ease; }
+			.j-post:hover .j-post-title a { color: var(--cat-color); }
 			.j-desc { color: var(--color-text-muted); margin: 0 0 0.75rem; max-width: 680px; }
 			.j-meta { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; font-size: 0.82rem; color: var(--color-text-muted); font-style: italic; }
 			.j-topic-tag { font-style: normal; padding: 0.1rem 0.6rem; border-radius: 999px; background: var(--color-bg-offset); border: 1px solid var(--color-border); }
