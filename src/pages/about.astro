@@ -1,265 +1,63 @@
 ---
-import Layout from "../layouts/Layout.astro";
-import aboutRaw from "../data/about.yml?raw";
-import siteConfig from "../side.config";
-import { parse } from "yaml";
-
-interface CustomItem {
-  title?: string;
-  subtitle?: string;
-  date?: string;
-  description?: string;
-  link?: string;
-}
-
-interface CustomSection {
-  title?: string;
-  items?: (string | CustomItem)[];
-}
-
-interface AboutData {
-  hero?: {
-    title?: string;
-    description?: string;
-  };
-  profile?: Array<{ label?: string; value?: string }>;
-  experience?: Array<{
-    role?: string;
-    organization?: string;
-    period?: string;
-    bullets?: string[];
-  }>;
-  service?: Array<
-    string | { role?: string; organization?: string; period?: string }
-  >;
-  education?: Array<{
-    degree?: string;
-    institution?: string;
-    year?: string | number;
-  }>;
-  sections?: CustomSection[];
-}
-
-const aboutData = (parse(aboutRaw) as AboutData) || {};
-const {
-  hero = {},
-  profile = [],
-  experience = [],
-  service = [],
-  education = [],
-  sections = [],
-} = aboutData;
-
-const pageTitle = siteConfig.pageTitles.about.title || hero.title || "About";
-const pageDescription = siteConfig.pageTitles.about.description || hero.description || "";
+import Layout from '../layouts/BlogPost.astro';
 ---
 
-<Layout title={pageTitle} description={pageDescription}>
-  <div class="space-y-6">
-    <!-- Page Header -->
-    <header class="space-y-1">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-50">
-        {pageTitle}
-      </h1>
-      <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed max-w-2xl">
-        {pageDescription}
-      </p>
-    </header>
+<Layout
+	title="About"
+	description="About Sergio Eraso — physicist, modeler, and builder."
+	pubDate={new Date('2026-06-10')}
+>
+	<p>
+		I'm <strong>Sergio Eraso</strong>, a physicist who likes turning hard, messy
+		problems into models you can actually compute with. I'm currently a PhD
+		researcher in the <a href="https://physics.mit.edu/">Department of Physics at MIT</a>
+		(Dean of Science Fellow), advised by
+		<a href="https://physics.mit.edu/faculty/mehran-kardar/">Mehran Kardar</a>, working
+		on nonequilibrium statistical physics and biophysics.
+	</p>
 
-    {
-      profile.length > 0 && (
-        <section class="grid gap-3 sm:grid-cols-3">
-          {profile.map((item) => (
-            <div class="rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800/50">
-              <p class="m-0 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                {item.label}
-              </p>
-              <p class="m-0 mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
-                {item.value}
-              </p>
-            </div>
-          ))}
-        </section>
-      )
-    }
+	<p>
+		My research is about how simple, local rules give rise to predictable
+		large-scale behavior in living systems — from bacterial swarms to expanding
+		populations. Day to day, that means <strong>mathematical modeling, stochastic
+		simulation, and statistical inference</strong>: building models, running them on
+		clusters, and pulling signal out of noisy data. I care a lot about explaining
+		that work clearly, to fellow researchers and to students seeing it for the first time.
+	</p>
 
-    <div class="fade-in-up animation-delay-200 space-y-8">
-      <!-- Education Section -->
-      {
-        education.length > 0 && (
-          <section class="space-y-3">
-            <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Education</h2>
-            <div class="space-y-3">
-              {education.map((edu) => (
-                <div class="group relative p-6 rounded-2xl bg-white dark:bg-gray-800/50 shadow-sm hover:shadow-md transition-shadow duration-300">
-                  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <div class="flex items-center gap-3">
-                      <div class="p-2 rounded-lg bg-accent-50 dark:bg-accent-900/30">
-                        <span class="i-mdi:school text-lg text-accent-600 dark:text-accent-400"></span>
-                      </div>
-                      <div class="space-y-0.5">
-                        <h3 class="font-bold text-gray-900 dark:text-gray-50">{edu.degree}</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1">
-                          <span class="i-mdi:domain text-gray-400 dark:text-gray-500"></span>
-                          {edu.institution}
-                        </p>
-                      </div>
-                    </div>
-                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-accent-800 dark:text-accent-200 bg-accent-100 dark:bg-accent-900/40 border border-accent-200 dark:border-accent-800">
-                      <span class="i-mdi:calendar text-accent-500"></span>
-                      {edu.year}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )
-      }
+	<p>
+		I'm increasingly interested in applying these skills beyond academia — on
+		problems in industry where modeling, simulation, and data turn uncertainty into
+		decisions. If that overlaps with what you're working on, I'd love to chat.
+	</p>
 
-      <!-- Experience Section -->
-      {
-        experience.length > 0 && (
-          <section class="space-y-3">
-            <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Experience</h2>
-            <div class="space-y-4">
-              {experience.map((exp) => (
-                <div class="group relative p-6 rounded-2xl bg-white dark:bg-gray-800/50 shadow-sm hover:shadow-md transition-shadow duration-300">
-                  <div class="space-y-3">
-                    <!-- Title row with dot, role, and period aligned -->
-                    <div class="flex items-center justify-between gap-3">
-                      <div class="flex items-center gap-3">
-                        <!-- Timeline dot -->
-                        <div class="w-3 h-3 rounded-full bg-accent-500 shrink-0"></div>
-                        <h3 class="font-bold text-gray-900 dark:text-gray-50">{exp.role}</h3>
-                      </div>
-                      <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-accent-800 dark:text-accent-200 bg-accent-100 dark:bg-accent-900/40 border border-accent-200 dark:border-accent-800 whitespace-nowrap shrink-0">
-                        <span class="i-mdi:calendar-range text-accent-500"></span>
-                        {exp.period}
-                      </span>
-                    </div>
-                    
-                    <!-- Organization -->
-                    <p class="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1.5 ml-6">
-                      <span class="i-mdi:office-building text-gray-400 dark:text-gray-500"></span>
-                      {exp.organization}
-                    </p>
-                    
-                    <ul class="space-y-2 pl-6">
-                      {(exp.bullets || []).map((bullet) => (
-                        <li class="flex items-start gap-2.5 text-sm text-gray-600 dark:text-gray-300">
-                          <span class="i-mdi:check-circle text-accent-500 dark:text-accent-400 shrink-0 mt-0.5" />
-                          <span class="leading-relaxed">{bullet}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )
-      }
+	<h2>Background</h2>
+	<ul>
+		<li><strong>Ph.D. in Physics</strong>, MIT — 2023–present (Dean of Science Fellow)</li>
+		<li><strong>B.S. in Physics &amp; Mathematics</strong>, Emory University — 2019–2023, <em>magna cum laude</em></li>
+		<li>Study abroad, Yonsei University, Seoul (2022)</li>
+	</ul>
 
-      <!-- Service Section -->
-      {
-        service.length > 0 && (
-          <section class="space-y-3">
-            <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Academic Service</h2>
-            <div class="grid gap-3 sm:grid-cols-2">
-              {service.map((item) => {
-                if (typeof item === "string") {
-                  return (
-                    <div class="group flex items-center gap-3 p-6 rounded-2xl bg-white dark:bg-gray-800/50 shadow-sm hover:shadow-md transition-shadow duration-300">
-                      <div class="p-1.5 rounded-lg bg-accent-50 dark:bg-accent-900/30 shrink-0">
-                        <span class="i-mdi:star text-accent-500 dark:text-accent-400" />
-                      </div>
-                      <span class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{item}</span>
-                    </div>
-                  );
-                }
-                return (
-                  <div class="group flex items-center gap-3 p-6 rounded-2xl bg-white dark:bg-gray-800/50 shadow-sm hover:shadow-md transition-shadow duration-300">
-                    <div class="p-1.5 rounded-lg bg-accent-50 dark:bg-accent-900/30 shrink-0">
-                      <span class="i-mdi:star text-accent-500 dark:text-accent-400" />
-                    </div>
-                    <div class="text-sm space-y-0.5">
-                      <p class="font-semibold text-gray-900 dark:text-gray-100">{item.role}</p>
-                      <p class="text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                        <span class="i-mdi:domain text-gray-400 dark:text-gray-500 text-xs"></span>
-                        {item.organization}
-                      </p>
-                      <span class="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-500">
-                        <span class="i-mdi:calendar text-xs"></span>
-                        {item.period}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )
-      }
+	<h2>Toolkit</h2>
+	<ul>
+		<li><strong>Programming:</strong> Python, Julia, Mathematica, LaTeX; NumPy, SciPy, matplotlib, multiprocessing, Git</li>
+		<li><strong>Modeling &amp; simulation:</strong> stochastic processes &amp; SDEs, Fokker–Planck and master equations, Monte Carlo, dynamical systems</li>
+		<li><strong>Statistics &amp; computation:</strong> statistical inference, maximum-likelihood estimation, hypothesis testing, simulated annealing, genetic algorithms</li>
+		<li><strong>Languages:</strong> Spanish (native), English (fluent), Korean (basic)</li>
+	</ul>
 
-      <!-- Custom Sections (Awards, etc.) -->
-      {
-        sections.map((section) => (
-          <section class="space-y-3">
-            <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{section.title}</h2>
-            <div class="space-y-3">
-              {(section.items || []).map((item) => {
-                if (typeof item === "string") {
-                  return (
-                    <div class="group flex items-center gap-3 p-6 rounded-2xl bg-white dark:bg-gray-800/50 shadow-sm hover:shadow-md transition-shadow duration-300">
-                      <div class="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/30 shrink-0">
-                        <span class="i-mdi:medal text-amber-500 dark:text-amber-400" />
-                      </div>
-                      <span class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{item}</span>
-                    </div>
-                  );
-                }
-                return (
-                  <div class="group relative p-6 rounded-2xl bg-white dark:bg-gray-800/50 shadow-sm hover:shadow-md transition-shadow duration-300">
-                    <!-- Decorative gradient -->
-                    <div class="absolute inset-0 rounded-xl bg-gradient-to-br from-amber-50/50 to-transparent dark:from-amber-900/10 dark:to-transparent pointer-events-none"></div>
-                    
-                    <div class="relative flex flex-col sm:flex-row sm:items-center gap-3">
-                      <div class="p-2 rounded-lg bg-amber-50 dark:bg-amber-900/30 shrink-0">
-                        <span class="i-mdi:trophy text-lg text-amber-500 dark:text-amber-400" />
-                      </div>
-                      <div class="flex-1 space-y-1">
-                        {item.title && (
-                          <h3 class="font-bold text-gray-900 dark:text-gray-100">
-                            {item.link ? (
-                              <a href={item.link} target="_blank" rel="noreferrer" class="hover:text-accent-600 dark:hover:text-accent-400 transition-colors no-underline text-inherit inline-flex items-center gap-1">
-                                {item.title}
-                                <span class="i-mdi:open-in-new text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                              </a>
-                            ) : item.title}
-                          </h3>
-                        )}
-                        {item.subtitle && (
-                          <p class="text-sm font-medium text-accent-600 dark:text-accent-400">{item.subtitle}</p>
-                        )}
-                        {item.description && (
-                          <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{item.description}</p>
-                        )}
-                      </div>
-                      {item.date && (
-                        <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 shrink-0">
-                          <span class="i-mdi:calendar text-gray-400 dark:text-gray-500 text-xs"></span>
-                          {item.date}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        ))
-      }
-    </div>
-  </div>
+	<h2>Beyond research</h2>
+	<p>
+		I serve as a graduate-student representative on the MIT Physics Education
+		Committee and on the executive board of the MIT Latino Graduate Student
+		Association, and I mentor students through the MIT Directed Reading Program.
+	</p>
+
+	<h2>Get in touch</h2>
+	<p>
+		The best way to reach me is by
+		<a href="mailto:sergioerasojr@gmail.com">email</a>. You can also find me on
+		<a href="https://github.com/SergioEJr">GitHub</a> and
+		<a href="https://www.linkedin.com/in/sergio-eraso-jr/">LinkedIn</a>.
+	</p>
 </Layout>

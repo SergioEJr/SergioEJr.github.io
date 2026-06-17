@@ -1,15 +1,33 @@
 // @ts-check
-import { defineConfig } from 'astro/config';
+
+import { unified } from '@astrojs/markdown-remark';
+import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
-import UnoCSS from 'unocss/vite';
-import icon from "astro-icon";
+import { defineConfig } from 'astro/config';
+import rehypeKatex from 'rehype-katex';
+import remarkMath from 'remark-math';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://sergioejr.github.io/', // Your production site URL here
-	integrations: [icon(), sitemap()],
-	vite: {
-		plugins: [UnoCSS()]
+	site: 'https://sergioejr.github.io',
+	base: process.env.BASE_PATH || '/',
+	integrations: [
+		mdx(),
+		sitemap()
+	],
+	markdown: {
+		shikiConfig: {
+			themes: {
+				light: 'github-light',
+				dark: 'github-dark',
+			},
+		},
+		processor: unified({
+			remarkPlugins: [remarkMath],
+			rehypePlugins: [rehypeKatex],
+		}),
 	},
-	prefetch: true
+	build: {
+		inlineStylesheets: 'always',
+	},
 });

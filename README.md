@@ -1,35 +1,35 @@
 # sergioejr.github.io
 
-Personal website of **Sergio Eraso** — research, projects, teaching, and writing.
+Personal website of **Sergio Eraso** — research, projects, and writing.
 Live at **https://sergioejr.github.io**.
 
 Built with [Astro](https://astro.build/) on the
-[astro-theme-scholars](https://github.com/jxpeng98/astro-theme-scholars) theme
-by Jiaxin Peng (MIT License). Deployed to GitHub Pages via GitHub Actions.
+[Astro Scholar](https://github.com/shravanngoswamii/astro-scholar) theme by
+Shravan Goswami (MIT License). Supports LaTeX math (KaTeX), syntax-highlighted
+code, full-text search (Pagefind), and auto-generated OG images. Deployed to
+GitHub Pages via GitHub Actions.
 
 ## Where to edit things
 
 | What | File |
 |------|------|
-| Name, tagline, socials, nav, hero, page titles | `src/side.config.ts` |
-| About page (bio, education, experience, skills) | `src/data/about.yml` |
-| Research / publications | `src/data/publications.bib` |
-| Projects | `src/data/projects.yml` |
-| Teaching | `src/data/teaching.yml` |
-| Blog posts (one file per post) | `src/content/posts/*.md` |
-| Profile photo | `public/profile.svg` (replace with your headshot) |
-| Favicon | `public/favicon.svg` |
-
-In `publications.bib`, set `public = {yes}` for published work, `{wp}` for
-working papers, and `{wip}` for work in progress.
+| Site title, contact, social links, CV link | `src/consts.ts` |
+| Home page hero | `src/pages/index.astro` |
+| About page | `src/pages/about.astro` |
+| Author profile(s) | `src/data/authors.json` |
+| Projects | `src/data/projects.json` |
+| Publications | `src/data/publications.bib` |
+| Blog posts (one file per post) | `src/content/blog/*.md` |
+| Navigation | `src/components/Header.astro` |
+| Profile image | `public/profile.svg` (replace with a headshot) |
 
 ## Develop locally
 
 ```sh
-pnpm install
-pnpm dev       # http://localhost:4321
-pnpm build     # production build to ./dist
-pnpm preview   # preview the production build
+npm install
+npm run dev      # http://localhost:4321
+npm run build    # production build to ./dist (also runs Pagefind search index)
+npm run preview  # preview the production build
 ```
 
 ## Deploying
