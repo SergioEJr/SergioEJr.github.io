@@ -13,6 +13,10 @@ const blog = defineCollection({
 			description: z.string(),
 			pubDate: z.coerce.date(),
 			updatedDate: z.coerce.date().optional(),
+			// Optional hero shown at the top of the post (off by default). Lives in
+			// src/assets/blog/ and is referenced relative to the post file, e.g.
+			//   heroImage: ../../assets/blog/my-post.jpg
+			// so Astro can optimize it (resize, webp/avif, hashing).
 			heroImage: image().optional(),
 			authors: z.array(z.string()).optional(),
 			toc: z.boolean().optional(),
@@ -42,11 +46,11 @@ const projects = defineCollection({
 		// A project may belong to both groups.
 		categories: z.array(z.enum(['Technical', 'Teaching'])).default(['Technical']),
 		// Optional custom thumbnail for the Projects listing card (path under
-		// /public, e.g. /projects/foo.png). When set, it replaces the
+		// /public, e.g. /projects/foo.jpeg). When set, it replaces the
 		// auto-generated hero card, with the category pills overlaid on top.
 		image: z.string().optional(),
-		// Optional image shown at the top of the project's article page. No overlay,
-		// and nothing is shown by default. Independent of `image`.
+		// Optional image shown at the top of the project's article page (no
+		// overlay, nothing by default). Same /public path convention.
 		articleImage: z.string().optional(),
 		tags: z.array(z.string()).default([]),
 		repo: z.string().url().optional(),
