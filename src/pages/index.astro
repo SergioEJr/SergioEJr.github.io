@@ -5,6 +5,7 @@ import Footer from "../components/Footer.astro";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
 import { getCollection } from "astro:content";
 import { url } from "../utils/paths";
+import { pageFade } from "../utils/pageTransition";
 
 const posts = (await getCollection("blog"))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
@@ -99,7 +100,7 @@ const selectedResearch = (
   </head>
   <body>
     <Header />
-    <main transition:animate="fade">
+    <main transition:animate={pageFade}>
       <section class="hero">
         <div class="hero-content">
           <h1 style="margin-bottom: 0.5rem; font-size: 3rem;">Sergio Eraso</h1>
