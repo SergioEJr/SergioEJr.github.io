@@ -1,6 +1,8 @@
 ---
 import { type CollectionEntry, getCollection, render } from 'astro:content';
 import BlogPost from '../../layouts/BlogPost.astro';
+import { PROJECT_CATEGORY_COLORS } from '../../utils/categories';
+import { url } from '../../utils/paths';
 
 export async function getStaticPaths() {
 	const projects = await getCollection('projects');
@@ -13,7 +15,12 @@ type Props = CollectionEntry<'projects'>;
 
 const project = Astro.props;
 const { Content, headings } = await render(project);
-const { title, description, date, repo, link } = project.data;
+const { title, description, date, repo, link, categories, articleImage } = project.data;
+
+const categoryBadges = categories.map((c) => ({
+	label: c,
+	color: PROJECT_CATEGORY_COLORS[c] ?? 'var(--color-accent)',
+}));
 ---
 
 <BlogPost
@@ -24,7 +31,13 @@ const { title, description, date, repo, link } = project.data;
 	headings={headings}
 	toc={headings.length > 1}
 	noHero={true}
+	categoryBadges={categoryBadges}
 >
+	{articleImage && (
+		<div class="project-article-image" slot="hero">
+			<img src={url(articleImage)} alt={title} />
+		</div>
+	)}
 	{(repo || link) && (
 		<p class="project-links">
 			{link && (
@@ -43,5 +56,18 @@ const { title, description, date, repo, link } = project.data;
 		display: flex;
 		gap: 0.75rem;
 		margin-bottom: 2rem;
+	}
+	.project-article-image {
+		width: 100%;
+		max-width: 1020px;
+		margin: 0 auto;
+		overflow: hidden;
+		border-radius: 12px;
+		box-shadow: var(--shadow-md);
+	}
+	.project-article-image img {
+		display: block;
+		width: 100%;
+		height: auto;
 	}
 </style>

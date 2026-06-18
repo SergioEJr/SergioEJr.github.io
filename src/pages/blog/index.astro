@@ -37,6 +37,14 @@ const topics = [...topicCounts.entries()].sort((a, b) => a[0].localeCompare(b[0]
 
 const catColor = (c: string) => (CATS as any)[c]?.color ?? 'var(--color-accent)';
 const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
+
+// Resolve where a Journal entry points. Pointer posts (externalUrl / linkTo) jump
+// straight to a full article; standalone posts get their own detail page.
+function postLink(data: any, id: string): { href: string; external: boolean } {
+	if (data.externalUrl) return { href: data.externalUrl, external: true };
+	if (data.linkTo) return { href: url(data.linkTo), external: false };
+	return { href: url(`/blog/${id}/`), external: false };
+}
 ---
 
 <!doctype html>
@@ -91,9 +99,22 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 							<div class="j-index">{String(i + 1).padStart(2, '0')}</div>
 							<div class="j-main">
 								<div class="j-cat" style={`color:${catColor(post.data.category)}`}>● {catLabel(post.data.category)}</div>
-								<h2 class="j-post-title">
-									<a href={url(`/blog/${post.id}/`)}>{post.data.title}</a>
-								</h2>
+								{(() => {
+									const link = postLink(post.data, post.id);
+									return (
+										<h2 class="j-post-title">
+											<a
+												href={link.href}
+												{...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+											>
+												{post.data.title}
+												{link.external && (
+													<svg class="j-ext-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg>
+												)}
+											</a>
+										</h2>
+									);
+								})()}
 								<p class="j-desc">{post.data.description}</p>
 								<div class="j-meta">
 									<FormattedDate date={post.data.pubDate} />
@@ -275,6 +296,8 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 			}
 			.j-post:hover .j-post-title { border-bottom-color: var(--cat-color); }
 			.j-post-title a { color: var(--color-text-main); text-decoration: none; transition: color 0.2s ease; }
+			.j-ext-icon { width: 0.7em; height: 0.7em; margin-left: 0.35rem; vertical-align: baseline; opacity: 0.55; transition: opacity 0.2s ease; }
+			.j-post:hover .j-ext-icon { opacity: 1; }
 			.j-desc { color: var(--color-text-muted); margin: 0 0 0.75rem; max-width: 680px; }
 			.j-meta { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; font-size: 0.82rem; color: var(--color-text-muted); font-style: italic; }
 			.j-topic-tag { font-style: normal; padding: 0.1rem 0.6rem; border-radius: 999px; background: var(--color-bg-offset); border: 1px solid var(--color-border); }

@@ -206,8 +206,17 @@ a:hover {
 	position: relative;
 	display: inline-block;
 	cursor: pointer;
-	border-bottom: 1px dotted var(--color-accent);
+	/* Co-authors inherit the surrounding (muted) color so a clickable profile looks
+	   identical to a plain name. Only the owner is emphasized below. */
+	color: inherit;
+	font-weight: inherit;
+}
+/* Only the site owner stands out: brighter, bold, underlined. */
+.author-link.author-owner {
 	color: var(--color-text-main);
+	font-weight: 700;
+	text-decoration: underline;
+	text-underline-offset: 2px;
 }
 
 .author-link:hover .author-tooltip {

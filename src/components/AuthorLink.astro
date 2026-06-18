@@ -30,10 +30,19 @@ if (author?.avatar) {
         avatar: normalizeAuthorAvatar(author.avatar),
     };
 }
+
+// The site owner is emphasized (bold + underline); every other author renders
+// plain, even when their profile card is clickable.
+const OWNER_ID = 'sergio-eraso';
+const isOwner = author?.id === OWNER_ID;
 ---
 
 {author ? (
-    <span class="author-link author-modal-trigger" data-member={JSON.stringify(author)} style="cursor: pointer;">
+    <span
+        class:list={['author-link', 'author-modal-trigger', { 'author-owner': isOwner }]}
+        data-member={JSON.stringify(author)}
+        style="cursor: pointer;"
+    >
         {author.name}
     </span>
 ) : (

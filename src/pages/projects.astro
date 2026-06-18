@@ -10,6 +10,15 @@ import { pageFade } from '../utils/pageTransition';
 const projects = (await getCollection('projects')).sort(
 	(a, b) => (a.data.order - b.data.order) || (b.data.date.valueOf() - a.data.date.valueOf()),
 );
+
+// Filter config — colors match the Journal categories (Math purple / Physics green).
+const CAT_COLORS: Record<string, string> = {
+	Technical: '#8b5cf6',
+	Teaching: '#10b981',
+};
+const FILTERS = ['Technical', 'Teaching'] as const;
+const filterCounts: Record<string, number> = { Technical: 0, Teaching: 0 };
+for (const p of projects) for (const c of p.data.categories) filterCounts[c] = (filterCounts[c] || 0) + 1;
 ---
 
 <!doctype html>
@@ -41,11 +50,44 @@ const projects = (await getCollection('projects')).sort(
 				margin: 0 auto;
 				line-height: 1.7;
 			}
+			.projects-filters {
+				display: flex;
+				flex-wrap: wrap;
+				justify-content: center;
+				gap: 0.6rem;
+				margin-bottom: 3rem;
+			}
+			.proj-filter {
+				background: transparent;
+				border: 1px solid var(--color-border);
+				color: var(--color-text-muted);
+				padding: 0.4rem 1.1rem;
+				border-radius: 999px;
+				font-size: 0.8rem;
+				font-weight: 700;
+				text-transform: uppercase;
+				letter-spacing: 0.05em;
+				cursor: pointer;
+				transition: all 0.2s ease;
+			}
+			.proj-filter .proj-filter-count {
+				opacity: 0.6;
+				margin-left: 0.2rem;
+				font-variant-numeric: tabular-nums;
+			}
+			.proj-filter:hover { color: var(--f-color); border-color: var(--f-color); }
+			.proj-filter.active { color: #fff; background: var(--f-color); border-color: var(--f-color); }
+			.proj-filter.active .proj-filter-count { opacity: 0.85; }
 			.projects-grid {
 				display: grid;
 				grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
 				gap: 2.5rem;
 				margin-bottom: 4rem;
+			}
+			.projects-empty {
+				text-align: center;
+				color: var(--color-text-muted);
+				padding: 3rem 0 5rem;
 			}
 			.project-card {
 				position: relative;
@@ -103,6 +145,30 @@ const projects = (await getCollection('projects')).sort(
 			}
 			.project-card:hover .project-image img {
 				transform: scale(1.05);
+			}
+			.project-image-badges {
+				position: absolute;
+				top: 1rem;
+				left: 1rem;
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.4rem;
+				z-index: 10;
+			}
+			.project-image-badge {
+				display: inline-flex;
+				align-items: center;
+				padding: 0.25rem 0.7rem;
+				border-radius: 999px;
+				font-size: 0.65rem;
+				font-weight: 700;
+				text-transform: uppercase;
+				letter-spacing: 0.08em;
+				color: var(--badge-color);
+				border: 1px solid color-mix(in srgb, var(--badge-color) 60%, transparent);
+				background: rgba(15, 23, 42, 0.55);
+				backdrop-filter: blur(8px);
+				-webkit-backdrop-filter: blur(8px);
 			}
 			.project-badge {
 				position: absolute;
@@ -197,15 +263,36 @@ const projects = (await getCollection('projects')).sort(
 				<h1>Projects</h1>
 				<p>Tools, teaching, and experiments I've built — most started as a problem I wanted solved or an idea I wanted to understand.</p>
 			</div>
-			
+
+			<div class="projects-filters" id="projects-filters">
+				{FILTERS.map((c) => (
+					<button
+						class="proj-filter"
+						data-filter={c}
+						style={`--f-color:${CAT_COLORS[c]}`}
+					>
+						{c} <span class="proj-filter-count">{filterCounts[c]}</span>
+					</button>
+				))}
+			</div>
+
 			<div class="projects-grid">
 				{projects.length > 0 ? projects.map((project) => (
-					<article class="project-card">
+					<article class="project-card" data-categories={project.data.categories.join(',')}>
 						<div class="project-image">
 							<img
-								src={url(`/projects/${project.id}.png`)}
+								src={project.data.image ? url(project.data.image) : url(`/projects/${project.id}.png`)}
 								alt={project.data.title}
 							/>
+							{/* Custom thumbnails get the category pills overlaid; the generated
+							    hero card already has them baked in. */}
+							{project.data.image && (
+								<div class="project-image-badges">
+									{project.data.categories.map((c) => (
+										<span class="project-image-badge" style={`--badge-color:${CAT_COLORS[c]}`}>{c}</span>
+									))}
+								</div>
+							)}
 							<span class="project-badge">{project.data.status}</span>
 						</div>
 
@@ -237,7 +324,49 @@ const projects = (await getCollection('projects')).sort(
                     <p>No projects yet. Add Markdown files in <code>src/content/projects/</code>.</p>
                 )}
 			</div>
+			<p class="projects-empty" id="projects-empty" hidden>No projects match the selected filters.</p>
 		</main>
 		<Footer />
+
+		<script is:inline>
+			function initProjectFilters() {
+				const bar = document.getElementById('projects-filters');
+				if (!bar || bar.dataset.init === 'true') return;
+				bar.dataset.init = 'true';
+
+				const filters = Array.from(bar.querySelectorAll('.proj-filter'));
+				const cards = Array.from(document.querySelectorAll('.project-card'));
+				const empty = document.getElementById('projects-empty');
+				const active = new Set();
+
+				function apply() {
+					let visible = 0;
+					cards.forEach((card) => {
+						const cats = (card.getAttribute('data-categories') || '')
+							.split(',')
+							.filter(Boolean);
+						// No filter selected → show all; otherwise show if it matches any active filter.
+						const show =
+							active.size === 0 || cats.some((c) => active.has(c));
+						card.style.display = show ? '' : 'none';
+						if (show) visible++;
+					});
+					if (empty) empty.hidden = visible !== 0;
+				}
+
+				filters.forEach((btn) => {
+					btn.addEventListener('click', () => {
+						const f = btn.getAttribute('data-filter');
+						if (active.has(f)) active.delete(f);
+						else active.add(f);
+						btn.classList.toggle('active', active.has(f));
+						apply();
+					});
+				});
+			}
+
+			initProjectFilters();
+			document.addEventListener('astro:page-load', initProjectFilters);
+		</script>
 	</body>
 </html>
