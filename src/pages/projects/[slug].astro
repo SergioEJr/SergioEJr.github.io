@@ -35,7 +35,7 @@ const categoryBadges = categories.map((c) => ({
 >
 	{articleImage && (
 		<div class="project-article-image" slot="hero">
-			<img src={url(articleImage)} alt={title} />
+			<img src={url(articleImage)} alt={title} loading="eager" fetchpriority="high" decoding="async" />
 		</div>
 	)}
 	{(repo || link) && (

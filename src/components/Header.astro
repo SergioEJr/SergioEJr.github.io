@@ -14,11 +14,10 @@ const brandLogoSvg = logoSvg
 <header class="site-header">
   <nav>
     <h2>
-      <a href={url("/")} class="brand">
+      <a href={url("/")} class="brand" aria-label={`${SITE_TITLE} — home`}>
         <span class="brand-logo" aria-hidden="true">
           <Fragment set:html={brandLogoSvg} />
         </span>
-        <span></span>
       </a>
     </h2>
 

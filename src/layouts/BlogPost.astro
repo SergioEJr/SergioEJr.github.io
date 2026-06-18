@@ -17,6 +17,9 @@ type Props = Partial<CollectionEntry<'blog'>['data']> & {
 	title: string,
 	description: string,
 	pubDate: Date,
+	// Blog posts pass optimized ImageMetadata; simple pages (e.g. About) may pass
+	// a plain path string to a file in /public.
+	heroImage?: CollectionEntry<'blog'>['data']['heroImage'] | string,
 	id?: string,
 	headings?: { depth: number; slug: string; text: string }[],
 	toc?: boolean,
@@ -522,7 +525,11 @@ const { title, description, pubDate, updatedDate, heroImage, authors, tags, head
 				) : (
 					!noHero && heroImage && (
 						<div class="hero-image">
-							<Image width={1020} height={510} src={heroImage} alt={title} />
+							{typeof heroImage === 'string' ? (
+								<img width={1020} height={510} src={url(heroImage)} alt={title} loading="eager" fetchpriority="high" decoding="async" />
+							) : (
+								<Image width={1020} height={510} src={heroImage} alt={title} loading="eager" fetchpriority="high" />
+							)}
 						</div>
 					)
 				)}
