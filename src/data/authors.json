@@ -3,6 +3,7 @@
     "id": "sergio-eraso",
     "name": "Sergio Eraso",
     "title": "PhD Student in Physics, MIT",
+    "avatar": "/public/sergio.jpeg",
     "role": "Researcher",
     "bio": "Sergio is a physicist working on nonequilibrium statistical physics and biophysics. He builds models, simulations, and tools to understand how simple local rules produce predictable large-scale behavior in complex systems.",
     "github": "https://github.com/SergioEJr",
@@ -10,5 +11,14 @@
     "email": "sergioerasojr@gmail.com",
     "sortOrder": 0,
     "alumni": false
+  },
+  {
+    "id": "mehran-kardar",
+    "name": "Mehran Kardar",
+    "title": "Francis Friedman Professor of Physics, MIT",
+    "avatar": "public/mehran.jpg",
+    "role": "Principal Investigator",
+    "bio": "Professor Kardar is a theoretical physicist interested in a wide range of phenomena. He is particularly known for the Kardar–Parisi–Zhang (KPZ) equation in theoretical physics, which has been named after him and his two coauthors: the Nobel Prize laureate Giorgio Parisi, and Yi-Cheng Zhang.",
+    "website": "https://physics.mit.edu/faculty/mehran-kardar/"
   }
 ]
