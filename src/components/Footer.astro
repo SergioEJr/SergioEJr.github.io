@@ -255,25 +255,29 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
     return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
   };
 
-  const modal = document.getElementById(
-    "author-modal",
-  ) as HTMLDialogElement | null;
-  const closeBtn = document.getElementById("close-modal");
-
-  const modalAvatar = document.getElementById(
-    "modal-avatar",
-  ) as HTMLImageElement | null;
-  const modalName = document.getElementById("modal-name");
-  const modalTitle = document.getElementById("modal-title");
-  const modalRole = document.getElementById("modal-role");
-  const modalBio = document.getElementById("modal-bio");
-  const modalSocials = document.getElementById("modal-socials");
+  let authorModalAbort: AbortController | undefined;
 
   const initModals = () => {
+    if (authorModalAbort) authorModalAbort.abort();
+    authorModalAbort = new AbortController();
+    const { signal } = authorModalAbort;
+    const modal = document.getElementById(
+      "author-modal",
+    ) as HTMLDialogElement | null;
+    const closeBtn = document.getElementById("close-modal");
+    const modalAvatar = document.getElementById(
+      "modal-avatar",
+    ) as HTMLImageElement | null;
+    const modalName = document.getElementById("modal-name");
+    const modalTitle = document.getElementById("modal-title");
+    const modalRole = document.getElementById("modal-role");
+    const modalBio = document.getElementById("modal-bio");
+    const modalSocials = document.getElementById("modal-socials");
+
+    if (!modal) return;
+
     const triggers = document.querySelectorAll(".author-modal-trigger");
     triggers.forEach((card) => {
-      if (card.hasAttribute("data-modal-initialized")) return;
-      card.setAttribute("data-modal-initialized", "true");
       card.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -328,24 +332,18 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
 
         document.body.style.overflow = "hidden";
         if (modal) modal.showModal();
-      });
+      }, { signal });
     });
-  };
 
-  if (modal) {
-    initModals();
-
-    modal.addEventListener("close", () => {
+    modal?.addEventListener("close", () => {
       document.body.style.overflow = "";
-    });
+    }, { signal });
 
-    if (closeBtn) {
-      closeBtn.addEventListener("click", () => {
-        modal.close();
-      });
-    }
+    closeBtn?.addEventListener("click", () => {
+      modal?.close();
+    }, { signal });
 
-    modal.addEventListener("click", (e) => {
+    modal?.addEventListener("click", (e) => {
       const dialogDimensions = modal.getBoundingClientRect();
       if (
         e.clientX < dialogDimensions.left ||
@@ -355,8 +353,11 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
       ) {
         modal.close();
       }
-    });
-  }
+    }, { signal });
+  };
+
+  initModals();
+  document.addEventListener("astro:page-load", initModals);
 </script>
 
 <style>
