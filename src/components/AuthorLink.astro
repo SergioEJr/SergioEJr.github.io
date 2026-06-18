@@ -1,5 +1,6 @@
 ---
 import authorsData from '../data/authors.json';
+import { normalizeAuthorAvatar } from '../utils/authors';
 
 interface Props {
   nameOrSlug: string;
@@ -21,6 +22,13 @@ if (!author && target) {
         const dbName = normalize(a.name);
         return dbName.includes(target) || target.includes(dbName);
     });
+}
+
+if (author?.avatar) {
+    author = {
+        ...author,
+        avatar: normalizeAuthorAvatar(author.avatar),
+    };
 }
 ---
 
