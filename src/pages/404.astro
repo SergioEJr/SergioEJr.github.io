@@ -4,6 +4,7 @@ import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import { SITE_TITLE } from '../consts';
 import { url } from '../utils/paths';
+import { pageFade } from '../utils/pageTransition';
 ---
 
 <!doctype html>
@@ -170,7 +171,7 @@ import { url } from '../utils/paths';
 
   <body>
     <Header />
-    <main transition:animate="fade">
+    <main transition:animate={pageFade}>
       <section class="not-found-wrap">
         <div class="not-found-chip">Page Not Found</div>
 

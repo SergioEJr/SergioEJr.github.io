@@ -8,6 +8,7 @@ import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 import TableOfContents from '../components/TableOfContents.astro';
 import { url } from '../utils/paths';
+import { pageFade } from '../utils/pageTransition';
 
 type Props = CollectionEntry<'blog'>['data'] & { id?: string, headings?: { depth: number; slug: string; text: string }[], toc?: boolean, noHero?: boolean };
 
@@ -483,7 +484,7 @@ const fallbackHero = id ? url(`/blog/${id}.png`) : url('/og.png');
 
 	<body>
 		<Header />
-		<main transition:animate="fade">
+		<main transition:animate={pageFade}>
 			<article>
 				{!noHero && (
 					<div class="hero-image">

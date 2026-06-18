@@ -8,6 +8,7 @@ import FormattedDate from '../../components/FormattedDate.astro';
 import AuthorLink from '../../components/AuthorLink.astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
 import { url } from '../../utils/paths';
+import { pageFade } from '../../utils/pageTransition';
 
 export async function getStaticPaths() {
 	const posts = await getCollection('blog');
@@ -149,7 +150,7 @@ const { posts } = Astro.props;
 	</head>
 	<body>
 		<Header />
-		<main transition:animate="fade">
+		<main transition:animate={pageFade}>
 			<h1>Posts tagged "{tag}"</h1>
             <p style="margin-bottom: 2rem; max-width: 700px; color: var(--color-text-muted);">
                 <a href={url('/blog')} style="color: var(--color-accent); text-decoration: none;">&larr; Back to the Journal</a>

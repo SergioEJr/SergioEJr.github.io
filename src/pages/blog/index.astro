@@ -6,6 +6,7 @@ import FormattedDate from '../../components/FormattedDate.astro';
 import { SITE_TITLE } from '../../consts';
 import { getCollection } from 'astro:content';
 import { url } from '../../utils/paths';
+import { pageFade } from '../../utils/pageTransition';
 
 type Cat = 'all' | 'news' | 'math' | 'physics' | 'notes';
 
@@ -45,7 +46,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 	</head>
 	<body>
 		<Header />
-		<main id="journal" style="--cat-color: var(--color-accent);" transition:animate="fade">
+		<main id="journal" style="--cat-color: var(--color-accent);" transition:animate={pageFade}>
 			<!-- Header (updated client-side per filter) -->
 			<header class="j-head">
 				<div class="j-eyebrow"><span id="j-eyebrow-label">All</span> · <span id="j-eyebrow-count">{counts.all}</span> pieces</div>

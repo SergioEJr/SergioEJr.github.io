@@ -5,6 +5,7 @@ import Footer from '../components/Footer.astro';
 import { SITE_TITLE } from '../consts';
 import authorsData from '../data/authors.json';
 import { generateFallbackAvatar } from '../utils/avatar';
+import { pageFade } from '../utils/pageTransition';
 
 type AuthorRecord = (typeof authorsData)[number] & {
 	isTeam?: boolean;
@@ -158,7 +159,7 @@ const withFallback = (member: AuthorRecord) => ({
 	</head>
 	<body>
 		<Header />
-		<main transition:animate="fade">
+		<main transition:animate={pageFade}>
 			<div class="team-hero">
 				<h1>Research Team</h1>
 				<p>Meet the scholars, students, and collaborators shaping the ideas behind this portfolio.</p>

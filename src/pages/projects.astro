@@ -5,6 +5,7 @@ import Footer from '../components/Footer.astro';
 import { SITE_TITLE } from '../consts';
 import { getCollection } from 'astro:content';
 import { url } from '../utils/paths';
+import { pageFade } from '../utils/pageTransition';
 
 const projects = (await getCollection('projects')).sort(
 	(a, b) => (a.data.order - b.data.order) || (b.data.date.valueOf() - a.data.date.valueOf()),
@@ -191,7 +192,7 @@ const projects = (await getCollection('projects')).sort(
 	</head>
 	<body>
 		<Header />
-		<main class="projects-section" transition:animate="fade">
+		<main class="projects-section" transition:animate={pageFade}>
 			<div class="projects-hero">
 				<h1>Projects</h1>
 				<p>Tools, teaching, and experiments I've built — most started as a problem I wanted solved or an idea I wanted to understand.</p>

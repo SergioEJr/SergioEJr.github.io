@@ -6,6 +6,7 @@ import { SITE_TITLE } from '../consts';
 import { getCollection } from 'astro:content';
 import AuthorLink from '../components/AuthorLink.astro';
 import { url } from '../utils/paths';
+import { pageFade } from '../utils/pageTransition';
 
 const research = (await getCollection('research')).sort(
 	(a, b) => (a.data.order - b.data.order) || (b.data.date.valueOf() - a.data.date.valueOf()),
@@ -19,7 +20,7 @@ const research = (await getCollection('research')).sort(
 	</head>
 	<body>
 		<Header />
-		<main transition:animate="fade">
+		<main transition:animate={pageFade}>
 			<h1>Research</h1>
 			<p>I study how living systems generate predictable large-scale order. Each project below has a short overview — click a title to read it.</p>
 
