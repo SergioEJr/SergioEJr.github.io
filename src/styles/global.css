@@ -97,20 +97,10 @@ main {
 	padding: 3rem 1rem;
 }
 
-/* Smooth, flicker-free cross-page fade using the browser's native
-   cross-document View Transitions. Unsupported browsers just navigate
-   normally (no flicker, no fade). */
-@view-transition {
-	navigation: auto;
-}
+::view-transition-group(root),
 ::view-transition-old(root),
 ::view-transition-new(root) {
-	animation-duration: 0.25s;
-}
-@media (prefers-reduced-motion: reduce) {
-	@view-transition {
-		navigation: none;
-	}
+	animation: none;
 }
 
 h1,
