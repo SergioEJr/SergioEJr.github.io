@@ -45,7 +45,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 	</head>
 	<body>
 		<Header />
-		<main id="journal" style="--cat-color: var(--color-accent);">
+		<main id="journal" style="--cat-color: var(--color-accent);" transition:animate="fade">
 			<!-- Header (updated client-side per filter) -->
 			<header class="j-head">
 				<div class="j-eyebrow"><span id="j-eyebrow-label">All</span> · <span id="j-eyebrow-count">{counts.all}</span> pieces</div>
@@ -110,83 +110,103 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 		<Footer />
 
 		<script is:inline define:vars={{ cats: CATS }}>
-			const root = document.getElementById('journal');
-			const titleEl = document.getElementById('j-title');
-			const subEl = document.getElementById('j-subtitle');
-			const eyeLabel = document.getElementById('j-eyebrow-label');
-			const eyeCount = document.getElementById('j-eyebrow-count');
-			const side = document.getElementById('j-notes-side');
-			const posts = Array.from(document.querySelectorAll('.j-post'));
-			const filters = Array.from(document.querySelectorAll('.j-filter'));
-			const topicBtns = Array.from(document.querySelectorAll('.j-topic'));
+			function initJournalFilters() {
+				const root = document.getElementById('journal');
+				if (!root || root.dataset.filtersInitialized === 'true') return;
+				root.dataset.filtersInitialized = 'true';
 
-			const list = document.querySelector('.j-list');
-			let activeCat = 'all';
-			let activeTopic = 'all';
+				const titleEl = document.getElementById('j-title');
+				const subEl = document.getElementById('j-subtitle');
+				const eyeLabel = document.getElementById('j-eyebrow-label');
+				const eyeCount = document.getElementById('j-eyebrow-count');
+				const side = document.getElementById('j-notes-side');
+				const posts = Array.from(document.querySelectorAll('.j-post'));
+				const filters = Array.from(document.querySelectorAll('.j-filter'));
+				const topicBtns = Array.from(document.querySelectorAll('.j-topic'));
+				const list = document.querySelector('.j-list');
 
-			function fadeApply() {
-				if (!list) { apply(); return; }
-				list.style.opacity = '0';
-				setTimeout(() => { apply(); list.style.opacity = ''; }, 160);
-			}
+				let activeCat = 'all';
+				let activeTopic = 'all';
 
-			function apply() {
-				const meta = cats[activeCat];
-				root.style.setProperty('--cat-color', meta.color);
-				titleEl.textContent = meta.title;
-				subEl.textContent = meta.subtitle;
-				eyeLabel.textContent = meta.label;
+				function apply() {
+					const meta = cats[activeCat];
+					root.style.setProperty('--cat-color', meta.color);
+					titleEl.textContent = meta.title;
+					subEl.textContent = meta.subtitle;
+					eyeLabel.textContent = meta.label;
 
-				if (side) side.hidden = activeCat !== 'notes';
+					if (side) side.hidden = activeCat !== 'notes';
 
-				let visible = 0;
-				posts.forEach((el) => {
-					const cat = el.getAttribute('data-category');
-					const topic = el.getAttribute('data-topic');
-					let show = activeCat === 'all' || cat === activeCat;
-					if (show && activeCat === 'notes' && activeTopic !== 'all') {
-						show = topic === activeTopic;
+					let visible = 0;
+					posts.forEach((el) => {
+						const cat = el.getAttribute('data-category');
+						const topic = el.getAttribute('data-topic');
+						let show = activeCat === 'all' || cat === activeCat;
+						if (show && activeCat === 'notes' && activeTopic !== 'all') {
+							show = topic === activeTopic;
+						}
+						el.style.display = show ? '' : 'none';
+						if (show) visible++;
+					});
+					eyeCount.textContent = String(visible);
+				}
+
+				function fadeApply() {
+					if (!list) {
+						apply();
+						return;
 					}
-					el.style.display = show ? '' : 'none';
-					if (show) visible++;
+					list.style.opacity = '0';
+					setTimeout(() => {
+						apply();
+						list.style.opacity = '';
+					}, 160);
+				}
+
+				filters.forEach((btn) => {
+					btn.addEventListener('click', () => {
+						filters.forEach((b) => b.classList.remove('active'));
+						btn.classList.add('active');
+						activeCat = btn.getAttribute('data-filter');
+						activeTopic = 'all';
+						topicBtns.forEach((b) =>
+							b.classList.toggle('active', b.getAttribute('data-topic') === 'all')
+						);
+						fadeApply();
+					});
 				});
-				eyeCount.textContent = String(visible);
+
+				topicBtns.forEach((btn) => {
+					btn.addEventListener('click', () => {
+						topicBtns.forEach((b) => b.classList.remove('active'));
+						btn.classList.add('active');
+						activeTopic = btn.getAttribute('data-topic');
+						fadeApply();
+					});
+				});
+
+				apply();
 			}
 
-			filters.forEach((btn) => {
-				btn.addEventListener('click', () => {
-					filters.forEach((b) => b.classList.remove('active'));
-					btn.classList.add('active');
-					activeCat = btn.getAttribute('data-filter');
-					activeTopic = 'all';
-					topicBtns.forEach((b) => b.classList.toggle('active', b.getAttribute('data-topic') === 'all'));
-					fadeApply();
-				});
-			});
-
-			topicBtns.forEach((btn) => {
-				btn.addEventListener('click', () => {
-					topicBtns.forEach((b) => b.classList.remove('active'));
-					btn.classList.add('active');
-					activeTopic = btn.getAttribute('data-topic');
-					fadeApply();
-				});
-			});
-
-			apply();
+			initJournalFilters();
+			document.addEventListener('astro:page-load', initJournalFilters);
 		</script>
 
 		<style>
-			#journal { max-width: var(--max-width); }
+			#journal {
+				max-width: var(--max-width);
+				background: inherit;
+			}
 			.j-head { padding: 1rem 0 1.25rem; position: relative; z-index: 1; }
 			.j-filters-bar {
 				position: sticky;
 				top: 4.5rem; /* height of the navbar */
 				z-index: 30; /* above the page content/title, below navbar (100) and mobile menu (200) */
-				background: var(--color-bg);
+				background: inherit;
 				padding: 0.85rem 0;
 				margin-bottom: 2.25rem;
 				border-bottom: 1px solid var(--color-border);
+				transition: border-color 0.3s ease;
 			}
 			.j-eyebrow {
 				display: inline-block;
@@ -240,13 +260,20 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 				padding: 1.75rem 0; border-bottom: 1px solid var(--color-border);
 				transition: border-color 0.2s ease;
 			}
-			/* On hover, tint the post's separator with the category color */
-			.j-post:hover { border-bottom-color: var(--cat-color); }
 			.j-index { font-variant-numeric: tabular-nums; color: var(--color-text-muted); opacity: 0.5; font-size: 0.9rem; padding-top: 0.3rem; }
 			.j-cat { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
-			.j-post-title { font-family: var(--font-serif); font-size: 1.6rem; line-height: 1.2; margin: 0 0 0.5rem; }
+			.j-post-title {
+				font-family: var(--font-serif);
+				font-size: 1.6rem;
+				line-height: 1.2;
+				margin: 0 0 0.5rem;
+				border-bottom: 2px solid var(--color-border);
+				padding-bottom: 0.35rem;
+				display: inline-block;
+				transition: border-color 0.2s ease;
+			}
+			.j-post:hover .j-post-title { border-bottom-color: var(--cat-color); }
 			.j-post-title a { color: var(--color-text-main); text-decoration: none; transition: color 0.2s ease; }
-			.j-post:hover .j-post-title a { color: var(--cat-color); }
 			.j-desc { color: var(--color-text-muted); margin: 0 0 0.75rem; max-width: 680px; }
 			.j-meta { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; font-size: 0.82rem; color: var(--color-text-muted); font-style: italic; }
 			.j-topic-tag { font-style: normal; padding: 0.1rem 0.6rem; border-radius: 999px; background: var(--color-bg-offset); border: 1px solid var(--color-border); }

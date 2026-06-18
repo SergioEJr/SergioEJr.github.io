@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import type { ImageMetadata } from 'astro';
+import { ClientRouter } from 'astro:transitions';
 import { SITE_TITLE, UMAMI_SRC, UMAMI_WEBSITE_ID } from '../consts';
 import { url } from '../utils/paths';
 
@@ -46,22 +47,28 @@ const imageUrl = typeof image === 'string'
 <script is:inline data-cfasync="false">
 	(() => {
 		const root = document.documentElement;
+		const resolvePreferredTheme = () => {
+			try {
+				const stored = localStorage.getItem('theme');
+				if (stored === 'dark' || stored === 'light') return stored;
+			} catch {}
+			return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+		};
 		const paintTheme = (theme) => {
 			const dark = theme === 'dark';
 			root.setAttribute('data-theme', dark ? 'dark' : 'light');
 			root.style.setProperty('background-color', 'var(--color-bg)');
 			root.style.colorScheme = dark ? 'dark' : 'light';
 		};
-		let theme = 'light';
-		try {
-			const s = localStorage.getItem('theme');
-			if (s === 'dark' || s === 'light') theme = s;
-			else if (matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark';
-		} catch {
-			if (matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark';
-		}
-		paintTheme(theme);
-		window.addEventListener('load', () => root.setAttribute('data-theme-ready', 'true'), { once: true });
+		const applyPreferredTheme = () => paintTheme(resolvePreferredTheme());
+		const markThemeReady = () => root.setAttribute('data-theme-ready', 'true');
+		applyPreferredTheme();
+		document.addEventListener('astro:after-swap', () => {
+			applyPreferredTheme();
+			markThemeReady();
+		});
+		document.addEventListener('astro:page-load', markThemeReady);
+		window.addEventListener('load', markThemeReady, { once: true });
 		window.__setPreferredTheme = paintTheme;
 	})();
 </script>
@@ -92,7 +99,7 @@ const imageUrl = typeof image === 'string'
 	html[data-theme='dark'], html[data-theme='dark'] body { background-color: var(--color-bg); color-scheme: dark; }
 	html[data-theme='light'], html[data-theme='light'] body { background-color: var(--color-bg); color-scheme: light; }
 	/* Critical header layout — prevents FOUC before component CSS loads */
-	header {
+	.site-header {
 		position: sticky;
 		top: 0;
 		z-index: 100;
@@ -100,7 +107,7 @@ const imageUrl = typeof image === 'string'
 		backdrop-filter: blur(12px);
 		-webkit-backdrop-filter: blur(12px);
 	}
-	header nav {
+	.site-header nav {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -108,7 +115,7 @@ const imageUrl = typeof image === 'string'
 		margin: 0 auto;
 		height: 4.5rem;
 	}
-	header { background-color: var(--color-bg-header); }
+	.site-header { background-color: var(--color-bg-header); }
 	/* Critical card backgrounds — prevents white flash in dark mode */
 	.project-card, .interactive-card, .pi-card, .collab-card, .team-card {
 		background-color: var(--color-bg-offset);
@@ -128,6 +135,7 @@ const imageUrl = typeof image === 'string'
 	}
 </style>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<ClientRouter />
 <link rel="icon" type="image/svg+xml" href={url('/favicon.svg')} />
 <link rel="sitemap" href={url('/sitemap-index.xml')} />
 <link
