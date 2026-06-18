@@ -10,10 +10,21 @@ import TableOfContents from '../components/TableOfContents.astro';
 import { url } from '../utils/paths';
 import { pageFade } from '../utils/pageTransition';
 
-type Props = CollectionEntry<'blog'>['data'] & { id?: string, headings?: { depth: number; slug: string; text: string }[], toc?: boolean, noHero?: boolean };
+type CategoryBadge = { label: string; color: string };
+// Blog-collection fields are optional here because this layout is also reused by
+// the Projects and Research detail pages, which don't supply blog-only fields.
+type Props = Partial<CollectionEntry<'blog'>['data']> & {
+	title: string,
+	description: string,
+	pubDate: Date,
+	id?: string,
+	headings?: { depth: number; slug: string; text: string }[],
+	toc?: boolean,
+	noHero?: boolean,
+	categoryBadges?: CategoryBadge[],
+};
 
-const { title, description, pubDate, updatedDate, heroImage, authors, tags, id, headings = [], toc, noHero } = Astro.props;
-const fallbackHero = id ? url(`/blog/${id}.png`) : url('/og.png');
+const { title, description, pubDate, updatedDate, heroImage, authors, tags, headings = [], toc, noHero, categoryBadges = [] } = Astro.props;
 ---
 
 <html lang="en">
@@ -413,6 +424,26 @@ const fallbackHero = id ? url(`/blog/${id}.png`) : url('/og.png');
 				text-align: center;
 				line-height: 1.2;
 			}
+			.category-badges {
+				display: flex;
+				justify-content: center;
+				flex-wrap: wrap;
+				gap: 0.5rem;
+				margin-bottom: 1rem;
+			}
+			.category-badge {
+				display: inline-flex;
+				align-items: center;
+				padding: 0.25rem 0.8rem;
+				border-radius: 999px;
+				font-size: 0.72rem;
+				font-weight: 700;
+				text-transform: uppercase;
+				letter-spacing: 0.08em;
+				color: var(--badge-color);
+				border: 1px solid color-mix(in srgb, var(--badge-color) 55%, transparent);
+				background: color-mix(in srgb, var(--badge-color) 12%, transparent);
+			}
 			.title h1 {
 				margin: 0 0 0.5em 0;
 				font-size: 2.2rem;
@@ -486,19 +517,28 @@ const fallbackHero = id ? url(`/blog/${id}.png`) : url('/og.png');
 		<Header />
 		<main transition:animate={pageFade}>
 			<article>
-				{!noHero && (
-					<div class="hero-image">
-						{heroImage ? (
+				{Astro.slots.has('hero') ? (
+					<slot name="hero" />
+				) : (
+					!noHero && heroImage && (
+						<div class="hero-image">
 							<Image width={1020} height={510} src={heroImage} alt={title} />
-						) : (
-							<img width={1020} height={510} src={fallbackHero} alt={title} />
-						)}
-					</div>
+						</div>
+					)
 				)}
 				<div class="blog-container" style="position: relative;">
 					<div class="prose-wrapper">
 						<div class="prose">
 							<div class="title">
+								{categoryBadges.length > 0 && (
+									<div class="category-badges">
+										{categoryBadges.map((b) => (
+											<span class="category-badge" style={`--badge-color:${b.color}`}>
+												{b.label}
+											</span>
+										))}
+									</div>
+								)}
 								<div class="date">
 									<FormattedDate date={pubDate} />
 									{

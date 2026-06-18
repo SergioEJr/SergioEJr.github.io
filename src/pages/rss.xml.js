@@ -10,7 +10,8 @@ export async function GET(context) {
 		site: context.site,
 		items: posts.map((post) => ({
 			...post.data,
-			link: `/blog/${post.id}/`,
+			// Pointer posts link straight to their target article.
+			link: post.data.externalUrl ?? post.data.linkTo ?? `/blog/${post.id}/`,
 		})),
 	});
 }

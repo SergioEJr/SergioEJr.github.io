@@ -1,7 +1,13 @@
 import type { APIRoute } from "astro";
 import { getCollection } from "astro:content";
-import { generateOgImage } from "../utils/generateOgImage";
+import { generateOgImage, type OgBadge } from "../utils/generateOgImage";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
+
+// Project category colors — match the Projects page filters / Journal categories.
+const PROJECT_CAT_COLORS: Record<string, string> = {
+    Technical: '#8b5cf6',
+    Teaching: '#10b981',
+};
 
 export async function getStaticPaths() {
     const posts = await getCollection('blog');
@@ -18,16 +24,25 @@ export async function getStaticPaths() {
         { params: { route: 'blog' }, props: { title: 'Blog', subtitle: SITE_TITLE } },
     ];
 
-    // Dynamic blog posts
-    const blogPages = posts.map((post) => ({
-        params: { route: `blog/${post.id}` },
-        props: { title: post.data.title, subtitle: 'Blog Post' },
-    }));
+    // Dynamic blog posts — skip pointer posts, which have no detail page.
+    const blogPages = posts
+        .filter((post) => !post.data.externalUrl && !post.data.linkTo)
+        .map((post) => ({
+            params: { route: `blog/${post.id}` },
+            props: { title: post.data.title, subtitle: 'Blog Post' },
+        }));
 
-    const projectPages = projects.map((project) => ({
-        params: { route: `projects/${project.id}` },
-        props: { title: project.data.title, subtitle: 'Project' },
-    }));
+    const projectPages = projects.map((project) => {
+        const cats = project.data.categories.length ? project.data.categories : ['Project'];
+        return {
+            params: { route: `projects/${project.id}` },
+            props: {
+                title: project.data.title,
+                // One colored pill per category.
+                badges: cats.map((c) => ({ label: c, color: PROJECT_CAT_COLORS[c] })),
+            },
+        };
+    });
 
     const researchPages = research.map((entry) => ({
         params: { route: `publications/${entry.id}` },
@@ -39,7 +54,8 @@ export async function getStaticPaths() {
 
 export const GET: APIRoute = async ({ props }) => {
     const safeTitle = (props.title as string).replace(/&/g, 'and');
-    return new Response(await generateOgImage(safeTitle, props.subtitle as string), {
+    const subtitle = (props.badges as OgBadge[] | undefined) ?? (props.subtitle as string);
+    return new Response(await generateOgImage(safeTitle, subtitle), {
         headers: { "Content-Type": "image/png" },
     });
 };

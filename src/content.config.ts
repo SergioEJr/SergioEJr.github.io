@@ -19,6 +19,13 @@ const blog = defineCollection({
 			tags: z.array(z.string()).optional(),
 			category: z.enum(['news', 'math', 'physics', 'notes']).default('news'),
 			topic: z.string().optional(), // used to group Notes posts
+			// "Pointer" posts: a Journal entry whose title/description are timeline-friendly
+			// and that links straight to a full article instead of rendering its own page.
+			// `externalUrl` → off-site link (opens in a new tab);
+			// `linkTo` → another page on this site (e.g. /blog/full-post/ or /projects/foo/).
+			// Leave both unset for a normal standalone post with its own detail page.
+			externalUrl: z.string().url().optional(),
+			linkTo: z.string().optional(),
 		}),
 });
 
@@ -31,6 +38,16 @@ const projects = defineCollection({
 		description: z.string(),
 		date: z.coerce.date(),
 		status: z.string().default('Completed'),
+		// Drives the Projects page filters and the auto-generated hero-card badge.
+		// A project may belong to both groups.
+		categories: z.array(z.enum(['Technical', 'Teaching'])).default(['Technical']),
+		// Optional custom thumbnail for the Projects listing card (path under
+		// /public, e.g. /projects/foo.png). When set, it replaces the
+		// auto-generated hero card, with the category pills overlaid on top.
+		image: z.string().optional(),
+		// Optional image shown at the top of the project's article page. No overlay,
+		// and nothing is shown by default. Independent of `image`.
+		articleImage: z.string().optional(),
 		tags: z.array(z.string()).default([]),
 		repo: z.string().url().optional(),
 		link: z.string().url().optional(),

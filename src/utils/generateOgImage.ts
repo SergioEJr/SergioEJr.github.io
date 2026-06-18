@@ -13,35 +13,71 @@ async function loadGoogleFont(font: string, text: string) {
     return res.arrayBuffer();
 }
 
-export async function generateOgImage(title: string, subtitle: string) {
-    const textToLoad = title + subtitle + "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+// A pill badge shown at the top-left of the OG card.
+export type OgBadge = { label: string; color?: string };
+
+export async function generateOgImage(
+    title: string,
+    subtitle: string | OgBadge[],
+    badgeColor?: string,
+) {
+    // Normalize to a list of badges. A plain string → a single white pill
+    // (with an optional color override); an array → one pill per entry.
+    const badges: OgBadge[] = Array.isArray(subtitle)
+        ? subtitle
+        : [{ label: subtitle, color: badgeColor }];
+
+    // We interpolate text into a raw HTML string below, so escape angle brackets
+    // and ampersands to keep the markup valid.
+    const esc = (s: string) =>
+        s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    const pillMarkup = badges
+        .map((b) => {
+            const color = b.color ?? '#ffffff';
+            const border = b.color ? `${b.color}99` : 'rgba(255, 255, 255, 0.2)';
+            return `
+                <div style="display: flex; align-items: center; padding: 12px 24px; background-color: rgba(255, 255, 255, 0.1); border-radius: 999px; border: 1px solid ${border};">
+                    <span style="color: ${color}; font-size: 24px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">
+                        ${esc(b.label)}
+                    </span>
+                </div>`;
+        })
+        .join('');
+
+    // Include the byline/URL and a punctuation set so the dynamic font subset
+    // covers every glyph we render (e.g. the "." in "sejr.me").
+    const textToLoad =
+        title +
+        badges.map((b) => b.label).join('') +
+        'sejr.me Sergio Eraso' +
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' +
+        " .·,:;!?&'’\"()[]–—-/@#";
     const fontDataRegular = await loadGoogleFont("Inter", textToLoad);
     const fontDataBold = await loadGoogleFont("Inter:wght@700", textToLoad);
 
-    const markup = html`
+    // Build the full markup as a single string. We call html() with a string
+    // (not as a tagged template) so the pill markup isn't HTML-escaped.
+    const markupString = `
         <div style="background-color: #0f172a; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; font-family: 'Inter';">
-            
+
             <div style="display: flex; position: absolute; top: -150px; right: -50px; width: 600px; height: 600px; background-image: linear-gradient(135deg, rgba(56, 189, 248, 0.4), rgba(49, 46, 129, 0)); border-radius: 50%;"></div>
             <div style="display: flex; position: absolute; bottom: -150px; left: -50px; width: 600px; height: 600px; background-image: linear-gradient(45deg, rgba(167, 139, 250, 0.4), rgba(88, 28, 135, 0)); border-radius: 50%;"></div>
 
             <div style="display: flex; flex-direction: column; justify-content: space-between; padding: 80px; width: 100%; height: 100%;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
-                    <div style="display: flex; align-items: center; padding: 12px 24px; background-color: rgba(255, 255, 255, 0.1); border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.2);">
-                        <span style="color: #ffffff; font-size: 24px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">
-                            ${subtitle}
-                        </span>
-                    </div>
+                <div style="display: flex; justify-content: flex-start; align-items: flex-start; gap: 16px; width: 100%;">
+                    ${pillMarkup}
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 24px; margin-bottom: 20px;">
                     <div style="display: flex; color: #ffffff; font-size: 84px; font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; margin: 0; max-width: 900px; overflow: hidden; max-height: 280px;">
-                        ${title}
+                        ${esc(title)}
                     </div>
                 </div>
 
                 <div style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%;">
                     <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <span style="color: #94a3b8; font-size: 28px; font-weight: 400;">sergioejr.github.io</span>
+                        <span style="color: #94a3b8; font-size: 28px; font-weight: 400;">sejr.me</span>
                         <span style="color: #cbd5e1; font-size: 32px; font-weight: 700;">Sergio Eraso</span>
                     </div>
                     <div style="display: flex; align-items: center; justify-content: center; width: 80px; height: 80px; background-color: #ffffff; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
@@ -54,6 +90,7 @@ export async function generateOgImage(title: string, subtitle: string) {
             </div>
         </div>
     `;
+    const markup = html(markupString);
 
     const svg = await satori(markup, {
         width: 1200,

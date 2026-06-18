@@ -1,20 +1,30 @@
 ---
 import { type CollectionEntry, getCollection, render } from 'astro:content';
 import BlogPost from '../../layouts/BlogPost.astro';
+import { BLOG_CATEGORY_COLORS, BLOG_CATEGORY_LABELS } from '../../utils/categories';
 
 export async function getStaticPaths() {
 	const posts = await getCollection('blog');
-	return posts.map((post) => ({
-		params: { slug: post.id },
-		props: post,
-	}));
+	// Pointer posts (externalUrl / linkTo) have no body of their own — the Journal
+	// card links straight to the target — so they don't get a detail page.
+	return posts
+		.filter((post) => !post.data.externalUrl && !post.data.linkTo)
+		.map((post) => ({
+			params: { slug: post.id },
+			props: post,
+		}));
 }
 type Props = CollectionEntry<'blog'>;
 
 const post = Astro.props;
 const { Content, headings } = await render(post);
+
+const categoryBadges = [{
+	label: BLOG_CATEGORY_LABELS[post.data.category] ?? post.data.category,
+	color: BLOG_CATEGORY_COLORS[post.data.category] ?? 'var(--color-accent)',
+}];
 ---
 
-<BlogPost {...post.data} id={post.id} headings={headings}>
+<BlogPost {...post.data} id={post.id} headings={headings} categoryBadges={categoryBadges}>
 	<Content />
 </BlogPost>
