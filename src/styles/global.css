@@ -103,6 +103,15 @@ main {
 	animation: none;
 }
 
+/* iOS Safari paints the view-transition backdrop white for a frame while the
+   <main> content cross-fades (the area behind the snapshot should be
+   transparent but isn't). Pin it to the themed page color so there is never a
+   white flash — especially blinding in dark mode. Desktop ignores this since
+   its backdrop is already transparent. */
+::view-transition {
+	background-color: var(--color-bg);
+}
+
 @keyframes siteFadeIn {
 	from {
 		opacity: 0;
