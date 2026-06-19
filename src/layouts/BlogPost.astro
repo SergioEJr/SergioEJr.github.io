@@ -24,10 +24,11 @@ type Props = Partial<CollectionEntry<'blog'>['data']> & {
 	headings?: { depth: number; slug: string; text: string }[],
 	toc?: boolean,
 	noHero?: boolean,
+	showDate?: boolean,
 	categoryBadges?: CategoryBadge[],
 };
 
-const { title, description, pubDate, updatedDate, heroImage, authors, tags, headings = [], toc, noHero, categoryBadges = [] } = Astro.props;
+const { title, description, pubDate, updatedDate, heroImage, authors, tags, headings = [], toc, noHero, showDate = true, categoryBadges = [] } = Astro.props;
 ---
 
 <html lang="en">
@@ -546,17 +547,19 @@ const { title, description, pubDate, updatedDate, heroImage, authors, tags, head
 										))}
 									</div>
 								)}
-								<div class="date">
-									<FormattedDate date={pubDate} />
-									{
-										updatedDate && (
-											<div class="last-updated-on">
-												Last updated on <FormattedDate date={updatedDate} />
-											</div>
-										)
-									}
-								</div>
 								<h1>{title}</h1>
+								{showDate && (
+									<div class="date">
+										<FormattedDate date={pubDate} />
+										{
+											updatedDate && (
+												<div class="last-updated-on">
+													Last updated on <FormattedDate date={updatedDate} />
+												</div>
+											)
+										}
+									</div>
+								)}
 								{authors && authors.length > 0 && (
 									<div class="blog-authors">
 										{authors.map((authorId, i) => (
