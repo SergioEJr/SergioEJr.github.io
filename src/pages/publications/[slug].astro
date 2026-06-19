@@ -13,7 +13,7 @@ type Props = CollectionEntry<'research'>;
 
 const entry = Astro.props;
 const { Content, headings } = await render(entry);
-const { title, description, date, venue, paper, poster } = entry.data;
+const { title, description, date, paper, poster } = entry.data;
 import { url } from '../../utils/paths';
 ---
 
@@ -26,15 +26,16 @@ import { url } from '../../utils/paths';
 	toc={headings.length > 1}
 	noHero={true}
 >
-	<div class="research-links">
-		{venue && <span class="venue">{venue}</span>}
-		{paper && (
-			<a class="btn" href={paper} target="_blank" rel="noopener noreferrer">Paper ↗</a>
-		)}
-		{poster && (
-			<a class="btn btn-outline" href={url(poster)} target="_blank" rel="noopener noreferrer">Poster ↗</a>
-		)}
-	</div>
+	{(paper || poster) && (
+		<div class="research-links">
+			{paper && (
+				<a class="btn" href={paper} target="_blank" rel="noopener noreferrer">Paper ↗</a>
+			)}
+			{poster && (
+				<a class="btn btn-outline" href={url(poster)} target="_blank" rel="noopener noreferrer">Poster ↗</a>
+			)}
+		</div>
+	)}
 	<Content />
 </BlogPost>
 
@@ -45,10 +46,6 @@ import { url } from '../../utils/paths';
 		flex-wrap: wrap;
 		gap: 1rem;
 		margin-bottom: 2rem;
-	}
-	.venue {
-		font-style: italic;
-		color: var(--color-text-muted);
 	}
 	.bibtex summary {
 		cursor: pointer;
