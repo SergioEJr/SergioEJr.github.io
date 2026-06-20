@@ -30,6 +30,10 @@ const blog = defineCollection({
 			// Leave both unset for a normal standalone post with its own detail page.
 			externalUrl: z.string().url().optional(),
 			linkTo: z.string().optional(),
+			// Link-less "update" posts: shown in the Journal timeline as just a
+			// title + description (e.g. a short News update). No link is rendered
+			// and no detail page is generated. Any body text is ignored.
+			noLink: z.boolean().default(false),
 		}),
 });
 
