@@ -5,10 +5,11 @@ import { BLOG_CATEGORY_COLORS, BLOG_CATEGORY_LABELS } from '../../utils/categori
 
 export async function getStaticPaths() {
 	const posts = await getCollection('blog');
-	// Pointer posts (externalUrl / linkTo) have no body of their own — the Journal
-	// card links straight to the target — so they don't get a detail page.
+	// Pointer posts (externalUrl / linkTo) link straight to a target, and
+	// link-less update posts (noLink) have no destination at all — neither
+	// renders its own detail page.
 	return posts
-		.filter((post) => !post.data.externalUrl && !post.data.linkTo)
+		.filter((post) => !post.data.externalUrl && !post.data.linkTo && !post.data.noLink)
 		.map((post) => ({
 			params: { slug: post.id },
 			props: post,

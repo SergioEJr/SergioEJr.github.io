@@ -99,7 +99,9 @@ function postLink(data: any, id: string): { href: string; external: boolean } {
 							<div class="j-index">{String(i + 1).padStart(2, '0')}</div>
 							<div class="j-main">
 								<div class="j-cat" style={`color:${catColor(post.data.category)}`}>● {catLabel(post.data.category)}</div>
-								{(() => {
+								{post.data.noLink ? (
+										<h2 class="j-post-title j-post-title--static">{post.data.title}</h2>
+									) : (() => {
 									const link = postLink(post.data, post.id);
 									return (
 										<h2 class="j-post-title">
@@ -296,6 +298,9 @@ function postLink(data: any, id: string): { href: string; external: boolean } {
 			}
 			.j-post:hover .j-post-title { border-bottom-color: var(--cat-color); }
 			.j-post-title a { color: var(--color-text-main); text-decoration: none; transition: color 0.2s ease; }
+			/* Link-less update posts: title is plain text, no underline/hover affordance */
+			.j-post-title--static { border-bottom: none; padding-bottom: 0; cursor: default; }
+			.j-post:hover .j-post-title--static { border-bottom-color: transparent; }
 			.j-ext-icon { width: 0.7em; height: 0.7em; margin-left: 0.35rem; vertical-align: baseline; opacity: 0.55; transition: opacity 0.2s ease; }
 			.j-post:hover .j-ext-icon { opacity: 1; }
 			.j-desc { color: var(--color-text-muted); margin: 0 0 0.75rem; max-width: 680px; }
