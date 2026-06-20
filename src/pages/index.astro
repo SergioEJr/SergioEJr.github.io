@@ -156,7 +156,7 @@ const selectedResearch = (
                       <span style="font-style: italic; color: var(--color-accent);">
                         {entry.data.venue || "In preparation"}
                       </span>
-                      <span>, {entry.data.date.getFullYear()}</span>
+                      <span>, {entry.data.date.getUTCFullYear()}</span>
                     </div>
                   </div>
                 ))
@@ -189,6 +189,7 @@ const selectedResearch = (
                       year: "numeric",
                       month: "short",
                       day: "numeric",
+                      timeZone: "UTC",
                     })}
                   </small>
                 </li>

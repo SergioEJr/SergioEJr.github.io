@@ -47,7 +47,7 @@ const research = (await getCollection('research')).sort(
 
 						<div class="pub-venue">
 							{entry.data.venue || 'In preparation'}
-							<span> ({entry.data.date.getFullYear()})</span>
+							<span> ({entry.data.date.getUTCFullYear()})</span>
 						</div>
 
 						<div class="pub-links" style="margin-top: 0.5rem; font-size: 0.9rem; display: flex; align-items: center; gap: 0.75rem;">
