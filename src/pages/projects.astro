@@ -298,7 +298,7 @@ for (const p of projects) for (const c of p.data.categories) filterCounts[c] = (
 
 						<div class="project-content-wrapper">
 							<div class="project-header">
-								<span class="project-year">{project.data.date.getFullYear()}</span>
+								<span class="project-year">{project.data.date.getUTCFullYear()}</span>
 								<h3><a class="card-link" href={url(`/projects/${project.id}/`)}>{project.data.title}</a></h3>
 							</div>
 
