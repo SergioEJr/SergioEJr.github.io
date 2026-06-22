@@ -161,6 +161,10 @@ const { title, description, pubDate, updatedDate, heroImage, authors, tags, head
 				margin: 1.75rem 0;
 				overflow-x: auto;
 				line-height: 1.1;
+				/* Stop iOS Safari from auto-enlarging individual lines (e.g. the
+				   `return` line rendering larger than the rest on mobile). */
+				-webkit-text-size-adjust: 100%;
+				text-size-adjust: 100%;
 			}
 			.prose :global(pre code) {
 				display: block;
@@ -171,6 +175,8 @@ const { title, description, pubDate, updatedDate, heroImage, authors, tags, head
 				font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
 				line-height: 1.5 !important;
 				letter-spacing: -0.01em;
+				-webkit-text-size-adjust: 100%;
+				text-size-adjust: 100%;
 			}
 			.prose :global(.code-block-frame) {
 				position: relative;
@@ -200,14 +206,22 @@ const { title, description, pubDate, updatedDate, heroImage, authors, tags, head
 			html[data-theme='dark'] .prose :global(pre.astro-code) {
 				border-color: rgba(148, 163, 184, 0.24);
 				box-shadow: 0 20px 45px rgba(2, 6, 23, 0.4);
+				/* Shiki sets background-color:#fff inline on the <pre>; that beats a
+				   normal stylesheet rule, so override with !important using the
+				   theme's own dark background (github-dark = #24292e). */
+				background-color: var(--shiki-dark-bg, #24292e) !important;
 			}
 			html[data-theme='dark'] .prose :global(pre.astro-code),
 			html[data-theme='dark'] .prose :global(pre.astro-code span) {
 				color: var(--shiki-dark) !important;
-				background-color: var(--shiki-dark-bg) !important;
 				font-style: var(--shiki-dark-font-style) !important;
 				font-weight: var(--shiki-dark-font-weight) !important;
 				text-decoration: var(--shiki-dark-text-decoration) !important;
+			}
+			/* Let the code block's own styled background show through — don't paint
+			   the per-token Shiki background (which created a gray box per span). */
+			html[data-theme='dark'] .prose :global(pre.astro-code span) {
+				background-color: transparent !important;
 			}
 			.prose :global(pre.astro-code:focus-visible) {
 				outline: 2px solid var(--color-accent);
