@@ -4,9 +4,10 @@ import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import { SITE_TITLE } from '../../consts';
-import { getCollection } from 'astro:content';
 import { url } from '../../utils/paths';
 import { pageFade } from '../../utils/pageTransition';
+import { titleHtml } from '../../utils/title';
+import { getPublishedPosts } from '../../utils/posts';
 
 type Cat = 'all' | 'news' | 'math' | 'physics' | 'notes';
 
@@ -19,9 +20,19 @@ const CATS: Record<Cat, { label: string; color: string; title: string; subtitle:
 };
 const FILTER_ORDER: Cat[] = ['news', 'math', 'physics', 'notes', 'all'];
 
-const posts = (await getCollection('blog')).sort(
-	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+// Oldest → newest, with a stable id tiebreak so posts that share a pubDate keep
+// a consistent order. This is the canonical chronological order.
+const byDate = (await getPublishedPosts()).sort(
+	(a, b) => (a.data.pubDate.valueOf() - b.data.pubDate.valueOf()) || a.id.localeCompare(b.id),
 );
+
+// Chronological post number: the oldest post is #1, counting up.
+const postNumber = new Map<string, number>();
+byDate.forEach((p, i) => postNumber.set(p.id, i + 1));
+
+// Display newest-first, which is exactly the chronological order reversed — so the
+// numbering and the display order always agree, even on shared dates.
+const posts = [...byDate].reverse();
 
 const counts: Record<string, number> = { all: posts.length, news: 0, math: 0, physics: 0, notes: 0 };
 for (const p of posts) counts[p.data.category] = (counts[p.data.category] || 0) + 1;
@@ -96,11 +107,11 @@ function postLink(data: any, id: string): { href: string; external: boolean } {
 							data-topic={post.data.topic ?? ''}
 							style={`--cat-color:${catColor(post.data.category)}`}
 						>
-							<div class="j-index">{String(i + 1).padStart(2, '0')}</div>
+							<div class="j-index">{String(postNumber.get(post.id) ?? i + 1).padStart(2, '0')}</div>
 							<div class="j-main">
 								<div class="j-cat" style={`color:${catColor(post.data.category)}`}>● {catLabel(post.data.category)}</div>
 								{post.data.noLink ? (
-										<h2 class="j-post-title j-post-title--static">{post.data.title}</h2>
+										<h2 class="j-post-title j-post-title--static" set:html={titleHtml(post.data.title)} />
 									) : (() => {
 									const link = postLink(post.data, post.id);
 									return (
@@ -109,7 +120,7 @@ function postLink(data: any, id: string): { href: string; external: boolean } {
 												href={link.href}
 												{...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
 											>
-												{post.data.title}
+												<span set:html={titleHtml(post.data.title)} />
 												{link.external && (
 													<svg class="j-ext-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg>
 												)}

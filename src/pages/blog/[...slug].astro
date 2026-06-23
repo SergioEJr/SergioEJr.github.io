@@ -1,10 +1,11 @@
 ---
-import { type CollectionEntry, getCollection, render } from 'astro:content';
+import { type CollectionEntry, render } from 'astro:content';
 import BlogPost from '../../layouts/BlogPost.astro';
 import { BLOG_CATEGORY_COLORS, BLOG_CATEGORY_LABELS } from '../../utils/categories';
+import { getPublishedPosts } from '../../utils/posts';
 
 export async function getStaticPaths() {
-	const posts = await getCollection('blog');
+	const posts = await getPublishedPosts();
 	// Pointer posts (externalUrl / linkTo) link straight to a target, and
 	// link-less update posts (noLink) have no destination at all — neither
 	// renders its own detail page.

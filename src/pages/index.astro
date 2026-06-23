@@ -6,8 +6,9 @@ import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
 import { getCollection } from "astro:content";
 import { url } from "../utils/paths";
 import { pageFade } from "../utils/pageTransition";
+import { getPublishedPosts } from "../utils/posts";
 
-const posts = (await getCollection("blog"))
+const posts = (await getPublishedPosts())
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
   .slice(0, 3);
 

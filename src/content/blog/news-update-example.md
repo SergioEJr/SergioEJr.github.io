@@ -1,7 +1,7 @@
 ---
-title: 'Awarded a Dean of Science Fellowship'
-description: 'A short, link-less update — it shows only this title and description in the Journal timeline, with no link and no detail page. Set `noLink: true` for these.'
-pubDate: '2026-06-18'
+title: "Graduated from Emory University"
+description: "Onto the next!"
+pubDate: "2023-05-20"
 category: news
 # Link-less update post: appears in the Journal as just a title + description.
 # No link is rendered and no detail page is generated. Any body text is ignored.

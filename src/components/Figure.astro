@@ -1,0 +1,100 @@
+---
+// A figure for blog diagrams that renders well in both light and dark mode.
+// Three modes (pick whichever fits the graphic), all with an optional caption:
+//
+// 1) Adaptive SVG — one SVG whose strokes/text use `currentColor`, so it inherits
+//    the page text color and flips with the theme automatically. Best for line-art
+//    physics diagrams. Pass the SVG markup as a raw import:
+//      import diagram from '../../assets/blog/diagram.svg?raw';
+//      <Figure svg={diagram} caption="..." />
+//
+// 2) Light/dark image pair — two exports, swapped by theme. Best for richly
+//    colored graphics. Use /public paths:
+//      <Figure light="/blog/fig-light.png" dark="/blog/fig-dark.png" caption="..." />
+//
+// 3) Single image on a card — one export with its own neutral panel + border:
+//      <Figure src="/blog/fig.png" caption="..." />
+//
+// `width` (px) optionally caps the figure width; otherwise it fills the column.
+
+import { url } from '../utils/paths';
+
+interface Props {
+  svg?: string;       // raw SVG markup (mode 1)
+  light?: string;     // light-mode image path (mode 2)
+  dark?: string;      // dark-mode image path (mode 2)
+  src?: string;       // single image path (mode 3)
+  alt?: string;
+  caption?: string;
+  width?: number;     // max width in px
+}
+
+const { svg, light, dark, src, alt = '', caption, width } = Astro.props;
+
+// Strip an XML prolog if a raw SVG was pasted with one.
+const svgMarkup = svg ? svg.replace(/<\?xml[^>]*>\s*/, '') : undefined;
+const figureStyle = width ? `max-width:${width}px` : undefined;
+---
+
+<figure class="figure" style={figureStyle}>
+  {svgMarkup ? (
+    <div class="figure__svg" role="img" aria-label={alt} set:html={svgMarkup} />
+  ) : light && dark ? (
+    <>
+      <img class="figure__img figure__img--light" src={url(light)} alt={alt} loading="lazy" decoding="async" />
+      <img class="figure__img figure__img--dark" src={url(dark)} alt={alt} loading="lazy" decoding="async" />
+    </>
+  ) : src ? (
+    <img class="figure__img figure__img--card" src={url(src)} alt={alt} loading="lazy" decoding="async" />
+  ) : null}
+
+  {caption && <figcaption class="figure__caption" set:html={caption} />}
+</figure>
+
+<style>
+  .figure {
+    margin: 2rem auto;
+    text-align: center;
+  }
+
+  /* Adaptive SVG: inherits the page text color via currentColor. */
+  .figure__svg {
+    color: var(--color-text-main);
+    line-height: 0; /* no stray inline-svg gap */
+  }
+  .figure__svg :global(svg) {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Image modes share sizing. */
+  .figure__img {
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto;
+    /* Override the global dark-mode dimming so diagrams stay crisp. */
+    filter: none !important;
+  }
+
+  /* Single image gets a neutral card so it reads on both themes. */
+  .figure__img--card {
+    background: var(--color-bg-offset);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Light/dark pair: show the one matching the theme. */
+  .figure__img--dark { display: none; }
+  :global(html[data-theme='dark']) .figure__img--light { display: none; }
+  :global(html[data-theme='dark']) .figure__img--dark { display: inline-block; }
+
+  .figure__caption {
+    margin-top: 0.7rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+</style>

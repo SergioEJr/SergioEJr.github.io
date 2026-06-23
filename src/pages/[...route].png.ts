@@ -1,6 +1,8 @@
 import type { APIRoute } from "astro";
 import { getCollection } from "astro:content";
 import { generateOgImage, type OgBadge } from "../utils/generateOgImage";
+import { titlePlain } from "../utils/title";
+import { getPublishedPosts } from "../utils/posts";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
 
 // Project category colors — match the Projects page filters / Journal categories.
@@ -10,7 +12,7 @@ const PROJECT_CAT_COLORS: Record<string, string> = {
 };
 
 export async function getStaticPaths() {
-    const posts = await getCollection('blog');
+    const posts = await getPublishedPosts();
     const projects = await getCollection('projects');
     const research = await getCollection('research');
 
@@ -29,7 +31,7 @@ export async function getStaticPaths() {
         .filter((post) => !post.data.externalUrl && !post.data.linkTo)
         .map((post) => ({
             params: { route: `blog/${post.id}` },
-            props: { title: post.data.title, subtitle: 'Blog Post' },
+            props: { title: titlePlain(post.data.title), subtitle: 'Blog Post' },
         }));
 
     const projectPages = projects.map((project) => {

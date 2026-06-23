@@ -3,7 +3,8 @@
   <defs>
     <style>
       .cls-1, .cls-2, .cls-3 {
-        stroke-miterlimit: 10;
+        stroke-linejoin: round;
+        stroke-linecap: round;
       }
 
       .cls-1, .cls-3 {

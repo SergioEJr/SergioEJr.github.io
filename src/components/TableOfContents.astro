@@ -147,7 +147,9 @@ const toc = headings.filter(
 
   /* Mobile Inline Styles */
   .toc-mobile-details {
-    margin-top: 0.5rem;
+    /* Pull up under the title separator, which has ~2em of padding+margin below
+       the <hr>; this tightens that gap without touching the global .title block. */
+    margin-top: -1.5rem;
     margin-bottom: 1.5rem;
     border-radius: var(--radius);
     border: 1px solid var(--color-border);
@@ -187,29 +189,30 @@ const toc = headings.filter(
   }
 
   .toc-mobile-content {
-    padding: 0.4rem 0.85rem 0.55rem;
+    padding: 0.5rem 0.85rem;
     border-top: 1px solid var(--color-border);
   }
 
+  /* Reset margins inherited from the global .prose ul/li rules, which otherwise
+     add a large bottom margin / item spacing inside the dropdown. */
   .toc-list-mobile {
     display: flex;
     flex-direction: column;
-    gap: 0.02rem;
+    gap: 0;
     font-size: 0.86rem;
-    line-height: 1.22;
+    line-height: 1.3;
     list-style: none;
-    padding: 0;
-    margin: 0;
+    padding: 0 !important;
+    margin: 0 !important;
   }
 
   .toc-item-mobile {
-    margin: 0;
+    margin: 0 !important;
   }
 
   .toc-item-mobile a {
     display: block;
-    padding-top: 0.1rem;
-    padding-bottom: 0.1rem;
+    padding: 0.28rem 0 0.28rem 0.85rem; /* indent items past the header text */
     color: var(--color-text-muted);
     text-decoration: none;
     transition: color 0.2s ease;
@@ -224,10 +227,19 @@ const toc = headings.filter(
     font-weight: 500;
   }
 
+  /* Sub-items: a guide line that drops from under the parent heading's text.
+     The border sits at the parent's text start (link padding = 0.85rem); the
+     sub-item text is then clearly indented past the line. The !important beats
+     the generic `.toc-item-mobile { margin: 0 !important }` reset above. */
   .toc-item-mobile.depth-3 {
-    margin-left: 0.75rem;
+    /* Parent links are indented 0.85rem (their padding-left), so push the guide
+       line in by the same amount to sit directly under the parent text start.
+       !important beats the generic `.toc-item-mobile { margin: 0 !important }`. */
+    margin-left: 0.85rem !important;
     border-left: 1px solid var(--color-border);
-    padding-left: 0.75rem;
+  }
+  .toc-item-mobile.depth-3 a {
+    padding-left: 1rem; /* sub-text sits one clear level past the guide line */
   }
 </style>
 

@@ -1,6 +1,5 @@
 ---
 import { Image } from 'astro:assets';
-import { getCollection } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
@@ -9,9 +8,11 @@ import AuthorLink from '../../components/AuthorLink.astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
 import { url } from '../../utils/paths';
 import { pageFade } from '../../utils/pageTransition';
+import { titleHtml, titlePlain } from '../../utils/title';
+import { getPublishedPosts } from '../../utils/posts';
 
 export async function getStaticPaths() {
-	const posts = await getCollection('blog');
+	const posts = await getPublishedPosts();
 	const tags = [...new Set(posts.flatMap((post) => post.data.tags || []))];
 
 	return tags.map((tag) => ({
@@ -162,7 +163,7 @@ const { posts } = Astro.props;
                         <article class="blog-post-card">
                             <div class="blog-content">
                                 <h2 class="blog-title">
-                                    <a href={url(`/blog/${post.id}/`)}>{post.data.title}</a>
+                                    <a href={url(`/blog/${post.id}/`)} set:html={titleHtml(post.data.title)} />
                                 </h2>
                                 
                                 <div class="blog-meta">
@@ -200,9 +201,9 @@ const { posts } = Astro.props;
 
                             <a href={url(`/blog/${post.id}/`)} class="blog-thumb">
                                 {post.data.heroImage ? (
-                                    <Image width={560} height={315} src={post.data.heroImage} alt={post.data.title} />
+                                    <Image width={560} height={315} src={post.data.heroImage} alt={titlePlain(post.data.title)} />
                                 ) : (
-                                    <img src={url(`/blog/${post.id}.png`)} alt={post.data.title} />
+                                    <img src={url(`/blog/${post.id}.png`)} alt={titlePlain(post.data.title)} />
                                 )}
                             </a>
                         </article>

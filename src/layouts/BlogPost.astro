@@ -9,6 +9,7 @@ import Header from '../components/Header.astro';
 import TableOfContents from '../components/TableOfContents.astro';
 import { url } from '../utils/paths';
 import { pageFade } from '../utils/pageTransition';
+import { titleHtml, titlePlain } from '../utils/title';
 
 type CategoryBadge = { label: string; color: string };
 // Blog-collection fields are optional here because this layout is also reused by
@@ -29,11 +30,13 @@ type Props = Partial<CollectionEntry<'blog'>['data']> & {
 };
 
 const { title, description, pubDate, updatedDate, heroImage, authors, tags, headings = [], toc, noHero, showDate = true, categoryBadges = [] } = Astro.props;
+// Plain text (markers stripped) for metadata/alt; HTML form is used for the visible <h1>.
+const titleText = titlePlain(title);
 ---
 
 <html lang="en">
 	<head>
-		<BaseHead title={title} description={description} />
+		<BaseHead title={titleText} description={description} />
 		<style>
 			html {
 				scroll-padding-top: 5.5rem; /* Account for sticky header height when scrolling to anchors */
@@ -42,6 +45,10 @@ const { title, description, pubDate, updatedDate, heroImage, authors, tags, head
 				width: 100%;
 				max-width: 100%;
 				margin: 0;
+				/* Contain any horizontal overflow from gutter elements (side notes
+				   floated with negative margins) without creating a scroll container
+				   — `clip` (unlike hidden/auto) does NOT break the sticky navbar. */
+				overflow-x: clip;
 			}
 			.hero-image {
 				width: 100%;
@@ -345,14 +352,16 @@ const { title, description, pubDate, updatedDate, heroImage, authors, tags, head
 				border-radius: 12px;
 				box-shadow: var(--shadow-sm);
 			}
-			.prose :global(details) {
+			/* Generic prose <details> (collapsibles). The TOC dropdown is also a
+			   <details> but styles itself, so exclude it to avoid double padding. */
+			.prose :global(details:not(.toc-mobile-details)) {
 				margin: 1.5rem 0;
 				padding: 1rem 1.25rem;
 				border: 1px solid var(--color-border);
 				border-radius: 12px;
 				background: var(--color-bg-offset);
 			}
-			.prose :global(summary) {
+			.prose :global(summary:not(.toc-mobile-summary)) {
 				cursor: pointer;
 				font-weight: 700;
 				color: var(--color-text-main);
@@ -541,9 +550,9 @@ const { title, description, pubDate, updatedDate, heroImage, authors, tags, head
 					!noHero && heroImage && (
 						<div class="hero-image">
 							{typeof heroImage === 'string' ? (
-								<img width={1020} height={510} src={url(heroImage)} alt={title} loading="eager" fetchpriority="high" decoding="async" />
+								<img width={1020} height={510} src={url(heroImage)} alt={titleText} loading="eager" fetchpriority="high" decoding="async" />
 							) : (
-								<Image width={1020} height={510} src={heroImage} alt={title} loading="eager" fetchpriority="high" />
+								<Image width={1020} height={510} src={heroImage} alt={titleText} loading="eager" fetchpriority="high" />
 							)}
 						</div>
 					)
@@ -561,7 +570,7 @@ const { title, description, pubDate, updatedDate, heroImage, authors, tags, head
 										))}
 									</div>
 								)}
-								<h1>{title}</h1>
+								<h1 set:html={titleHtml(title)} />
 								{showDate && (
 									<div class="date">
 										<FormattedDate date={pubDate} />

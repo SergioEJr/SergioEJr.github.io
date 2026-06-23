@@ -12,7 +12,13 @@ export default defineConfig({
 	site: 'https://sergioejr.github.io',
 	base: process.env.BASE_PATH || '/',
 	integrations: [
-		mdx(),
+		// MDX parses `{...}` as JS expressions, which collides with KaTeX math like
+		// `$2^{10,000}$`. Registering remark-math on the MDX pipeline makes the math
+		// tokenizer claim `$...$` before the expression parser sees the braces.
+		mdx({
+			remarkPlugins: [remarkMath],
+			rehypePlugins: [rehypeKatex],
+		}),
 		sitemap()
 	],
 	markdown: {
