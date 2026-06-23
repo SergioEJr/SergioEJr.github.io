@@ -1,7 +1,7 @@
 ---
-title: 'My Study Abroad in Korea'
-description: 'A semester in Seoul — what I worked on, what I learned, and a few things that surprised me.'
-pubDate: '2026-03-01'
+title: "My Study Abroad in Korea"
+description: "A semester in Seoul @ Yonsei — what I worked on, what I learned, and a few things that surprised me."
+pubDate: "2022-12-26"
 category: news
 authors:
   - sergio-eraso

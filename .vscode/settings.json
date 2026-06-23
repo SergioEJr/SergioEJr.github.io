@@ -1,3 +1,12 @@
 {
-  "workbench.colorTheme": "Monokai Classic"
+  "workbench.colorTheme": "Monokai Classic",
+
+  // The MDX VS Code extension (unifiedjs.vscode-mdx) runs a language server that
+  // parses `{...}` as JS expressions and flags KaTeX math like `$2^{10,000}$`
+  // with "Could not parse expression with acorn" — a false positive, since the
+  // Astro build (astro.config.mjs registers remark-math) handles it fine. There's
+  // no granular setting to disable just that diagnostic in this version, so we
+  // turn off the MDX language server entirely. Syntax highlighting still works;
+  // we lose MDX IntelliSense, and Astro validates everything at build time anyway.
+  "mdx.server.enable": false
 }

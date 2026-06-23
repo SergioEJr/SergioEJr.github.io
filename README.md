@@ -38,3 +38,19 @@ Pushing to `main` runs the **Deploy site** workflow
 (`.github/workflows/deploy.yml`), which builds with Astro and publishes to
 GitHub Pages. In the repo's **Settings → Pages**, set **Source** to
 **GitHub Actions** (one-time).
+
+## Editor notes
+
+**MDX language server is disabled** (`mdx.server.enable: false` in
+`.vscode/settings.json`). The MDX VS Code extension parses `{...}` as JS and
+falsely flags KaTeX math such as `$2^{10,000}$` with *"Could not parse
+expression with acorn"* — even though the build is fine, because
+`astro.config.mjs` registers `remark-math` (mirrored in `mdx.config.mjs` for
+tooling). That version of the extension has no setting to disable only that
+diagnostic, so the whole server is off.
+
+- **Trade-off:** MDX syntax highlighting still works; MDX IntelliSense
+  (component autocomplete/hover in `.mdx`) is lost. Astro validates everything at
+  build time regardless.
+- **To re-enable** IntelliSense, set `mdx.server.enable: true` and live with the
+  false positives, or shorten the offending inline math.

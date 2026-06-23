@@ -34,6 +34,9 @@ const blog = defineCollection({
 			// title + description (e.g. a short News update). No link is rendered
 			// and no detail page is generated. Any body text is ignored.
 			noLink: z.boolean().default(false),
+			// Draft posts are excluded from all listings, routes, feeds, and search.
+			// Set `draft: true` while writing; remove it (or set false) to publish.
+			draft: z.boolean().default(false),
 		}),
 });
 
