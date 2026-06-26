@@ -14,8 +14,7 @@ const posts = (await getPublishedPosts())
 
 const allResearch = (await getCollection("research")).sort(
   (a, b) =>
-    a.data.order - b.data.order ||
-    b.data.date.valueOf() - a.data.date.valueOf(),
+    b.data.date.valueOf() - a.data.date.valueOf() || a.id.localeCompare(b.id),
 );
 const selectedResearch = (
   allResearch.filter((r) => r.data.selected).length > 0

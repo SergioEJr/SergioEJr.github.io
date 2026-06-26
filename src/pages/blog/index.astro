@@ -6,7 +6,7 @@ import FormattedDate from '../../components/FormattedDate.astro';
 import { SITE_TITLE } from '../../consts';
 import { url } from '../../utils/paths';
 import { pageFade } from '../../utils/pageTransition';
-import { titleHtml } from '../../utils/title';
+import { renderInline } from '../../utils/inlineText';
 import { getPublishedPosts } from '../../utils/posts';
 
 type Cat = 'all' | 'news' | 'math' | 'physics' | 'notes';
@@ -111,7 +111,7 @@ function postLink(data: any, id: string): { href: string; external: boolean } {
 							<div class="j-main">
 								<div class="j-cat" style={`color:${catColor(post.data.category)}`}>● {catLabel(post.data.category)}</div>
 								{post.data.noLink ? (
-										<h2 class="j-post-title j-post-title--static" set:html={titleHtml(post.data.title)} />
+										<h2 class="j-post-title j-post-title--static" set:html={renderInline(post.data.title)} />
 									) : (() => {
 									const link = postLink(post.data, post.id);
 									return (
@@ -120,7 +120,7 @@ function postLink(data: any, id: string): { href: string; external: boolean } {
 												href={link.href}
 												{...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
 											>
-												<span set:html={titleHtml(post.data.title)} />
+												<span set:html={renderInline(post.data.title)} />
 												{link.external && (
 													<svg class="j-ext-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg>
 												)}

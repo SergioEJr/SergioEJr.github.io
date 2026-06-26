@@ -44,9 +44,27 @@ Playwright + Chromium are installed (dev-only). The helper is `scripts/shot.mjs`
 3. **Iterate**: edit CSS → the dev server hot-reloads → re-run the script. No
    rebuild needed for `.astro`/CSS changes.
 
-4. **Clean up**: if YOU started a dev server in step 1, kill only its PID
+4. **Confirm CSS changes on the PRODUCTION build, not just dev.** Vite HMR + the
+   ClientRouter (view transitions) can serve *stale inlined CSS* on client-side
+   navigation — a style looks wrong when you click into a page but right after a
+   hard refresh. This is a dev-only artifact; production is fine. So when a fix
+   "only works after refresh", verify on a preview build before trusting it (and
+   before telling the user it's broken):
+   ```sh
+   npm run build > /tmp/build.log 2>&1
+   npm run preview -- --port 4399 > /tmp/preview.log 2>&1 & echo $! > /tmp/shot-dev.pid
+   sleep 3
+   PREVIEW_URL=http://localhost:4399 node scripts/shot.mjs /publications/ ...
+   ```
+   To reproduce the dev/prod gap: load the home page, **click** the nav link to
+   the target page (client-side nav), then read the element's computed style —
+   compare against a direct `goto` of the same page. A mismatch that disappears in
+   `preview` is HMR, not a real bug.
+
+5. **Clean up**: if YOU started a dev/preview server, kill only its PID
    (`kill "$(cat /tmp/shot-dev.pid)"`). If you reused the user's, leave it alone.
-   Keep `scripts/shot.mjs` (it's reusable).
+   Keep `scripts/shot.mjs` (it's reusable). Run temporary Playwright scripts from
+   the PROJECT dir (not /tmp) so `playwright` resolves from node_modules.
 
 ## Measuring exact positions
 

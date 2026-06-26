@@ -18,7 +18,57 @@
     "title": "Francis Friedman Professor of Physics, MIT",
     "avatar": "/authors/mehran.jpg",
     "role": "Principal Investigator",
-    "bio": "Professor Kardar is a theoretical physicist interested in a wide range of phenomena. He is particularly known for the Kardar–Parisi–Zhang (KPZ) equation in theoretical physics, which has been named after him and his two coauthors: the Nobel Prize laureate Giorgio Parisi, and Yi-Cheng Zhang.",
+    "bio": "Professor Kardar is a theoretical physicist interested in a wide range of phenomena in statistical mechanics. He is particularly known for the Kardar–Parisi–Zhang (KPZ) equation in theoretical physics, which has been named after him and his two coauthors: the Nobel Prize laureate Giorgio Parisi, and Yi-Cheng Zhang.",
     "website": "https://physics.mit.edu/faculty/mehran-kardar/"
+  },
+  {
+    "id": "yariv-kafri",
+    "name": "Yariv Kafri",
+    "title": "Professor of Physics, Technion — Israel Institute of Technology",
+    "avatar": "/authors/yariv.jpeg",
+    "role": "Principal Investigator",
+    "bio": "Professor Kafri is a theoretical physicist specializing in nonequilibrium statistical mechanics and active matter. His contributions range from non-equilibrium fluctuations and driven diffusive systems to translocation of polymers and the chemotaxis of bacteria.",
+    "website": "https://phsites.technion.ac.il/kafri/"
+  },
+  {
+    "id": "arup-chakraborty",
+    "name": "Arup K. Chakraborty",
+    "title": "John M. Deutch Institute Professor, MIT",
+    "avatar": "/authors/arup.jpg",
+    "role": "Principal Investigator",
+    "bio": "Professor Chakraborty is an American engineer and physicist focusing in biophysics, computational modeling and infectious disease.",
+    "website": "https://chakrabortygroup.mit.edu/"
+  },
+  {
+    "id": "ruslan-medzhitov",
+    "name": "Ruslan Medzhitov",
+    "title": "Sterling Professor of Immunobiology, Yale University",
+    "avatar": "/authors/ruslan.jpeg",
+    "role": "Principal Investigator",
+    "bio": "Professor Medzhitov studies the biology of inflammation, mechanisms of homoeostasis, allergic immunity and mechanisms of diseases.",
+    "website": "https://medicine.yale.edu/profile/ruslan-medzhitov/"
+  },
+  {
+    "id": "andriy-goychuk",
+    "name": "Andriy Goychuk",
+    "title": "Professor, Helmholtz Center for Infection Research",
+    "avatar": "/authors/andriy.jpeg",
+    "role": "Principal Investigator",
+    "bio": "Professor Goychuk is a physicist interested in the fundamental mechanisms underlying the self-organization of living matter.",
+    "website": "https://www.helmholtz-hzi.de/en/research/research-groups/details/mechanochemistry-of-inflammation/"
+  },
+  {
+    "id": "david-goh",
+    "name": "David Goh",
+    "title": "PhD Student, HST",
+    "role": "Researcher",
+    "bio": "David is a PhD student at Harvard-MIT Health Sciences and Technology."
+  },
+  {
+    "id": "ori-yehezkel",
+    "name": "Ori Yehezkel",
+    "title": "MSc Student, Technion — Israel Institute of Technology",
+    "role": "Researcher",
+    "bio": "Ori is an MSc almunus from The Tenchion and is a former student of Yariv Kafri."
   }
 ]

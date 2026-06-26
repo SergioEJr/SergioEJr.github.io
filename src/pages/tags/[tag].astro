@@ -8,7 +8,7 @@ import AuthorLink from '../../components/AuthorLink.astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
 import { url } from '../../utils/paths';
 import { pageFade } from '../../utils/pageTransition';
-import { titleHtml, titlePlain } from '../../utils/title';
+import { renderInline, stripInline } from '../../utils/inlineText';
 import { getPublishedPosts } from '../../utils/posts';
 
 export async function getStaticPaths() {
@@ -163,7 +163,7 @@ const { posts } = Astro.props;
                         <article class="blog-post-card">
                             <div class="blog-content">
                                 <h2 class="blog-title">
-                                    <a href={url(`/blog/${post.id}/`)} set:html={titleHtml(post.data.title)} />
+                                    <a href={url(`/blog/${post.id}/`)} set:html={renderInline(post.data.title)} />
                                 </h2>
                                 
                                 <div class="blog-meta">
@@ -201,9 +201,9 @@ const { posts } = Astro.props;
 
                             <a href={url(`/blog/${post.id}/`)} class="blog-thumb">
                                 {post.data.heroImage ? (
-                                    <Image width={560} height={315} src={post.data.heroImage} alt={titlePlain(post.data.title)} />
+                                    <Image width={560} height={315} src={post.data.heroImage} alt={stripInline(post.data.title)} />
                                 ) : (
-                                    <img src={url(`/blog/${post.id}.png`)} alt={titlePlain(post.data.title)} />
+                                    <img src={url(`/blog/${post.id}.png`)} alt={stripInline(post.data.title)} />
                                 )}
                             </a>
                         </article>

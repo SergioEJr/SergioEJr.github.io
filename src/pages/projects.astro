@@ -7,9 +7,16 @@ import { getCollection } from 'astro:content';
 import { url } from '../utils/paths';
 import { pageFade } from '../utils/pageTransition';
 
-const projects = (await getCollection('projects')).sort(
-	(a, b) => (a.data.order - b.data.order) || (b.data.date.valueOf() - a.data.date.valueOf()),
-);
+// Default: reverse chronological (newest first). `order` is an optional manual
+// override — projects with one are pinned to the front in ascending order.
+const projects = (await getCollection('projects')).sort((a, b) => {
+	const ao = a.data.order, bo = b.data.order;
+	if (ao != null && bo != null) return ao - bo;      // both pinned → by order
+	if (ao != null) return -1;                          // pinned before unpinned
+	if (bo != null) return 1;
+	return (b.data.date.valueOf() - a.data.date.valueOf()) // both unpinned → newest first
+		|| a.id.localeCompare(b.id);
+});
 
 // Filter config — colors match the Journal categories (Math purple / Physics green).
 const CAT_COLORS: Record<string, string> = {
