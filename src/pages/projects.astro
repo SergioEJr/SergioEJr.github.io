@@ -1,379 +1,755 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import { SITE_TITLE } from '../consts';
-import { getCollection } from 'astro:content';
-import { url } from '../utils/paths';
-import { pageFade } from '../utils/pageTransition';
+import BaseHead from "../components/BaseHead.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import { SITE_TITLE } from "../consts";
+import { getCollection } from "astro:content";
+import { url } from "../utils/paths";
+import { pageFade } from "../utils/pageTransition";
 
 // Default: reverse chronological (newest first). `order` is an optional manual
 // override — projects with one are pinned to the front in ascending order.
-const projects = (await getCollection('projects')).sort((a, b) => {
-	const ao = a.data.order, bo = b.data.order;
-	if (ao != null && bo != null) return ao - bo;      // both pinned → by order
-	if (ao != null) return -1;                          // pinned before unpinned
-	if (bo != null) return 1;
-	return (b.data.date.valueOf() - a.data.date.valueOf()) // both unpinned → newest first
-		|| a.id.localeCompare(b.id);
+const projects = (await getCollection("projects")).sort((a, b) => {
+  const ao = a.data.order,
+    bo = b.data.order;
+  if (ao != null && bo != null) return ao - bo; // both pinned → by order
+  if (ao != null) return -1; // pinned before unpinned
+  if (bo != null) return 1;
+  return (
+    b.data.date.valueOf() - a.data.date.valueOf() || // both unpinned → newest first
+    a.id.localeCompare(b.id)
+  );
 });
 
 // Filter config — colors match the Journal categories (Math purple / Physics green).
 const CAT_COLORS: Record<string, string> = {
-	Technical: '#8b5cf6',
-	Teaching: '#10b981',
+  Technical: "#8b5cf6",
+  Teaching: "#10b981",
 };
-const FILTERS = ['Technical', 'Teaching'] as const;
+const FILTERS = ["Technical", "Teaching"] as const;
 const filterCounts: Record<string, number> = { Technical: 0, Teaching: 0 };
-for (const p of projects) for (const c of p.data.categories) filterCounts[c] = (filterCounts[c] || 0) + 1;
+for (const p of projects)
+  for (const c of p.data.categories)
+    filterCounts[c] = (filterCounts[c] || 0) + 1;
 ---
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<BaseHead title={`Projects | ${SITE_TITLE}`} description="Research Projects" />
-		<style>
-			.projects-section {
-				max-width: var(--max-width);
-				margin: 0 auto;
-			}
-			.projects-hero {
-				text-align: center;
-				margin-bottom: 4rem;
-				padding: 2rem 0;
-			}
-			.projects-hero h1 {
-				font-family: var(--font-serif);
-				font-size: 3.2rem;
-				margin: 0 0 1rem 0;
-				color: var(--color-text-main);
-				letter-spacing: -0.02em;
-				line-height: 1.2;
-			}
-			.projects-hero p {
-				font-size: 1.15rem;
-				color: var(--color-text-muted);
-				max-width: 700px;
-				margin: 0 auto;
-				line-height: 1.7;
-			}
-			.projects-filters {
-				display: flex;
-				flex-wrap: wrap;
-				justify-content: center;
-				gap: 0.6rem;
-				margin-bottom: 3rem;
-			}
-			.proj-filter {
-				background: transparent;
-				border: 1px solid var(--color-border);
-				color: var(--color-text-muted);
-				padding: 0.4rem 1.1rem;
-				border-radius: 999px;
-				font-size: 0.8rem;
-				font-weight: 700;
-				text-transform: uppercase;
-				letter-spacing: 0.05em;
-				cursor: pointer;
-				transition: all 0.2s ease;
-			}
-			.proj-filter .proj-filter-count {
-				opacity: 0.6;
-				margin-left: 0.2rem;
-				font-variant-numeric: tabular-nums;
-			}
-			.proj-filter:hover { color: var(--f-color); border-color: var(--f-color); }
-			.proj-filter.active { color: #fff; background: var(--f-color); border-color: var(--f-color); }
-			.proj-filter.active .proj-filter-count { opacity: 0.85; }
-			.projects-grid {
-				display: grid;
-				grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-				gap: 2.5rem;
-				margin-bottom: 4rem;
-			}
-			.projects-empty {
-				text-align: center;
-				color: var(--color-text-muted);
-				padding: 3rem 0 5rem;
-			}
-			.project-card {
-				position: relative;
-				display: flex;
-				flex-direction: column;
-				text-decoration: none;
-				color: inherit;
-				background-color: var(--color-bg-offset);
-				border: 1px solid var(--color-border);
-				border-radius: 16px;
-				overflow: hidden;
-				transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-				box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-			}
-			/* Whole card clickable via the title's stretched link */
-			.card-link { color: inherit; text-decoration: none; }
-			.card-link::after {
-				content: "";
-				position: absolute;
-				inset: 0;
-				z-index: 1;
-			}
-			.project-footer {
-				display: flex;
-				align-items: center;
-				justify-content: space-between;
-				gap: 1rem;
-				margin-top: auto;
-			}
-			/* Repo icon sits above the stretched link so it stays separately clickable */
-			.repo-icon {
-				position: relative;
-				z-index: 2;
-				display: inline-flex;
-				color: var(--color-text-muted);
-				transition: color 0.2s ease, transform 0.2s ease;
-			}
-			.repo-icon:hover { color: var(--color-accent); transform: translateY(-1px); }
-			.project-card:hover {
-				transform: translateY(-6px);
-				box-shadow: var(--shadow-lg);
-				border-color: var(--color-accent);
-			}
-			.project-image {
-				position: relative;
-				width: 100%;
-				aspect-ratio: 16 / 9;
-				overflow: hidden;
-			}
-			.project-image img {
-				width: 100%;
-				height: 100%;
-				object-fit: cover;
-				transition: transform 0.6s ease;
-			}
-			.project-card:hover .project-image img {
-				transform: scale(1.05);
-			}
-			.project-image-badges {
-				position: absolute;
-				top: 1rem;
-				left: 1rem;
-				display: flex;
-				flex-wrap: wrap;
-				gap: 0.4rem;
-				z-index: 10;
-			}
-			.project-image-badge {
-				display: inline-flex;
-				align-items: center;
-				padding: 0.25rem 0.7rem;
-				border-radius: 999px;
-				font-size: 0.65rem;
-				font-weight: 700;
-				text-transform: uppercase;
-				letter-spacing: 0.08em;
-				color: var(--badge-color);
-				border: 1px solid color-mix(in srgb, var(--badge-color) 60%, transparent);
-				background: rgba(15, 23, 42, 0.55);
-				backdrop-filter: blur(8px);
-				-webkit-backdrop-filter: blur(8px);
-			}
-			.project-badge {
-				position: absolute;
-				top: 1rem;
-				right: 1rem;
-				padding: 0.35rem 0.8rem;
-				background-color: var(--color-bg-header);
-				color: var(--color-text-main);
-				font-size: 0.7rem;
-				font-weight: 700;
-				text-transform: uppercase;
-				letter-spacing: 0.1em;
-				border-radius: 20px;
-				backdrop-filter: blur(8px);
-				box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-				z-index: 10;
-			}
-			.project-content-wrapper {
-				display: flex;
-				flex-direction: column;
-				padding: 1.75rem;
-				flex: 1;
-			}
-			.project-year {
-				font-size: 0.75rem;
-				color: var(--color-accent);
-				font-weight: 700;
-				text-transform: uppercase;
-				letter-spacing: 0.1em;
-				margin-bottom: 0.5rem;
-			}
-			.project-card h3 {
-				font-family: var(--font-serif);
-				font-size: 1.4rem;
-				margin: 0 0 1rem 0;
-				line-height: 1.3;
-				color: var(--color-text-main);
-			}
-			.project-card h3 a {
-				color: inherit;
-				text-decoration: none;
-			}
-			.project-description {
-				color: var(--color-text-muted);
-				font-size: 0.95rem;
-				line-height: 1.6;
-				margin-bottom: 1.5rem;
-				flex: 1;
-			}
-			.project-meta {
-				display: flex;
-				align-items: center;
-				gap: 0.5rem;
-				font-size: 0.85rem;
-				margin-bottom: 1.25rem;
-				flex-wrap: wrap;
-				padding-top: 1rem;
-				border-top: 1px solid var(--color-border);
-			}
-			.meta-label {
-				font-weight: 600;
-				color: var(--color-text-muted);
-			}
-			.author-names {
-				color: var(--color-text-main);
-				font-weight: 500;
-			}
-			.read-more {
-				display: inline-flex;
-				align-items: center;
-				font-size: 0.9rem;
-				color: var(--color-accent);
-				text-decoration: none;
-				font-weight: 600;
-				transition: gap 0.2s ease;
-				gap: 0.25rem;
-			}
-			.read-more:hover {
-				gap: 0.5rem;
-			}
-			@media (max-width: 768px) {
-				.projects-hero h1 { font-size: 2.5rem; }
-				.projects-grid { gap: 2rem; }
-				.project-content-wrapper { padding: 1.5rem; }
-			}
-		</style>
-	</head>
-	<body>
-		<Header />
-		<main class="projects-section" transition:animate={pageFade}>
-			<div class="projects-hero">
-				<h1>Projects</h1>
-				<p>Tools, teaching, and experiments I've built — most started as a problem I wanted solved or an idea I wanted to understand.</p>
-			</div>
+  <head>
+    <BaseHead
+      title={`Projects | ${SITE_TITLE}`}
+      description="Research Projects"
+    />
+    <style>
+      .projects-section {
+        max-width: var(--max-width);
+        margin: 0 auto;
+      }
+      .projects-hero {
+        text-align: center;
+        margin-bottom: 4rem;
+        padding: 2rem 0;
+      }
+      .projects-hero h1 {
+        font-family: var(--font-serif);
+        font-size: 3.2rem;
+        margin: 0 0 1rem 0;
+        color: var(--color-text-main);
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+      }
+      .projects-hero p {
+        font-size: 1.15rem;
+        color: var(--color-text-muted);
+        max-width: 700px;
+        margin: 0 auto;
+        line-height: 1.7;
+      }
+      .projects-filters {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.6rem;
+        margin-bottom: 3rem;
+      }
+      .proj-filter {
+        background: transparent;
+        border: 1px solid var(--color-border);
+        color: var(--color-text-muted);
+        padding: 0.4rem 1.1rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .proj-filter .proj-filter-count {
+        opacity: 0.6;
+        margin-left: 0.2rem;
+        font-variant-numeric: tabular-nums;
+      }
+      .proj-filter:hover {
+        color: var(--f-color);
+        border-color: var(--f-color);
+      }
+      .proj-filter.active {
+        color: #fff;
+        background: var(--f-color);
+        border-color: var(--f-color);
+      }
+      .proj-filter.active .proj-filter-count {
+        opacity: 0.85;
+      }
+      .projects-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 2.5rem;
+        margin-bottom: 4rem;
+      }
+      .projects-empty {
+        text-align: center;
+        color: var(--color-text-muted);
+        padding: 3rem 0 5rem;
+      }
+      .projects-grid {
+        /* Give the grid perspective so child cards can tilt in 3D space. */
+        perspective: 1200px;
+      }
+      .project-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        text-decoration: none;
+        color: inherit;
+        background-color: var(--color-bg-offset);
+        border: 1px solid var(--color-border);
+        border-radius: 16px;
+        overflow: hidden;
+        transform-style: preserve-3d;
+        /* --rx/--ry/--lift drive the tilt; defaults = flat & resting.
+				   When the pointer leaves we transition back smoothly; while
+				   tracking, JS sets transition to none for 1:1 responsiveness. */
+        --rx: 0deg;
+        --ry: 0deg;
+        --lift: 0px;
+        /* ── Glare / outline tunables (CSS side) ──────────────────────────
+           Edit these; they take effect on save (CSS, no script caching).
+           --glare-strength: peak opacity of the bulk accent glow (0..1).
+           --glare-radius:   how far the bulk glow spreads from the cursor.
+           --outline-accent: peak % of accent in the border near the cursor.
+           --outline-radius: how far along the border the accent reaches. */
+        --glare-strength: 0.1;
+        --glare-radius: 55%;
+        --outline-accent: 95%;
+        --outline-radius: 130px;
+        transform: perspective(1200px) rotateX(var(--rx)) rotateY(var(--ry))
+          translateY(var(--lift));
+        transition:
+          transform 0.4s cubic-bezier(0.23, 1, 0.32, 1),
+          box-shadow 0.3s ease,
+          border-color 0.3s ease;
+        box-shadow:
+          0 4px 6px -1px rgba(0, 0, 0, 0.05),
+          0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      }
+      /* Glare: a soft radial light that follows the cursor, sitting above
+			   the card content but below the badges/links (z-index handled below).
+			   --mx/--my are the pointer position (in %), --glare is the opacity.
+			   Tinted with the accent so it reads on both light and dark. */
+      .project-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        pointer-events: none;
+        border-radius: inherit;
+        /* Bulk glow: a soft accent light that follows the cursor. Opacity is the
+           live --glare (0→1 on hover) times --glare-strength. A plain accent
+           tint with normal blending reads on BOTH modes (screen vanished on the
+           white card body in light mode). */
+        opacity: calc(var(--glare, 0) * var(--glare-strength));
+        background: radial-gradient(
+          circle at var(--mx, 50%) var(--my, 50%),
+          var(--color-accent),
+          transparent var(--glare-radius)
+        );
+      }
+      /* Outline shine: the border itself, but only the region near the
+			   cursor takes on the accent color — elsewhere it stays the resting
+			   border color, so the mouse reads as a moving "activation source".
+			   The radial gradient blends accent → border-color; --glare scales
+			   the accent strength so it fades in/out cleanly. */
+      .project-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 4;
+        pointer-events: none;
+        border-radius: inherit;
+        padding: 1px;
+        background: radial-gradient(
+          var(--outline-radius) circle at var(--mx, 50%) var(--my, 50%),
+          color-mix(
+            in srgb,
+            var(--color-accent)
+              calc(var(--outline-accent) * var(--glare, 0) * var(--edge, 0)),
+            var(--color-border)
+          ),
+          var(--color-border) 70%
+        );
+        -webkit-mask:
+          linear-gradient(#fff 0 0) content-box,
+          linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask:
+          linear-gradient(#fff 0 0) content-box,
+          linear-gradient(#fff 0 0);
+        mask-composite: exclude;
+      }
+      /* Whole card clickable via the title's stretched link */
+      .card-link {
+        color: inherit;
+        text-decoration: none;
+      }
+      .card-link::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+      }
+      .project-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-top: auto;
+      }
+      /* Repo icon sits above the stretched link so it stays separately clickable */
+      .repo-icon {
+        position: relative;
+        z-index: 2;
+        display: inline-flex;
+        color: var(--color-text-muted);
+        transition:
+          color 0.2s ease,
+          transform 0.2s ease;
+      }
+      .repo-icon:hover {
+        color: var(--color-accent);
+        transform: translateY(-1px);
+      }
+      .project-card:hover {
+        box-shadow: var(--shadow-lg);
+        border-color: var(--color-accent);
+      }
+      /* When not tilting (no JS / reduced motion), still give a gentle lift. */
+      .project-card:hover {
+        --lift: -6px;
+      }
+      .project-image {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        overflow: hidden;
+        /* Clip the image to the card's top corners directly. The card's
+				   own `overflow: hidden` can leak square corners mid-transform
+				   (3D rendering context), so the image carries its own radius. */
+        border-top-left-radius: inherit;
+        border-top-right-radius: inherit;
+      }
+      .project-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.6s ease;
+      }
+      .project-card:hover .project-image img {
+        transform: scale(1.05);
+      }
+      .project-image-badges {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        z-index: 10;
+      }
+      .project-image-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.7rem;
+        border-radius: 999px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--badge-color);
+        border: 1px solid
+          color-mix(in srgb, var(--badge-color) 60%, transparent);
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }
+      .project-badge {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        padding: 0.35rem 0.8rem;
+        background-color: var(--color-bg-header);
+        color: var(--color-text-main);
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        border-radius: 20px;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        z-index: 10;
+      }
+      .project-content-wrapper {
+        display: flex;
+        flex-direction: column;
+        padding: 1.75rem;
+        flex: 1;
+      }
+      .project-year {
+        font-size: 0.75rem;
+        color: var(--color-accent);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 0.5rem;
+      }
+      .project-card h3 {
+        font-family: var(--font-serif);
+        font-size: 1.4rem;
+        margin: 0 0 1rem 0;
+        line-height: 1.3;
+        color: var(--color-text-main);
+      }
+      .project-card h3 a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .project-description {
+        color: var(--color-text-muted);
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+        flex: 1;
+      }
+      .project-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        margin-bottom: 1.25rem;
+        flex-wrap: wrap;
+        padding-top: 1rem;
+        border-top: 1px solid var(--color-border);
+      }
+      .meta-label {
+        font-weight: 600;
+        color: var(--color-text-muted);
+      }
+      .author-names {
+        color: var(--color-text-main);
+        font-weight: 500;
+      }
+      .read-more {
+        display: inline-flex;
+        align-items: center;
+        font-size: 0.9rem;
+        color: var(--color-accent);
+        text-decoration: none;
+        font-weight: 600;
+        transition: gap 0.2s ease;
+        gap: 0.25rem;
+      }
+      .read-more:hover {
+        gap: 0.5rem;
+      }
+      @media (max-width: 768px) {
+        .projects-hero h1 {
+          font-size: 2.5rem;
+        }
+        .projects-grid {
+          gap: 2rem;
+        }
+        .project-content-wrapper {
+          padding: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <Header />
+    <main class="projects-section" transition:animate={pageFade}>
+      <div class="projects-hero">
+        <h1>Projects</h1>
+        <p>
+          Tools, teaching, and experiments I've built — most started as a
+          problem I wanted solved or an idea I wanted to understand.
+        </p>
+      </div>
 
-			<div class="projects-filters" id="projects-filters">
-				{FILTERS.map((c) => (
-					<button
-						class="proj-filter"
-						data-filter={c}
-						style={`--f-color:${CAT_COLORS[c]}`}
-					>
-						{c} <span class="proj-filter-count">{filterCounts[c]}</span>
-					</button>
-				))}
-			</div>
+      <div class="projects-filters" id="projects-filters">
+        {
+          FILTERS.map((c) => (
+            <button
+              class="proj-filter"
+              data-filter={c}
+              style={`--f-color:${CAT_COLORS[c]}`}
+            >
+              {c} <span class="proj-filter-count">{filterCounts[c]}</span>
+            </button>
+          ))
+        }
+      </div>
 
-			<div class="projects-grid">
-				{projects.length > 0 ? projects.map((project) => (
-					<article class="project-card" data-categories={project.data.categories.join(',')}>
-						<div class="project-image">
-							<img
-								src={project.data.image ? url(project.data.image) : url(`/projects/${project.id}.png`)}
-								alt={project.data.title}
-							/>
-							{/* Custom thumbnails get the category pills overlaid; the generated
+      <div class="projects-grid">
+        {
+          projects.length > 0 ? (
+            projects.map((project) => (
+              <article
+                class="project-card"
+                data-categories={project.data.categories.join(",")}
+              >
+                <div class="project-image">
+                  <img
+                    src={
+                      project.data.image
+                        ? url(project.data.image)
+                        : url(`/projects/${project.id}.png`)
+                    }
+                    alt={project.data.title}
+                  />
+                  {/* Custom thumbnails get the category pills overlaid; the generated
 							    hero card already has them baked in. */}
-							{project.data.image && (
-								<div class="project-image-badges">
-									{project.data.categories.map((c) => (
-										<span class="project-image-badge" style={`--badge-color:${CAT_COLORS[c]}`}>{c}</span>
-									))}
-								</div>
-							)}
-							<span class="project-badge">{project.data.status}</span>
-						</div>
+                  {project.data.image && (
+                    <div class="project-image-badges">
+                      {project.data.categories.map((c) => (
+                        <span
+                          class="project-image-badge"
+                          style={`--badge-color:${CAT_COLORS[c]}`}
+                        >
+                          {c}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <span class="project-badge">{project.data.status}</span>
+                </div>
 
-						<div class="project-content-wrapper">
-							<div class="project-header">
-								<span class="project-year">{project.data.date.getUTCFullYear()}</span>
-								<h3><a class="card-link" href={url(`/projects/${project.id}/`)}>{project.data.title}</a></h3>
-							</div>
+                <div class="project-content-wrapper">
+                  <div class="project-header">
+                    <span class="project-year">
+                      {project.data.date.getUTCFullYear()}
+                    </span>
+                    <h3>
+                      <a
+                        class="card-link"
+                        href={url(`/projects/${project.id}/`)}
+                      >
+                        {project.data.title}
+                      </a>
+                    </h3>
+                  </div>
 
-							<p class="project-description">{project.data.description}</p>
+                  <p class="project-description">{project.data.description}</p>
 
-							{project.data.tags.length > 0 && (
-								<div class="project-meta">
-									<span class="author-names">{project.data.tags.join(' · ')}</span>
-								</div>
-							)}
+                  {project.data.tags.length > 0 && (
+                    <div class="project-meta">
+                      <span class="author-names">
+                        {project.data.tags.join(" · ")}
+                      </span>
+                    </div>
+                  )}
 
-							<div class="project-footer">
-								<span class="read-more">Read more &rarr;</span>
-								{project.data.repo && (
-									<a class="repo-icon" href={project.data.repo} target="_blank" rel="noopener noreferrer" aria-label="GitHub repository" title="GitHub repository">
-										<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
-									</a>
-								)}
-							</div>
-						</div>
-					</article>
-				)) : (
-                    <p>No projects yet. Add Markdown files in <code>src/content/projects/</code>.</p>
-                )}
-			</div>
-			<p class="projects-empty" id="projects-empty" hidden>No projects match the selected filters.</p>
-		</main>
-		<Footer />
+                  <div class="project-footer">
+                    <span class="read-more">Read more &rarr;</span>
+                    {project.data.repo && (
+                      <a
+                        class="repo-icon"
+                        href={project.data.repo}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="GitHub repository"
+                        title="GitHub repository"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+                        </svg>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </article>
+            ))
+          ) : (
+            <p>
+              No projects yet. Add Markdown files in{" "}
+              <code>src/content/projects/</code>.
+            </p>
+          )
+        }
+      </div>
+      <p class="projects-empty" id="projects-empty" hidden>
+        No projects match the selected filters.
+      </p>
+    </main>
+    <Footer />
 
-		<script is:inline>
-			function initProjectFilters() {
-				const bar = document.getElementById('projects-filters');
-				if (!bar || bar.dataset.init === 'true') return;
-				bar.dataset.init = 'true';
+    <script is:inline>
+      function initProjectFilters() {
+        const bar = document.getElementById("projects-filters");
+        if (!bar || bar.dataset.init === "true") return;
+        bar.dataset.init = "true";
 
-				const filters = Array.from(bar.querySelectorAll('.proj-filter'));
-				const cards = Array.from(document.querySelectorAll('.project-card'));
-				const empty = document.getElementById('projects-empty');
-				const active = new Set();
+        const filters = Array.from(bar.querySelectorAll(".proj-filter"));
+        const cards = Array.from(document.querySelectorAll(".project-card"));
+        const empty = document.getElementById("projects-empty");
+        const active = new Set();
 
-				function apply() {
-					let visible = 0;
-					cards.forEach((card) => {
-						const cats = (card.getAttribute('data-categories') || '')
-							.split(',')
-							.filter(Boolean);
-						// No filter selected → show all; otherwise show if it matches any active filter.
-						const show =
-							active.size === 0 || cats.some((c) => active.has(c));
-						card.style.display = show ? '' : 'none';
-						if (show) visible++;
-					});
-					if (empty) empty.hidden = visible !== 0;
-				}
+        function apply() {
+          let visible = 0;
+          cards.forEach((card) => {
+            const cats = (card.getAttribute("data-categories") || "")
+              .split(",")
+              .filter(Boolean);
+            // No filter selected → show all; otherwise show if it matches any active filter.
+            const show = active.size === 0 || cats.some((c) => active.has(c));
+            card.style.display = show ? "" : "none";
+            if (show) visible++;
+          });
+          if (empty) empty.hidden = visible !== 0;
+        }
 
-				filters.forEach((btn) => {
-					btn.addEventListener('click', () => {
-						const f = btn.getAttribute('data-filter');
-						if (active.has(f)) active.delete(f);
-						else active.add(f);
-						btn.classList.toggle('active', active.has(f));
-						apply();
-					});
-				});
-			}
+        filters.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const f = btn.getAttribute("data-filter");
+            if (active.has(f)) active.delete(f);
+            else active.add(f);
+            btn.classList.toggle("active", active.has(f));
+            apply();
+          });
+        });
+      }
 
-			initProjectFilters();
-			document.addEventListener('astro:page-load', initProjectFilters);
-		</script>
-	</body>
+      initProjectFilters();
+      document.addEventListener("astro:page-load", initProjectFilters);
+
+      function initCardTilt() {
+        // Respect reduced-motion and skip touch (no hover) devices.
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+          return;
+        if (!window.matchMedia("(hover: hover)").matches) return;
+
+        const grid = document.querySelector(".projects-grid");
+        if (!grid) return;
+        // HMR / re-init guard: tear down a previous run so edits to the tunables
+        // below take effect on a normal reload (instead of being ignored because
+        // a stale listener is still attached).
+        if (grid._tiltCleanup) grid._tiltCleanup();
+
+        // ── Tunable parameters ──────────────────────────────────────────────
+        // Edit these and hard-refresh (Cmd-Shift-R). Dev HMR can serve a stale
+        // inline script on client-side nav, so a normal nav may not pick up the
+        // change — hard refresh, or verify on `npm run preview`.
+        const MAX_TILT = 1; // peak rotation toward the cursor, in degrees
+        const LIFT = -8; // peak vertical lift on hover, in px (negative = up)
+        const EASE = 0.14; // 0..1 lerp factor/frame — higher = snappier, lower = floatier
+        const EDGE_BAND = 120; // px from a border within which the outline lights up
+        //   (cursor deeper than this into the content → outline stays neutral)
+        // ────────────────────────────────────────────────────────────────────
+
+        // Per-card animation state: current (rendered) vs target values.
+        // Lerping current → target every frame gives the gentle ramp on
+        // enter and a soft settle on leave, instead of a hard snap.
+        const state = new Map();
+        let raf = null;
+
+        function ensureState(card) {
+          let s = state.get(card);
+          if (!s) {
+            s = {
+              rx: 0,
+              ry: 0,
+              mx: 50,
+              my: 50,
+              glare: 0,
+              edge: 0,
+              trx: 0,
+              try_: 0,
+              tmx: 50,
+              tmy: 50,
+              tglare: 0,
+              tedge: 0,
+            };
+            state.set(card, s);
+          }
+          return s;
+        }
+
+        function tick() {
+          raf = null;
+          let animating = false;
+          state.forEach((s, card) => {
+            // Ease every tracked value toward its target.
+            s.rx += (s.trx - s.rx) * EASE;
+            s.ry += (s.try_ - s.ry) * EASE;
+            s.mx += (s.tmx - s.mx) * EASE;
+            s.my += (s.tmy - s.my) * EASE;
+            s.glare += (s.tglare - s.glare) * EASE;
+            s.edge += (s.tedge - s.edge) * EASE;
+
+            card.style.setProperty("--rx", s.rx.toFixed(3) + "deg");
+            card.style.setProperty("--ry", s.ry.toFixed(3) + "deg");
+            card.style.setProperty(
+              "--lift",
+              (LIFT * s.glare).toFixed(2) + "px",
+            );
+            card.style.setProperty("--mx", s.mx.toFixed(2) + "%");
+            card.style.setProperty("--my", s.my.toFixed(2) + "%");
+            card.style.setProperty("--glare", s.glare.toFixed(3));
+            // --edge: 0 when the cursor is deep in the content, →1 near a border.
+            // The outline accent multiplies by this so a centered cursor leaves
+            // the whole outline at its resting color.
+            card.style.setProperty("--edge", s.edge.toFixed(3));
+
+            // Keep animating until everything has effectively settled.
+            const settled =
+              Math.abs(s.trx - s.rx) < 0.01 &&
+              Math.abs(s.try_ - s.ry) < 0.01 &&
+              Math.abs(s.tmx - s.mx) < 0.05 &&
+              Math.abs(s.tmy - s.my) < 0.05 &&
+              Math.abs(s.tedge - s.edge) < 0.002 &&
+              Math.abs(s.tglare - s.glare) < 0.002;
+            if (!settled) animating = true;
+            else if (s.tglare === 0) state.delete(card); // fully at rest → drop
+          });
+          if (animating || state.size) schedule();
+        }
+
+        function schedule() {
+          if (raf == null) raf = requestAnimationFrame(tick);
+        }
+
+        // Disable the CSS transform transition while we drive it ourselves;
+        // the lerp provides the smoothing. (box-shadow/border still eased.)
+        grid.querySelectorAll(".project-card").forEach((card) => {
+          card.style.transition =
+            "box-shadow 0.3s ease, border-color 0.3s ease";
+        });
+
+        let hovered = null;
+
+        function release(card) {
+          if (!card) return;
+          const s = ensureState(card);
+          s.trx = 0;
+          s.try_ = 0;
+          s.tglare = 0;
+          s.tedge = 0;
+          schedule();
+        }
+
+        // CRITICAL: hit-test against the card's *static layout* box
+        // (offsetLeft/Top/Width/Height), NOT getBoundingClientRect — the latter
+        // reflects the live 3D transform + lift, so as the card tilts it moves
+        // out from under the pointer and the hover toggles, which is the corner
+        // flicker. offset* values are pre-transform layout, so the activation
+        // region stays put while the card animates within it.
+        function metrics(card) {
+          // offsetParent of the card is the grid (positioned context not set on
+          // grid, so offsetParent may be <body>); compute against the grid by
+          // walking offset ancestors until we reach it.
+          let x = 0,
+            y = 0,
+            node = card;
+          while (node && node !== grid) {
+            x += node.offsetLeft;
+            y += node.offsetTop;
+            node = node.offsetParent;
+          }
+          return { x, y, w: card.offsetWidth, h: card.offsetHeight };
+        }
+
+        function onMove(e) {
+          // Pointer position relative to the grid's static content box.
+          const gRect = grid.getBoundingClientRect();
+          const gx = e.clientX - gRect.left + grid.scrollLeft;
+          const gy = e.clientY - gRect.top + grid.scrollTop;
+
+          // Find which card's static box contains the pointer.
+          let card = null;
+          for (const c of grid.querySelectorAll(".project-card")) {
+            if (c.style.display === "none") continue;
+            const m = metrics(c);
+            if (gx >= m.x && gx <= m.x + m.w && gy >= m.y && gy <= m.y + m.h) {
+              card = c;
+              var px = (gx - m.x) / m.w;
+              var py = (gy - m.y) / m.h;
+              // Distance (px) to the nearest of the 4 edges, → edge factor.
+              var dEdge = Math.min(
+                gx - m.x,
+                m.x + m.w - gx,
+                gy - m.y,
+                m.y + m.h - gy,
+              );
+              break;
+            }
+          }
+
+          if (card !== hovered) {
+            release(hovered);
+            hovered = card;
+          }
+          if (!card) return;
+
+          const s = ensureState(card);
+          s.try_ = (px - 0.5) * 2 * MAX_TILT; // rotateY: left→right
+          s.trx = -(py - 0.5) * 2 * MAX_TILT; // rotateX: top→back
+          s.tmx = px * 100;
+          s.tmy = py * 100;
+          s.tglare = 1;
+          // 1 at the very edge, ramping to 0 once the cursor is EDGE_BAND px in.
+          s.tedge = Math.max(0, 1 - dEdge / EDGE_BAND);
+          schedule();
+        }
+
+        function onLeave() {
+          release(hovered);
+          hovered = null;
+        }
+
+        grid.addEventListener("pointermove", onMove);
+        grid.addEventListener("pointerleave", onLeave);
+
+        grid._tiltCleanup = () => {
+          grid.removeEventListener("pointermove", onMove);
+          grid.removeEventListener("pointerleave", onLeave);
+          if (raf != null) cancelAnimationFrame(raf);
+          state.clear();
+          delete grid._tiltCleanup;
+        };
+      }
+
+      initCardTilt();
+      document.addEventListener("astro:page-load", initCardTilt);
+    </script>
+  </body>
 </html>

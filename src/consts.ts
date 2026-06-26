@@ -7,7 +7,7 @@ export const SITE_DESCRIPTION =
 
 // Short tagline shown in the footer (kept separate so it doesn't repeat the name).
 export const SITE_TAGLINE =
-  '"What is not surrounded by uncertainty cannot be the truth" ~ Feynman';
+  '"What is not surrounded by uncertainty cannot be the truth." ~ Feynman';
 
 // Link to a CV/resume PDF. The button (footer + navbar icon) only appears once
 // the file actually exists at public/resume.pdf (see src/utils/cv.ts).
