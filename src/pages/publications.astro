@@ -7,9 +7,12 @@ import { getCollection } from 'astro:content';
 import AuthorLink from '../components/AuthorLink.astro';
 import { url } from '../utils/paths';
 import { pageFade } from '../utils/pageTransition';
+import { renderInline } from '../utils/inlineText';
 
+// Newest first (reverse chronological), with a stable id tiebreak for entries
+// that share a date.
 const research = (await getCollection('research')).sort(
-	(a, b) => (a.data.order - b.data.order) || (b.data.date.valueOf() - a.data.date.valueOf()),
+	(a, b) => (b.data.date.valueOf() - a.data.date.valueOf()) || a.id.localeCompare(b.id),
 );
 ---
 
@@ -41,47 +44,51 @@ const research = (await getCollection('research')).sort(
 							</div>
 						)}
 
-						<p class="pub-venue" style="margin: 0.25rem 0 0.5rem;">
-							{entry.data.description}
-						</p>
-
-						<div class="pub-venue">
+						<div class="pub-venue" style="margin-top: 0.35rem;">
 							{entry.data.venue || 'In preparation'}
 							<span> ({entry.data.date.getUTCFullYear()})</span>
 						</div>
 
-						<div class="pub-links" style="margin-top: 0.5rem; font-size: 0.9rem; display: flex; align-items: center; gap: 0.75rem;">
-							<a href={url(`/publications/${entry.id}/`)} class="btn-outline" style="padding: 2px 8px; font-size: 0.8rem;">
-								Overview
-							</a>
+						<div class="pub-links">
+							<a href={url(`/publications/${entry.id}/`)} class="pub-btn">Overview</a>
+
+							{entry.data.abstract && (
+								<button type="button" class="pub-btn pub-toggle" aria-expanded="false" data-target={`abstract-${entry.id}`}>Abstract</button>
+							)}
 
 							{entry.data.paper && (
-								<a href={entry.data.paper} target="_blank" rel="noopener noreferrer" class="btn-outline" style="padding: 2px 8px; font-size: 0.8rem;">
-									Paper ↗
-								</a>
+								<a href={entry.data.paper} target="_blank" rel="noopener noreferrer" class="pub-btn">Paper ↗</a>
 							)}
 
 							{entry.data.poster && (
-								<a href={url(entry.data.poster)} target="_blank" rel="noopener noreferrer" class="btn-outline" style="padding: 2px 8px; font-size: 0.8rem;">
-									Poster ↗
-								</a>
+								<a href={url(entry.data.poster)} target="_blank" rel="noopener noreferrer" class="pub-btn">Poster ↗</a>
+							)}
+
+							{entry.data.code && (
+								<a href={entry.data.code} target="_blank" rel="noopener noreferrer" class="pub-btn">Code ↗</a>
 							)}
 
 							{entry.data.bibtex && (
-								<details name="bibtex" style="display: inline-block;">
-									<summary style="font-size: 0.8rem; cursor: pointer; color: var(--color-accent);">BibTeX</summary>
-									<div class="bibtex-panel" style="position: absolute; background-color: var(--color-bg-offset); border: 1px solid var(--color-border); color: var(--color-text-main); padding: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px; z-index: 10; width: 340px; max-height: 250px; overflow: auto; margin-top: 0.5rem;">
-										<div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
-											<button class="copy-bibtex-btn" data-bibtex={entry.data.bibtex} style="background: none; border: none; cursor: pointer; color: var(--color-text-muted); font-size: 0.75rem; display: flex; align-items: center; gap: 4px; padding: 0;">
-												<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-												<span class="copy-text">Copy</span>
-											</button>
-										</div>
-										<pre style="margin: 0; font-size: 0.72rem; white-space: pre-wrap; word-break: break-word;">{entry.data.bibtex}</pre>
-									</div>
-								</details>
+								<button type="button" class="pub-btn pub-toggle" aria-expanded="false" data-target={`bibtex-${entry.id}`}>BibTeX</button>
 							)}
 						</div>
+
+						{/* Inline panels expand in-column below the buttons, pushing content
+						    down. Full-width, delineated box. */}
+						{entry.data.abstract && (
+							<div class="pub-panel" id={`abstract-${entry.id}`} hidden>
+								<p set:html={renderInline(entry.data.abstract, { math: true })} />
+							</div>
+						)}
+						{entry.data.bibtex && (
+							<div class="pub-panel pub-panel--bibtex" id={`bibtex-${entry.id}`} hidden>
+								<button class="copy-bibtex-btn" data-bibtex={entry.data.bibtex} aria-label="Copy BibTeX">
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+									<span class="copy-text">Copy</span>
+								</button>
+								<pre>{entry.data.bibtex}</pre>
+							</div>
+						)}
 					</article>
 				))}
 
@@ -91,24 +98,37 @@ const research = (await getCollection('research')).sort(
 		<Footer />
 
 		<script>
-			const detailsElements = document.querySelectorAll('details[name="bibtex"]');
-			detailsElements.forEach((details) => {
-				details.addEventListener('toggle', () => {
-					if (details.hasAttribute('open')) {
-						detailsElements.forEach((other) => {
-							if (other !== details && other.hasAttribute('open')) other.removeAttribute('open');
-						});
-					}
-				});
-			});
+			function initPublications() {
+				const toggles = Array.from(document.querySelectorAll('.pub-toggle'));
 
-			const copyBtns = document.querySelectorAll('.copy-bibtex-btn');
-			copyBtns.forEach((btn) => {
-				btn.addEventListener('click', async (e) => {
-					e.preventDefault();
-					const bibtex = btn.getAttribute('data-bibtex');
-					const textSpan = btn.querySelector('.copy-text');
-					if (bibtex && textSpan) {
+				toggles.forEach((btn) => {
+					// Guard against double-binding (runs on load AND astro:page-load).
+					if ((btn as HTMLElement).dataset.bound === 'true') return;
+					(btn as HTMLElement).dataset.bound = 'true';
+					btn.addEventListener('click', () => {
+						const id = btn.getAttribute('data-target');
+						const panel = id && document.getElementById(id);
+						if (!panel) return;
+						const isOpen = !panel.hidden;
+
+						// Within this article, close any other open panel/toggle first.
+						const article = btn.closest('article');
+						article?.querySelectorAll('.pub-panel').forEach((p) => { (p as HTMLElement).hidden = true; });
+						article?.querySelectorAll('.pub-toggle').forEach((t) => t.setAttribute('aria-expanded', 'false'));
+
+						// Toggle this one (clicking the open button closes it).
+						panel.hidden = isOpen;
+						btn.setAttribute('aria-expanded', String(!isOpen));
+					});
+				});
+
+				document.querySelectorAll('.copy-bibtex-btn').forEach((btn) => {
+					if ((btn as HTMLElement).dataset.bound === 'true') return;
+					(btn as HTMLElement).dataset.bound = 'true';
+					btn.addEventListener('click', async () => {
+						const bibtex = btn.getAttribute('data-bibtex');
+						const textSpan = btn.querySelector('.copy-text');
+						if (!bibtex || !textSpan) return;
 						try {
 							await navigator.clipboard.writeText(bibtex);
 							textSpan.textContent = 'Copied!';
@@ -116,9 +136,12 @@ const research = (await getCollection('research')).sort(
 						} catch (err) {
 							console.error('Failed to copy', err);
 						}
-					}
+					});
 				});
-			});
+			}
+
+			initPublications();
+			document.addEventListener('astro:page-load', initPublications);
 		</script>
 	</body>
 </html>

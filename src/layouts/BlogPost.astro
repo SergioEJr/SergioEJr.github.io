@@ -9,7 +9,7 @@ import Header from '../components/Header.astro';
 import TableOfContents from '../components/TableOfContents.astro';
 import { url } from '../utils/paths';
 import { pageFade } from '../utils/pageTransition';
-import { titleHtml, titlePlain } from '../utils/title';
+import { renderInline, stripInline } from '../utils/inlineText';
 
 type CategoryBadge = { label: string; color: string };
 // Blog-collection fields are optional here because this layout is also reused by
@@ -31,7 +31,7 @@ type Props = Partial<CollectionEntry<'blog'>['data']> & {
 
 const { title, description, pubDate, updatedDate, heroImage, authors, tags, headings = [], toc, noHero, showDate = true, categoryBadges = [] } = Astro.props;
 // Plain text (markers stripped) for metadata/alt; HTML form is used for the visible <h1>.
-const titleText = titlePlain(title);
+const titleText = stripInline(title);
 ---
 
 <html lang="en">
@@ -570,7 +570,7 @@ const titleText = titlePlain(title);
 										))}
 									</div>
 								)}
-								<h1 set:html={titleHtml(title)} />
+								<h1 set:html={renderInline(title)} />
 								{showDate && (
 									<div class="date">
 										<FormattedDate date={pubDate} />

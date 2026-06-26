@@ -63,7 +63,9 @@ const projects = defineCollection({
 		repo: z.string().url().optional(),
 		link: z.string().url().optional(),
 		featured: z.boolean().default(false),
-		order: z.number().default(0),
+		// Optional manual override. Projects with an `order` are listed first, in
+		// ascending order; everything else falls back to reverse-chronological.
+		order: z.number().optional(),
 	}),
 });
 
@@ -73,16 +75,16 @@ const research = defineCollection({
 	loader: glob({ base: './src/content/research', pattern: '**/*.{md,mdx}' }),
 	schema: z.object({
 		title: z.string(),
-		description: z.string(),
 		date: z.coerce.date(),
 		venue: z.string().optional(), // e.g. journal / conference / "In preparation"
-		paper: z.string().url().optional(), // arXiv or journal link
-		poster: z.string().optional(), // path to a poster PDF in the repo, e.g. /posters/foo.pdf
-		bibtex: z.string().optional(),
+		abstract: z.string().optional(), // shown in the inline "Abstract" dropdown
+		paper: z.string().url().optional(), // external DOI / arXiv link ("Paper" button)
+		poster: z.string().optional(), // path to a poster PDF, e.g. /posters/foo.pdf
+		code: z.string().url().optional(), // external repo link ("Code" button)
+		bibtex: z.string().optional(), // shown in the inline "BibTeX" dropdown
 		authors: z.array(z.string()).default([]),
 		tags: z.array(z.string()).default([]),
 		selected: z.boolean().default(false), // featured on the home page
-		order: z.number().default(0),
 	}),
 });
 

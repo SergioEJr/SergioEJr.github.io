@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { getCollection } from "astro:content";
 import { generateOgImage, type OgBadge } from "../utils/generateOgImage";
-import { titlePlain } from "../utils/title";
+import { stripInline } from "../utils/inlineText";
 import { getPublishedPosts } from "../utils/posts";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
 
@@ -31,7 +31,7 @@ export async function getStaticPaths() {
         .filter((post) => !post.data.externalUrl && !post.data.linkTo)
         .map((post) => ({
             params: { route: `blog/${post.id}` },
-            props: { title: titlePlain(post.data.title), subtitle: 'Blog Post' },
+            props: { title: stripInline(post.data.title), subtitle: 'Blog Post' },
         }));
 
     const projectPages = projects.map((project) => {

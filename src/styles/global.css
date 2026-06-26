@@ -371,6 +371,89 @@ a:hover {
 	color: var(--color-text-muted);
 }
 
+/* Research action buttons — all uniform (links and dropdown toggles alike). */
+.pub-links {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+	margin-top: 0.6rem;
+}
+.pub-btn {
+	display: inline-flex;
+	align-items: center;
+	font: inherit;
+	font-size: 0.82rem;
+	line-height: 1;
+	padding: 0.4rem 0.8rem;
+	/* Outline matches the text color. Use the variable directly (not currentColor):
+	   with the border-color transition + ClientRouter view transitions, a
+	   currentColor border can get stuck on its pre-navigation value. */
+	border: 1px solid var(--color-accent);
+	border-radius: 6px;
+	background: transparent;
+	color: var(--color-accent);
+	text-decoration: none;
+	cursor: pointer;
+	transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+.pub-btn:hover {
+	border-color: var(--color-accent);
+	background: var(--color-accent-light);
+}
+.pub-toggle[aria-expanded='true'] {
+	border-color: var(--color-accent);
+	background: var(--color-accent-light);
+}
+
+/* Inline panels (Abstract / BibTeX) — full-width delineated box that pushes the
+   rest of the list down when opened. */
+.pub-panel {
+	margin-top: 0.75rem;
+	padding: 1rem 1.15rem;
+	border: 1px solid var(--color-border);
+	border-radius: 10px;
+	background: var(--color-bg-offset);
+}
+.pub-panel p {
+	margin: 0;
+	color: var(--color-text-main);
+	font-style: normal;
+	line-height: 1.6;
+	font-size: 0.95rem;
+}
+.pub-panel--bibtex {
+	position: relative;
+}
+.pub-panel--bibtex pre {
+	margin: 0;
+	overflow-x: auto;
+	font-size: 0.8rem;
+	line-height: 1.5;
+	white-space: pre;
+	color: var(--color-text-main);
+}
+.copy-bibtex-btn {
+	position: absolute;
+	top: 0.6rem;
+	right: 0.6rem;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 0.25rem 0.5rem;
+	border: 1px solid var(--color-border);
+	border-radius: 6px;
+	background: var(--color-bg);
+	color: var(--color-text-muted);
+	font-size: 0.72rem;
+	cursor: pointer;
+	transition: color 0.2s ease, border-color 0.2s ease;
+}
+.copy-bibtex-btn:hover {
+	color: var(--color-accent);
+	border-color: var(--color-accent);
+}
+
 /* Team Card */
 .team-card {
 	text-align: center;
