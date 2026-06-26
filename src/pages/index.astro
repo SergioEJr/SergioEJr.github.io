@@ -42,8 +42,27 @@ const selectedResearch = (
         flex: 2;
         text-align: center;
         position: relative;
+        /* Perspective for the subtle tilt of the portrait link inside. */
+        perspective: 900px;
+      }
+      .hero-image-link {
+        display: inline-block;
+        border-radius: 50%;
+        /* --rx/--ry are driven by JS (lerped); default = flat & resting. */
+        --rx: 0deg;
+        --ry: 0deg;
+        transform: rotateX(var(--rx)) rotateY(var(--ry));
+        transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        will-change: transform;
+      }
+      /* Cancel the global a:hover dim/underline — over the photo it reads as a
+         grayish wash. The tilt is the only hover affordance we want here. */
+      .hero-image-link:hover {
+        opacity: 1;
+        text-decoration: none;
       }
       .hero-image img {
+        display: block;
         width: 280px;
         height: 280px;
         object-fit: cover;
@@ -124,14 +143,20 @@ const selectedResearch = (
           </div>
         </div>
         <div class="hero-image">
-          <img
-            src={url("/about/profile.jpeg")}
-            width={280}
-            height={280}
-            alt="Sergio Eraso"
-            fetchpriority="high"
-            decoding="async"
-          />
+          <a
+            href={url("/about")}
+            class="hero-image-link"
+            aria-label="About Sergio Eraso"
+          >
+            <img
+              src={url("/about/profile.jpeg")}
+              width={280}
+              height={280}
+              alt="Sergio Eraso"
+              fetchpriority="high"
+              decoding="async"
+            />
+          </a>
         </div>
       </section>
 
@@ -201,5 +226,70 @@ const selectedResearch = (
       </div>
     </main>
     <Footer />
+
+    <script is:inline>
+      function initHeroTilt() {
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+          return;
+        if (!window.matchMedia("(hover: hover)").matches) return;
+
+        const link = document.querySelector(".hero-image-link");
+        if (!link) return;
+        if (link._tiltCleanup) link._tiltCleanup();
+
+        // Extremely subtle: a few degrees of tilt that follows the cursor.
+        const MAX_TILT = 3; // degrees
+        const EASE = 0.12; // lerp factor/frame → smooth ramp & settle
+
+        let rx = 0,
+          ry = 0,
+          trx = 0,
+          try_ = 0,
+          raf = null;
+
+        function tick() {
+          raf = null;
+          rx += (trx - rx) * EASE;
+          ry += (try_ - ry) * EASE;
+          link.style.setProperty("--rx", rx.toFixed(3) + "deg");
+          link.style.setProperty("--ry", ry.toFixed(3) + "deg");
+          if (Math.abs(trx - rx) > 0.01 || Math.abs(try_ - ry) > 0.01)
+            schedule();
+        }
+        function schedule() {
+          if (raf == null) raf = requestAnimationFrame(tick);
+        }
+
+        // Disable the CSS transition while tracking; the lerp smooths it. On
+        // leave we restore it so the portrait eases back to flat.
+        function onMove(e) {
+          const r = link.getBoundingClientRect();
+          const px = (e.clientX - r.left) / r.width; // 0..1
+          const py = (e.clientY - r.top) / r.height; // 0..1
+          link.style.transition = "none";
+          try_ = (px - 0.5) * 2 * MAX_TILT; // rotateY: left→right
+          trx = -(py - 0.5) * 2 * MAX_TILT; // rotateX: top→back
+          schedule();
+        }
+        function onLeave() {
+          link.style.transition = "";
+          trx = 0;
+          try_ = 0;
+          schedule();
+        }
+
+        link.addEventListener("pointermove", onMove);
+        link.addEventListener("pointerleave", onLeave);
+        link._tiltCleanup = () => {
+          link.removeEventListener("pointermove", onMove);
+          link.removeEventListener("pointerleave", onLeave);
+          if (raf != null) cancelAnimationFrame(raf);
+          delete link._tiltCleanup;
+        };
+      }
+
+      initHeroTilt();
+      document.addEventListener("astro:page-load", initHeroTilt);
+    </script>
   </body>
 </html>
