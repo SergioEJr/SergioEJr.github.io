@@ -47,7 +47,7 @@ for (const p of projects)
       }
       .projects-hero {
         text-align: center;
-        margin-bottom: 4rem;
+        margin-bottom: 0.5rem;
         padding: 2rem 0;
       }
       .projects-hero h1 {
@@ -155,8 +155,8 @@ for (const p of projects)
         --glare-radius: 60%;
         --outline-accent: 95%;
         --outline-radius: 1000px;
-        --outline-falloff: 50%;
-        --outline-glow: 0.8;
+        --outline-falloff: 65%;
+        --outline-glow: 0.9;
         --outline-glow-size: 2px;
         transform: perspective(1200px) rotateX(var(--rx)) rotateY(var(--ry))
           translateY(var(--lift));
@@ -651,7 +651,7 @@ for (const p of projects)
         // card's short side from an edge (~140px), so any value beyond that
         // makes the outline always-on (no gating). To make the lit *arc* bigger,
         // use --outline-radius in the CSS, not this.
-        const EDGE_BAND = 400;
+        const EDGE_BAND = 500;
         // ────────────────────────────────────────────────────────────────────
 
         // Per-card animation state: current (rendered) vs target values.
