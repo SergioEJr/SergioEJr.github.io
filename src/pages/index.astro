@@ -2,6 +2,7 @@
 import BaseHead from "../components/BaseHead.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
+import HeroSim from "../components/HeroSim.astro";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
 import { getCollection } from "astro:content";
 import { url } from "../utils/paths";
@@ -28,71 +29,49 @@ const selectedResearch = (
   <head>
     <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
     <style>
+      /* The hero fills exactly one viewport below the sticky header, so on
+         landing the visitor sees only the simulation + description + buttons.
+         svh (small viewport height) is stable on mobile — it doesn't jump when
+         the browser URL bar shows/hides like vh does. --header-h matches the
+         nav height in Header.astro. */
       .hero {
+        --header-h: 4.5rem;
+        min-height: calc(100svh - var(--header-h));
+        padding: 1rem 0 1.25rem;
         display: flex;
-        align-items: center;
-        gap: 4rem;
-        padding: 4rem 0;
-        margin-bottom: 2rem;
+        flex-direction: column;
+        justify-content: center;
+        gap: 1.5rem;
+        /* Desktop needs visible overflow so HeroSim's full-bleed canvas/grid can
+           feather outside the text column. Mobile restores clipping below. */
+        position: relative;
+        overflow-x: visible;
       }
-      .hero-content {
-        flex: 3;
+      /* The sim box takes the leftover vertical space; intro/buttons size to
+         content. min-height keeps it usable on short screens. */
+      .hero > :global(.hero-sim) {
+        flex: 1 1 auto;
+        min-height: 14rem;
       }
-      .hero-image {
-        flex: 2;
+      .hero-intro {
+        flex: 0 0 auto;
+        max-width: 46rem;
+        margin: 0 auto;
         text-align: center;
-        position: relative;
-        /* Perspective for the subtle tilt of the portrait link inside. */
-        perspective: 900px;
       }
-      .hero-image-link {
-        display: inline-block;
-        position: relative;
-        border-radius: 50%;
-        /* --rx/--ry are driven by JS (lerped); default = flat & resting.
-           --mx/--my track the cursor (%), --glare is the live 0→1 opacity. */
-        --rx: 0deg;
-        --ry: 0deg;
-        --mx: 50%;
-        --my: 50%;
-        --glare: 0;
-        transform: rotateX(var(--rx)) rotateY(var(--ry));
-        transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-        will-change: transform;
+      .hero-intro p {
+        font-size: 1.05rem;
+        line-height: 1.6;
+        margin: 0 0 1.5rem;
       }
-      /* Very subtle glare: a soft white light that follows the cursor. Clipped
-         to the circular portrait and inset slightly to stay off the white ring.
-         --glare-strength caps how bright it gets. */
-      .hero-image-link::after {
-        content: "";
-        position: absolute;
-        inset: 6px; /* matches the img border so the glare stays on the photo */
-        border-radius: 50%;
-        pointer-events: none;
-        opacity: calc(var(--glare) * var(--glare-strength, 0.28));
-        background: radial-gradient(
-          circle at var(--mx) var(--my),
-          rgba(255, 255, 255, 0.9),
-          transparent 45%
-        );
-        mix-blend-mode: soft-light;
+      .hero-role {
+        color: var(--color-accent);
       }
-      /* Cancel the global a:hover dim/underline — over the photo it reads as a
-         grayish wash. The tilt is the only hover affordance we want here. */
-      .hero-image-link:hover {
-        opacity: 1;
-        text-decoration: none;
-      }
-      .hero-image img {
-        display: block;
-        width: 280px;
-        height: 280px;
-        object-fit: cover;
-        border-radius: 50%;
-        border: 6px solid var(--color-bg);
-        box-shadow:
-          0 0 0 1px var(--color-border),
-          0 12px 28px rgba(0, 0, 0, 0.55);
+      .hero-buttons {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
       }
 
       .pub-mini-item {
@@ -117,24 +96,21 @@ const selectedResearch = (
         color: var(--color-text-muted);
       }
 
-      .hero-buttons {
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
+      @media (min-width: 769px) {
+        .hero > :global(.hero-sim) {
+          /* Keep large monitors from diluting the fixed particle budget across
+             an overly tall domain; roughly matches a 14-inch laptop feel. */
+          max-height: 44rem;
+        }
       }
+
       @media (max-width: 768px) {
         .hero {
-          flex-direction: column-reverse;
-          text-align: center;
-          padding: 2rem 0;
-          gap: 2rem;
+          gap: 1.25rem;
+          overflow-x: clip;
         }
-        .hero-image img {
-          width: 200px;
-          height: 200px;
-        }
-        .hero-buttons {
-          justify-content: center;
+        .hero-intro p {
+          font-size: 0.95rem;
         }
       }
     </style>
@@ -143,42 +119,22 @@ const selectedResearch = (
     <Header />
     <main transition:animate={pageFade}>
       <section class="hero">
-        <div class="hero-content">
-          <h1 style="margin-bottom: 0.5rem; font-size: 3rem;">Sergio Eraso</h1>
-          <h2
-            style="font-weight: 400; color: var(--color-text-muted); margin-bottom: 1.5rem; font-family: var(--font-sans); text-transform: uppercase; letter-spacing: 0.05em; font-size: 1rem; border-bottom: none; padding-bottom: 0; display: block; margin-top: 0;"
-          >
-            PhD Student in Physics<br />
-            Massachusetts Institute of Technology
-          </h2>
-          <p style="font-size: 1.1rem; line-height: 1.7; margin-bottom: 2rem;">
-            I'm a physicist working on <strong
+        <HeroSim />
+        <div class="hero-intro">
+          <p>
+            <strong class="hero-role"
+              >PhD Student in Physics · MIT.</strong
+            >
+            I work on <strong
               >nonequilibrium statistical physics and biophysics</strong
-            >. I build models, simulations, and tools to understand how simple
+            >, building models, simulations, and tools to understand how simple
             local rules produce predictable large-scale behavior in complex
-            systems — and I'm increasingly applying that toolkit to problems
-            beyond academia.
+            systems — and increasingly applying that toolkit beyond academia.
           </p>
           <div class="hero-buttons">
             <a href={url("/publications")} class="btn">View Research</a>
-            <a href={url("/projects")} class="btn btn-outline">Projects</a>
+            <a href={url("/about")} class="btn btn-outline">About</a>
           </div>
-        </div>
-        <div class="hero-image">
-          <a
-            href={url("/about")}
-            class="hero-image-link"
-            aria-label="About Sergio Eraso"
-          >
-            <img
-              src={url("/about/profile.jpeg")}
-              width={280}
-              height={280}
-              alt="Sergio Eraso"
-              fetchpriority="high"
-              decoding="async"
-            />
-          </a>
         </div>
       </section>
 
@@ -248,92 +204,5 @@ const selectedResearch = (
       </div>
     </main>
     <Footer />
-
-    <script is:inline>
-      function initHeroTilt() {
-        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches)
-          return;
-        if (!window.matchMedia("(hover: hover)").matches) return;
-
-        const link = document.querySelector(".hero-image-link");
-        if (!link) return;
-        if (link._tiltCleanup) link._tiltCleanup();
-
-        // Extremely subtle: a few degrees of tilt that follows the cursor.
-        const MAX_TILT = 4; // degrees
-        const EASE = 0.12; // lerp factor/frame → smooth ramp & settle
-
-        let rx = 0,
-          ry = 0,
-          mx = 50,
-          my = 50,
-          glare = 0,
-          trx = 0,
-          try_ = 0,
-          tmx = 50,
-          tmy = 50,
-          tglare = 0,
-          raf = null;
-
-        function tick() {
-          raf = null;
-          rx += (trx - rx) * EASE;
-          ry += (try_ - ry) * EASE;
-          mx += (tmx - mx) * EASE;
-          my += (tmy - my) * EASE;
-          glare += (tglare - glare) * EASE;
-          link.style.setProperty("--rx", rx.toFixed(3) + "deg");
-          link.style.setProperty("--ry", ry.toFixed(3) + "deg");
-          link.style.setProperty("--mx", mx.toFixed(2) + "%");
-          link.style.setProperty("--my", my.toFixed(2) + "%");
-          link.style.setProperty("--glare", glare.toFixed(3));
-          if (
-            Math.abs(trx - rx) > 0.01 ||
-            Math.abs(try_ - ry) > 0.01 ||
-            Math.abs(tmx - mx) > 0.05 ||
-            Math.abs(tmy - my) > 0.05 ||
-            Math.abs(tglare - glare) > 0.002
-          )
-            schedule();
-        }
-        function schedule() {
-          if (raf == null) raf = requestAnimationFrame(tick);
-        }
-
-        // Disable the CSS transition while tracking; the lerp smooths it. On
-        // leave we restore it so the portrait eases back to flat.
-        function onMove(e) {
-          const r = link.getBoundingClientRect();
-          const px = (e.clientX - r.left) / r.width; // 0..1
-          const py = (e.clientY - r.top) / r.height; // 0..1
-          link.style.transition = "none";
-          try_ = (px - 0.5) * 2 * MAX_TILT; // rotateY: left→right
-          trx = -(py - 0.5) * 2 * MAX_TILT; // rotateX: top→back
-          tmx = px * 100;
-          tmy = py * 100;
-          tglare = 1;
-          schedule();
-        }
-        function onLeave() {
-          link.style.transition = "";
-          trx = 0;
-          try_ = 0;
-          tglare = 0;
-          schedule();
-        }
-
-        link.addEventListener("pointermove", onMove);
-        link.addEventListener("pointerleave", onLeave);
-        link._tiltCleanup = () => {
-          link.removeEventListener("pointermove", onMove);
-          link.removeEventListener("pointerleave", onLeave);
-          if (raf != null) cancelAnimationFrame(raf);
-          delete link._tiltCleanup;
-        };
-      }
-
-      initHeroTilt();
-      document.addEventListener("astro:page-load", initHeroTilt);
-    </script>
   </body>
 </html>

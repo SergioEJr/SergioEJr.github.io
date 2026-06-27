@@ -1,0 +1,864 @@
+---
+// HeroSim — active-matter "color-reveal" name hero.
+//
+// A live Active Brownian Particle (ABP) gas drifts across a <canvas> and passes
+// FREELY through the name's letters — the glyphs exert no force. The trick: a
+// particle is recolored to the heading accent color while it is inside a glyph,
+// so the moving gas spells out the name. The cursor is a repulsion well that
+// pushes the gas around. (An ABP gas evokes the owner's active-matter research.)
+//
+// The name is rendered twice: once as a real <h1> in the DOM (accessibility +
+// SEO; visually transparent) and once onto an offscreen canvas, whose alpha
+// mask becomes a signed field used only to test inside/outside for recoloring.
+//
+// Conventions mirror the hero-tilt script that used to live in index.astro:
+// prefers-reduced-motion / (hover: hover) guards, a requestAnimationFrame loop
+// with a re-init-safe cleanup handle for ClientRouter navigations, and CSS vars
+// read from :root so the sim follows the theme.
+import { SITE_TITLE } from "../consts";
+
+// The name renders on two lines. Each line is a wall the particles accumulate
+// against; the offscreen SDF draws the same lines at the same positions so the
+// particle crust lines up with the visible text.
+const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
+---
+
+<div class="hero-sim" data-hero-sim>
+  <!-- Background grid that fades softly into the page (extends beyond the box). -->
+  <div class="hero-sim-grid" aria-hidden="true"></div>
+  <canvas class="hero-sim-canvas" aria-hidden="true"></canvas>
+  <!-- Real, crawlable name for accessibility/SEO. Visually invisible and inert
+       (no selection / text cursor) so it doesn't break the simulation illusion;
+       the accent-colored particles passing through it spell the name. -->
+  <h1 class="hero-sim-name" aria-hidden="false">
+    {NAME_LINES.map((line) => <span class="hero-sim-line">{line}</span>)}
+  </h1>
+</div>
+
+<script>
+  type Vec = { x: number; y: number };
+
+  interface Particle {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    theta: number; // heading for self-propulsion
+  }
+
+  // Reusable per-mount controller so ClientRouter navigations don't stack loops.
+  function initHeroSim() {
+    const rootEl = document.querySelector<HTMLElement>("[data-hero-sim]");
+    if (!rootEl) return;
+    // Tear down a previous instance (re-init on astro:page-load).
+    (rootEl as any)._simCleanup?.();
+
+    const canvasEl =
+      rootEl.querySelector<HTMLCanvasElement>(".hero-sim-canvas");
+    const nameEl = rootEl.querySelector<HTMLElement>(".hero-sim-name");
+    if (!canvasEl || !nameEl) return;
+    const ctx2d = canvasEl.getContext("2d", { alpha: true });
+    if (!ctx2d) return;
+
+    // Non-null aliases so TypeScript keeps the narrowing inside the nested
+    // closures below (querySelector/getContext return nullable types).
+    const root: HTMLElement = rootEl;
+    const canvas: HTMLCanvasElement = canvasEl;
+    const ctx: CanvasRenderingContext2D = ctx2d;
+
+    // Each name line is rendered as its own wall (frontmatter consts aren't in
+    // script scope, so read the lines from the DOM).
+    const lineEls = Array.from(
+      root.querySelectorAll<HTMLElement>(".hero-sim-line"),
+    );
+
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const canHover = window.matchMedia("(hover: hover)").matches;
+
+    // ---- Tunables -------------------------------------------------------
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    let W = 0; // CSS px
+    let H = 0;
+    const MAX_SIM_W = 1512; // 14-inch MacBook-ish CSS viewport width
+    // CONSTANT DENSITY: legibility depends on particles-per-area, not raw count.
+    // We keep one particle per DENSITY px² so the gas looks identical at any
+    // window size — until we hit MAX_PARTICLES (perf cap), past which big screens
+    // thin out gracefully. Mobile gets a slightly denser, smaller-dot treatment
+    // for legibility in the tighter viewport.
+    const DENSITY = 12; // px² per particle (smaller = denser)
+    const MOBILE_DENSITY = 9;
+    const MAX_PARTICLES = 100000;
+    const isMobileSim = () => W < 600;
+    const density = () => (isMobileSim() ? MOBILE_DENSITY : DENSITY);
+    const targetCount = () => {
+      const area = Math.max(1, W * H);
+      return Math.min(Math.round(area / density()), MAX_PARTICLES);
+    };
+
+    // ===================================================================
+    // TWEAKABLE PARAMETERS — all the knobs for tuning the look live here.
+    //   DENSITY ........ gas density (px² per particle; smaller = denser) [above]
+    //   MAX_PARTICLES .. perf cap on particle count                      [above]
+    //   V0 ............. how fast particles drift
+    //   DR ............. how much they wander (rotational diffusion)
+    //   DOT_R .......... particle size (px radius)
+    //   GLOW ........... glow on activated (inside-letter) particles
+    //   ALPHA_OUT ...... opacity of the ambient (outside) gas
+    //   ALPHA_IN ....... opacity of the activated (inside-letter) particles
+    //   LIGHT_GAS / DARK_GAS ... outside-gas color per theme
+    //   inside color ... readColors() uses --color-accent (heading color)
+    //   CURSOR_R / CURSOR_PUSH . cursor repulsion size / strength
+    //   Grid look (opacity, size, bleed, fade) is in the <style> below.
+    // ===================================================================
+    const V0 = 100; // self-propulsion speed (px/s) — gentle drift
+    const DR = 1.4; // rotational diffusion (rad^2/s) — heading random walk
+    const DOT_R = 1.0; // particle radius (px) — small for crisp, dense letters
+    const MOBILE_DOT_R = 0.8;
+    const dotRadius = () => (isMobileSim() ? MOBILE_DOT_R : DOT_R);
+    const GLOW = 4; // shadowBlur on activated particles (cohesive letter glow)
+    const ALPHA_OUT = 0.4; // ambient gas opacity
+    const ALPHA_IN = 1.0; // activated (name) particle opacity
+    const CURSOR_R = 20; // cursor repulsion radius (px)
+    const CURSOR_PUSH = 5000; // cursor repulsion strength (pushes the gas)
+    const DAMP = 0.9; // velocity damping per step
+    const MAX_SPEED = 140; // px/s clamp
+    // Outside-gas color per theme. Light mode: a mid gray (darker than before so
+    // it's visible, lighter than the navy letters so the name still pops).
+    const DARK_GAS = ""; // "" → use --color-text-muted
+    const LIGHT_GAS = "#b3b3b3";
+
+    // ---- State ----------------------------------------------------------
+    let particles: Particle[] = [];
+    let raf: number | null = null;
+    let last = 0;
+    let running = false;
+    // The particle canvas is centered in the viewport and capped to a laptop-like
+    // width so huge monitors don't dilute the fixed particle budget. canvasLeft
+    // is the canvas's left in viewport coords, used to convert viewport positions
+    // into canvas-local coords.
+    let canvasLeft = 0;
+
+    // Wall field: a downsampled grid storing distance-to-glyph and the outward
+    // gradient (wall normal). Built from the rendered name's alpha mask.
+    const FIELD_STEP = 3; // px per field cell (downsample for speed)
+    let fieldW = 0;
+    let fieldH = 0;
+    let dist: Float32Array = new Float32Array(0); // signed distance (px), <0 inside glyph
+    // Parallel mask for the small "JR" superscript: 1 where a cell is inside a JR
+    // glyph. Particles there are colored magenta to echo the logo's pink glyphs.
+    let jrMask: Uint8Array = new Uint8Array(0);
+
+    // Colors, re-read on theme change. Particles drift freely everywhere; the
+    // ONLY thing the glyphs do is recolor a particle while it's inside a letter.
+    // So the name is spelled out by the inside-color particles passing through.
+    let dotColor = "#888"; // outside the text: subtle ambient gas
+    let insideColor = "#003366"; // inside a letter: the heading accent color
+    // "JR" superscript color — the logo's pink, so the sim echoes the brand.
+    const JR_COLOR = "#ff49ff";
+    function readColors() {
+      const cs = getComputedStyle(document.documentElement);
+      // Inside-text color = the color used for headings in this theme.
+      insideColor = cs.getPropertyValue("--color-accent").trim() || "#003366";
+      // Outside (ambient gas): muted in dark mode, but in light mode the muted
+      // text color is too dark and competes with the navy letters — use the
+      // light border gray so the activated letters clearly stand out.
+      const isDark =
+        document.documentElement.getAttribute("data-theme") === "dark";
+      dotColor = isDark
+        ? DARK_GAS || cs.getPropertyValue("--color-text-muted").trim() || "#888"
+        : LIGHT_GAS;
+    }
+
+    // ---- Wall field construction ---------------------------------------
+    // Render the name to an offscreen canvas matching the on-screen <h1>'s box
+    // and typography, read its alpha mask, then run a two-pass chamfer distance
+    // transform to get distance + gradient everywhere.
+    function buildField() {
+      if (W === 0 || H === 0) return;
+      fieldW = Math.max(1, Math.ceil(W / FIELD_STEP));
+      fieldH = Math.max(1, Math.ceil(H / FIELD_STEP));
+      const n = fieldW * fieldH;
+
+      const off = document.createElement("canvas");
+      off.width = fieldW;
+      off.height = fieldH;
+      const octx = off.getContext("2d");
+      if (!octx) return;
+
+      // Draw each visible name line into the mask at the SAME place the browser
+      // paints it, so the particle wall matches the text exactly. We read each
+      // line span's own box + computed font and center its real ink box (from
+      // measureText) on the span's center — canvas "middle" baseline doesn't
+      // match CSS line-height:1 centering for serif fonts (asymmetric
+      // ascent/descent), which would otherwise offset the SDF from the text.
+      const cs = getComputedStyle(nameEl);
+      const scale = 1 / FIELD_STEP;
+      const family = cs.fontFamily || "Georgia, serif";
+      const weight = cs.fontWeight || "700";
+      octx.fillStyle = "#fff";
+      octx.textAlign = "center";
+      octx.textBaseline = "alphabetic";
+
+      // Convert each name line's viewport rect into canvas-local space. The
+      // canvas may be narrower than the viewport on large screens, so subtract
+      // canvasLeft for x; y is measured from the sim box top.
+      const boxRect = root.getBoundingClientRect();
+      // Track the last line's ink box so the "JR" superscript can be placed just
+      // off its top-right corner without disturbing the name's own layout.
+      let lastLineRight = 0;
+      let lastLineTop = 0;
+      let lastFontPx = 64;
+      for (const lineEl of lineEls) {
+        const lcs = getComputedStyle(lineEl);
+        const fontPx =
+          parseFloat(lcs.fontSize) || parseFloat(cs.fontSize) || 64;
+        octx.font = `${weight} ${fontPx * scale}px ${family}`;
+        const r = lineEl.getBoundingClientRect();
+        const cx = (r.left - canvasLeft + r.width / 2) * scale;
+        const centerY = (r.top - boxRect.top + r.height / 2) * scale;
+        const text = (lineEl.textContent || "").trim();
+        const m = octx.measureText(text);
+        const baselineY =
+          centerY +
+          (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2;
+        octx.fillText(text, cx, baselineY);
+        // Real ink right edge (centered text → center ± half the measured width).
+        const inkHalf =
+          (m.actualBoundingBoxLeft + m.actualBoundingBoxRight || m.width) / 2;
+        lastLineRight = cx + inkHalf;
+        lastLineTop = (r.top - boxRect.top) * scale;
+        lastFontPx = fontPx;
+      }
+
+      const data = octx.getImageData(0, 0, fieldW, fieldH).data;
+      const inside = new Uint8Array(n);
+      for (let i = 0; i < n; i++) inside[i] = data[i * 4 + 3] > 40 ? 1 : 0;
+
+      // --- "JR" superscript mask (magenta particles; echoes the logo) --------
+      // Drawn on its own pass into a cleared offscreen, so it never perturbs the
+      // name's size/position/spacing. Placed just off the last line's top-right.
+      jrMask = new Uint8Array(n);
+      octx.clearRect(0, 0, fieldW, fieldH);
+      const jrPx = lastFontPx * 0.4 * scale; // small superscript
+      octx.font = `${weight} ${jrPx}px ${family}`;
+      octx.textAlign = "left";
+      octx.textBaseline = "alphabetic";
+      // Sit it as a superscript: x just past the last line's right edge, baseline
+      // near the cap height of that line (top + ~0.5em of the small glyph).
+      const jrX = lastLineRight + jrPx * 0.28;
+      const jrBaseline = lastLineTop + jrPx * 1.0;
+      octx.fillText("JR", jrX, jrBaseline);
+      const jrData = octx.getImageData(0, 0, fieldW, fieldH).data;
+      for (let i = 0; i < n; i++) jrMask[i] = jrData[i * 4 + 3] > 40 ? 1 : 0;
+      // Restore name-drawing defaults (not strictly needed past here).
+      octx.textAlign = "center";
+
+      const idx = (x: number, y: number) => y * fieldW + x;
+      const INF = 1e9;
+      const D1 = 1; // orthogonal cost
+      const D2 = Math.SQRT2; // diagonal cost
+
+      // Chamfer distance transform: distance from every cell to the nearest cell
+      // where `seed[i] === 1`. Two passes (forward + backward).
+      const chamfer = (seed: Uint8Array) => {
+        const d = new Float32Array(n);
+        for (let i = 0; i < n; i++) d[i] = seed[i] ? 0 : INF;
+        for (let y = 0; y < fieldH; y++) {
+          for (let x = 0; x < fieldW; x++) {
+            let v = d[idx(x, y)];
+            if (x > 0) v = Math.min(v, d[idx(x - 1, y)] + D1);
+            if (y > 0) v = Math.min(v, d[idx(x, y - 1)] + D1);
+            if (x > 0 && y > 0) v = Math.min(v, d[idx(x - 1, y - 1)] + D2);
+            if (x < fieldW - 1 && y > 0)
+              v = Math.min(v, d[idx(x + 1, y - 1)] + D2);
+            d[idx(x, y)] = v;
+          }
+        }
+        for (let y = fieldH - 1; y >= 0; y--) {
+          for (let x = fieldW - 1; x >= 0; x--) {
+            let v = d[idx(x, y)];
+            if (x < fieldW - 1) v = Math.min(v, d[idx(x + 1, y)] + D1);
+            if (y < fieldH - 1) v = Math.min(v, d[idx(x, y + 1)] + D1);
+            if (x < fieldW - 1 && y < fieldH - 1)
+              v = Math.min(v, d[idx(x + 1, y + 1)] + D2);
+            if (x > 0 && y < fieldH - 1)
+              v = Math.min(v, d[idx(x - 1, y + 1)] + D2);
+            d[idx(x, y)] = v;
+          }
+        }
+        return d;
+      };
+
+      // Signed distance field: distance to the glyph edge, negative INSIDE the
+      // glyph, positive outside. dOut = distance from outside cells to the glyph;
+      // dIn = distance from inside cells to the background. Combining the two
+      // gives a real inward distance (so the gradient points outward everywhere
+      // inside a letter, not just in a thin shell).
+      const notInside = new Uint8Array(n);
+      for (let i = 0; i < n; i++) notInside[i] = inside[i] ? 0 : 1;
+      const dOut = chamfer(inside); // 0 on glyph, grows outward
+      const dIn = chamfer(notInside); // 0 on background, grows inward
+
+      dist = new Float32Array(n);
+      for (let i = 0; i < n; i++) {
+        dist[i] = inside[i]
+          ? -dIn[i] * FIELD_STEP // negative inside
+          : dOut[i] * FIELD_STEP; // positive outside
+      }
+    }
+
+    // Field cell index for a CSS-px position (clamped to bounds).
+    function cellAt(px: number, py: number) {
+      const fx = Math.min(fieldW - 1, Math.max(0, (px / FIELD_STEP) | 0));
+      const fy = Math.min(fieldH - 1, Math.max(0, (py / FIELD_STEP) | 0));
+      return fy * fieldW + fx;
+    }
+    // True when a position falls inside a name glyph (→ heading-accent color).
+    function isInside(px: number, py: number) {
+      return dist[cellAt(px, py)] < 0;
+    }
+    // True when a position falls inside the "JR" superscript (→ magenta).
+    function isInsideJR(px: number, py: number) {
+      return jrMask[cellAt(px, py)] === 1;
+    }
+
+    // ---- Sizing ---------------------------------------------------------
+    function resize() {
+      const rect = root.getBoundingClientRect();
+      const prevW = W;
+      const prevH = H;
+      const viewportW = document.documentElement.clientWidth;
+      // Width is capped and centered on large screens; smaller screens keep the
+      // full viewport width. The grid remains viewport-wide in CSS.
+      W = Math.min(viewportW, MAX_SIM_W);
+      H = rect.height;
+      canvasLeft = (viewportW - W) / 2;
+      // Position the centered canvas relative to the sim box.
+      canvas.style.left = canvasLeft - rect.left + "px";
+      canvas.style.width = W + "px";
+      canvas.style.height = H + "px";
+      canvas.width = Math.round(W * DPR);
+      canvas.height = Math.round(H * DPR);
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+      // Rescale existing particles to the new domain so the gas stays UNIFORM
+      // across a resize. Without this, the canvas grows/shrinks but the old
+      // positions keep their pixel coords, leaving dense and empty bands.
+      if (prevW > 0 && prevH > 0 && particles.length) {
+        const sx = W / prevW;
+        const sy = H / prevH;
+        for (const p of particles) {
+          p.x *= sx;
+          p.y *= sy;
+        }
+      }
+
+      clearEdgeFade(); // gradient depends on W/H
+      buildField();
+      seedParticles();
+    }
+
+    // ---- Particles ------------------------------------------------------
+    function seedParticles() {
+      const want = targetCount();
+      // Preserve existing positions on resize where possible; just top up / trim.
+      if (particles.length > want) particles.length = want;
+      while (particles.length < want) {
+        // Particles pass through letters freely, so spawn anywhere.
+        particles.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          vx: 0,
+          vy: 0,
+          theta: Math.random() * Math.PI * 2,
+        });
+      }
+    }
+
+    // ---- Pointer --------------------------------------------------------
+    const cursor: Vec & { active: boolean } = { x: 0, y: 0, active: false };
+    function onMove(e: PointerEvent) {
+      // Particle coords live in canvas space: x is relative to the centered
+      // canvas, y is measured from the sim box top.
+      const rect = root.getBoundingClientRect();
+      cursor.x = e.clientX - canvasLeft;
+      cursor.y = e.clientY - rect.top;
+      cursor.active = true;
+    }
+    function onLeave() {
+      cursor.active = false;
+    }
+
+    // ---- Step + render --------------------------------------------------
+    // No inter-particle force: the gas is a cloud of independent ABPs. Uniform
+    // random spawn + rotational diffusion keeps them well spread, so we can run
+    // tens of thousands of particles cheaply (each step is O(N), no neighbours).
+    function step(dt: number) {
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        // Self-propulsion + rotational diffusion (the "active" part).
+        p.theta += Math.sqrt(2 * DR * dt) * gaussian();
+        let ax = V0 * Math.cos(p.theta);
+        let ay = V0 * Math.sin(p.theta);
+
+        // The glyphs exert NO force — particles pass through the letters freely.
+        // The name is revealed purely by recoloring particles while they're
+        // inside a glyph (see render()).
+
+        // Cursor repulsion well (the one interaction left).
+        if (cursor.active) {
+          const dx = p.x - cursor.x;
+          const dy = p.y - cursor.y;
+          const d2 = dx * dx + dy * dy;
+          if (d2 < CURSOR_R * CURSOR_R && d2 > 0.01) {
+            const d = Math.sqrt(d2);
+            const f = (CURSOR_PUSH * (1 - d / CURSOR_R)) / d;
+            ax += dx * f;
+            ay += dy * f;
+          }
+        }
+
+        // Integrate (semi-implicit) with damping + speed clamp.
+        p.vx = (p.vx + ax * dt) * DAMP;
+        p.vy = (p.vy + ay * dt) * DAMP;
+        const sp = Math.hypot(p.vx, p.vy);
+        if (sp > MAX_SPEED) {
+          p.vx = (p.vx / sp) * MAX_SPEED;
+          p.vy = (p.vy / sp) * MAX_SPEED;
+        }
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+
+        // Toroidal wrap so the field stays full.
+        if (p.x < 0) p.x += W;
+        else if (p.x >= W) p.x -= W;
+        if (p.y < 0) p.y += H;
+        else if (p.y >= H) p.y -= H;
+      }
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, W, H);
+      // Batched draw for speed at high particle counts: build the two paths
+      // (outside gas vs. inside-letter), then a single fill each. Squares (rect)
+      // are far cheaper than arcs at tens of thousands of dots. isInside() is
+      // evaluated once per particle and the result reused for both passes.
+      const half = dotRadius();
+      const sz = half * 2;
+
+      // Classify each particle once into JR (magenta) / name (accent) / outside
+      // (ambient gas), then draw each group as one batched fill. JR is checked
+      // first (it's a small disjoint mask); the result is reused so isInside /
+      // isInsideJR are each evaluated at most once per particle.
+      ctx.beginPath();
+      let anyInside = false;
+      let anyJR = false;
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        if (isInsideJR(p.x, p.y)) {
+          anyJR = true;
+          continue;
+        }
+        if (isInside(p.x, p.y)) {
+          anyInside = true;
+          continue;
+        }
+        ctx.rect(p.x - half, p.y - half, sz, sz);
+      }
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = ALPHA_OUT;
+      ctx.fillStyle = dotColor;
+      ctx.fill();
+
+      if (anyInside) {
+        // Inside the letters: heading accent + a soft GLOW so the activated
+        // particles read as one cohesive letter shape (this makes the name pop,
+        // especially in light mode). The shadow is set once and applies to the
+        // whole batched fill, so it stays cheap.
+        ctx.beginPath();
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          if (isInsideJR(p.x, p.y) || !isInside(p.x, p.y)) continue;
+          ctx.rect(p.x - half, p.y - half, sz, sz);
+        }
+        ctx.globalAlpha = ALPHA_IN;
+        ctx.fillStyle = insideColor;
+        ctx.shadowColor = insideColor;
+        ctx.shadowBlur = GLOW;
+        ctx.fill();
+        ctx.fill(); // second fill stacks the glow for a denser core
+        ctx.shadowBlur = 0;
+      }
+
+      if (anyJR) {
+        // "JR" superscript: magenta, matching the logo's pink glyphs.
+        ctx.beginPath();
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          if (!isInsideJR(p.x, p.y)) continue;
+          ctx.rect(p.x - half, p.y - half, sz, sz);
+        }
+        ctx.globalAlpha = ALPHA_IN;
+        ctx.fillStyle = JR_COLOR;
+        ctx.shadowColor = JR_COLOR;
+        ctx.shadowBlur = GLOW;
+        ctx.fill();
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      // SOFT EDGES (baked into the canvas, not CSS mask — robust across
+      // browsers/DPR). Erase the field toward ALL FOUR edges so the gas fades to
+      // transparent and the page background shows through — no hard rectangular
+      // boundary anywhere. A single radial gradient only reaches full opacity at
+      // the corners (its radius is the half-diagonal), leaving the top/bottom and
+      // side mid-edges under-erased — that was the visible hard edge. Instead we
+      // erase with two LINEAR gradients (one per axis), each fully opaque at its
+      // pair of edges, so every edge feathers out uniformly.
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.fillStyle = edgeFadeX();
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = edgeFadeY();
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalCompositeOperation = "source-over";
+    }
+
+    // Cached edge-fade gradients (opaque at the rim → erases; clear in the
+    // middle → keeps). One per axis; together they feather all four edges.
+    // Rebuilt on resize via clearEdgeFade(). FADE is the fraction of each side
+    // over which the fade happens (0.30 → outer 30% of each side feathers out).
+    // On narrow (mobile) screens the box is much skinnier, so the same fraction
+    // eats into the name — use a gentler horizontal fade there.
+    const FADE = 0.3; // vertical (top/bottom) fade — plenty of room
+    const fadeX = () => (W < 600 ? 0.16 : 0.3); // horizontal fade, gentler on mobile
+    let _edgeFadeX: CanvasGradient | null = null;
+    let _edgeFadeY: CanvasGradient | null = null;
+    function clearEdgeFade() {
+      _edgeFadeX = null;
+      _edgeFadeY = null;
+    }
+    function edgeFadeX(): CanvasGradient {
+      if (_edgeFadeX) return _edgeFadeX;
+      const f = fadeX();
+      const g = ctx.createLinearGradient(0, 0, W, 0);
+      g.addColorStop(0, "rgba(0,0,0,1)"); // erase left edge
+      g.addColorStop(f, "rgba(0,0,0,0)");
+      g.addColorStop(1 - f, "rgba(0,0,0,0)");
+      g.addColorStop(1, "rgba(0,0,0,1)"); // erase right edge
+      _edgeFadeX = g;
+      return g;
+    }
+    function edgeFadeY(): CanvasGradient {
+      if (_edgeFadeY) return _edgeFadeY;
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, "rgba(0,0,0,1)"); // erase top edge
+      g.addColorStop(FADE, "rgba(0,0,0,0)");
+      g.addColorStop(1 - FADE, "rgba(0,0,0,0)");
+      g.addColorStop(1, "rgba(0,0,0,1)"); // erase bottom edge
+      _edgeFadeY = g;
+      return g;
+    }
+
+    // Box-Muller normal.
+    let spare: number | null = null;
+    function gaussian() {
+      if (spare !== null) {
+        const v = spare;
+        spare = null;
+        return v;
+      }
+      let u = 0,
+        v = 0,
+        s = 0;
+      do {
+        u = Math.random() * 2 - 1;
+        v = Math.random() * 2 - 1;
+        s = u * u + v * v;
+      } while (s === 0 || s >= 1);
+      const m = Math.sqrt((-2 * Math.log(s)) / s);
+      spare = v * m;
+      return u * m;
+    }
+
+    function frame(now: number) {
+      raf = null;
+      if (!running) return;
+      let dt = (now - last) / 1000;
+      last = now;
+      // Cap dt so a backgrounded/janky tab doesn't explode the sim on resume.
+      if (!isFinite(dt) || dt <= 0) dt = 1 / 60;
+      dt = Math.min(dt, 1 / 30);
+      step(dt);
+      render();
+      schedule();
+    }
+    function schedule() {
+      if (raf == null) raf = requestAnimationFrame(frame);
+    }
+
+    function start() {
+      if (running || reduceMotion) return;
+      running = true;
+      last = performance.now();
+      schedule();
+    }
+    function stop() {
+      running = false;
+      if (raf != null) {
+        cancelAnimationFrame(raf);
+        raf = null;
+      }
+    }
+
+    // ---- Wire up --------------------------------------------------------
+    readColors();
+    resize();
+
+    if (reduceMotion) {
+      // Static frame: let the swarm relax a few steps so an outline still forms,
+      // then draw once. No RAF.
+      for (let k = 0; k < 80; k++) step(1 / 60);
+      render();
+    } else {
+      // Pause when the hero scrolls offscreen.
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (e.isIntersecting) start();
+            else stop();
+          }
+        },
+        { threshold: 0 },
+      );
+      io.observe(root);
+
+      const onVisibility = () => {
+        if (document.hidden) stop();
+        else if (isOnScreen()) start();
+      };
+      document.addEventListener("visibilitychange", onVisibility);
+
+      function isOnScreen() {
+        const r = root.getBoundingClientRect();
+        return r.bottom > 0 && r.top < window.innerHeight;
+      }
+
+      if (canHover) {
+        root.addEventListener("pointermove", onMove);
+        root.addEventListener("pointerleave", onLeave);
+      }
+
+      // Debounced resize → rebuild field + canvas.
+      let resizeT: number | null = null;
+      const onResize = () => {
+        if (resizeT) clearTimeout(resizeT);
+        resizeT = window.setTimeout(resize, 150);
+      };
+      window.addEventListener("resize", onResize);
+
+      // Rebuild the wall field once the webfont is ready (glyph metrics change).
+      if ((document as any).fonts?.ready) {
+        (document as any).fonts.ready.then(() => {
+          buildField();
+        });
+      }
+
+      // Recolor (and rebuild, in case weight/color changed) on theme toggle.
+      const mo = new MutationObserver(() => {
+        readColors();
+        buildField();
+      });
+      mo.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-theme"],
+      });
+
+      (root as any)._simCleanup = () => {
+        stop();
+        io.disconnect();
+        mo.disconnect();
+        document.removeEventListener("visibilitychange", onVisibility);
+        root.removeEventListener("pointermove", onMove);
+        root.removeEventListener("pointerleave", onLeave);
+        window.removeEventListener("resize", onResize);
+        if (resizeT) clearTimeout(resizeT);
+        delete (root as any)._simCleanup;
+      };
+
+      if (isOnScreen()) start();
+    }
+  }
+
+  initHeroSim();
+  document.addEventListener("astro:page-load", initHeroSim);
+</script>
+
+<style>
+  .hero-sim {
+    position: relative;
+    /* Break OUT of the content column so the simulation is a touch wider than the
+       text/buttons below it, giving the name more room to breathe. The negative
+       inline margins pull it past the column on both sides (capped so it never
+       causes horizontal scroll); width then fills the widened box. The grid
+       bleeds even further past this (negative inset below) so it reads as part of
+       the page background, not a framed panel. */
+    --sim-bleed: clamp(0px, 6vw, 7rem);
+    width: calc(100% + 2 * var(--sim-bleed));
+    margin-inline: calc(-1 * var(--sim-bleed));
+    min-height: 14rem;
+    /* Establish a container so the name can size in cqw (panel-width units). */
+    container-type: inline-size;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    isolation: isolate;
+    /* No border/clip: the panel blends into the page (soft edges below). */
+  }
+
+  /* Background grid. Mobile keeps the tuned, panel-local treatment below.
+     Desktop overrides anchor it to the viewport so it reads as page background,
+     not a framed simulation layer. */
+  .hero-sim-grid {
+    position: absolute;
+    /* Tuned mobile/default footprint. Desktop gets a wider viewport-anchored
+       treatment in the min-width override below. */
+    inset: -22% -12%;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(var(--color-border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
+    background-size: 46px 46px;
+    background-position: center;
+    opacity: 0.28; /* grid visibility — lower = fainter */
+    /* Mobile/default keeps the existing radial feathering. */
+    -webkit-mask-image: radial-gradient(
+      ellipse 60% 65% at center,
+      #000 25%,
+      transparent 60%
+    );
+    mask-image: radial-gradient(
+      ellipse 60% 65% at center,
+      #000 25%,
+      transparent 60%
+    );
+  }
+
+  .hero-sim-canvas {
+    position: absolute;
+    /* JS sizes and centers this canvas. It spans the viewport on laptop/mobile
+       and caps to a laptop-like width on large desktops, with baked edge fades
+       preventing a hard rectangular boundary. */
+    top: 0;
+    bottom: 0;
+    left: 0; /* overridden in JS via inline left/width to reach viewport edges */
+    z-index: 2;
+    pointer-events: none; /* never blocks buttons/links below */
+    /* Soft edges are baked into the canvas pixels (radial destination-out fade
+       in render()), which is robust across browsers/DPR — no CSS mask needed. */
+  }
+
+  .hero-sim-name {
+    position: relative;
+    z-index: 1; /* under the canvas: particles render over it */
+    margin: 0;
+    padding: 0 0.5rem;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    line-height: 0.95;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Size relative to the PANEL width (container query unit), not the viewport,
+       so each line fills the column consistently at any window size — including
+       mobile, where the name should nearly span the width. */
+    font-size: min(20cqw, 8.5rem);
+    /* COLOR-REVEAL: the name is spelled out by the accent-colored particles
+       passing through the letters (rendered on the canvas above). The <h1> stays
+       in the DOM for accessibility/SEO but is visually invisible AND inert — no
+       text selection or I-beam cursor, so it doesn't break the sim illusion. */
+    color: transparent;
+    text-shadow: none;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: default;
+    pointer-events: none;
+  }
+  .hero-sim-line {
+    display: block;
+    white-space: nowrap; /* each line is one row (matches the SDF) */
+  }
+
+  @media (min-width: 769px) {
+    .hero-sim {
+      /* With the parent no longer clipping on desktop, keep the widened sim
+         centered but never wider than the viewport. */
+      width: min(calc(100% + 2 * var(--sim-bleed)), 100vw);
+      margin-inline: 0;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .hero-sim-grid {
+      /* Full-bleed on desktop: the grid spans the viewport rather than the
+         local panel, so it reads like a site background passing through the sim. */
+      top: -18%;
+      bottom: -18%;
+      left: calc(50% - 50vw);
+      width: 100vw;
+      inset-inline: auto;
+      background-size: 48px 48px;
+      opacity: 0.24;
+      /* Feather independently along each axis so all four edges dissolve
+         evenly; a radial-only mask leaves the side midpoints too abrupt. */
+      -webkit-mask-image:
+        linear-gradient(
+          to right,
+          transparent 0,
+          #000 18%,
+          #000 82%,
+          transparent 100%
+        ),
+        linear-gradient(
+          to bottom,
+          transparent 0,
+          #000 20%,
+          #000 80%,
+          transparent 100%
+        );
+      -webkit-mask-composite: source-in;
+      mask-image:
+        linear-gradient(
+          to right,
+          transparent 0,
+          #000 18%,
+          #000 82%,
+          transparent 100%
+        ),
+        linear-gradient(
+          to bottom,
+          transparent 0,
+          #000 20%,
+          #000 80%,
+          transparent 100%
+        );
+      mask-composite: intersect;
+    }
+  }
+
+  @media (max-width: 768px) {
+    /* On mobile the name should fill most of the (narrow) column but leave a
+       little air on each side so the edge fade doesn't clip the letters. */
+    .hero-sim-name {
+      font-size: min(20cqw, 5.25rem);
+    }
+    .hero-sim-grid {
+      background-size: 34px 34px;
+    }
+  }
+</style>

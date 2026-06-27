@@ -1,0 +1,11 @@
+import { chromium } from "playwright";
+const theme=process.argv[2]||"dark", w=+(process.argv[3]||1300), h=+(process.argv[4]||950), out=process.argv[5]||"/tmp/h.png";
+const b = await chromium.launch();
+const p = await b.newPage({ viewport: { width: w, height: h } });
+p.on("pageerror", e=>console.log("[pageerror]", e.message));
+await p.emulateMedia({ colorScheme: theme, reducedMotion:"no-preference" });
+await p.goto("http://localhost:4399", { waitUntil:"networkidle" });
+await p.waitForTimeout(4500);
+await p.screenshot({ path: out });
+console.log("saved", out);
+await b.close();

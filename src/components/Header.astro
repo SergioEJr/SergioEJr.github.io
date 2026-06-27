@@ -379,6 +379,8 @@ const brandLogoSvg = logoSvg
     max-width: var(--max-width);
     margin: 0 auto;
     height: 4.5rem;
+    /* Anchor for the absolutely-centered nav menu. */
+    position: relative;
   }
   h2 {
     margin: 0;
@@ -460,8 +462,14 @@ const brandLogoSvg = logoSvg
     display: flex;
     align-items: center;
     gap: 0.25rem;
-    /* Anchor for the sliding underline. */
-    position: relative;
+    /* Centered in the nav independent of the (uneven) brand/action widths on
+       either side: taken out of flow and pinned to the nav's true horizontal
+       center. The sliding underline positions itself against the live rects of
+       these links, so it still tracks correctly. */
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
     /* Glow color for nav links + underline. In light mode the accent is a dark
        navy that wouldn't read as a glow, so glow with the brighter accent
        blue; in dark mode the accent itself is bright enough. */
