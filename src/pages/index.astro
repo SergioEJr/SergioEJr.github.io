@@ -47,13 +47,35 @@ const selectedResearch = (
       }
       .hero-image-link {
         display: inline-block;
+        position: relative;
         border-radius: 50%;
-        /* --rx/--ry are driven by JS (lerped); default = flat & resting. */
+        /* --rx/--ry are driven by JS (lerped); default = flat & resting.
+           --mx/--my track the cursor (%), --glare is the live 0→1 opacity. */
         --rx: 0deg;
         --ry: 0deg;
+        --mx: 50%;
+        --my: 50%;
+        --glare: 0;
         transform: rotateX(var(--rx)) rotateY(var(--ry));
         transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
         will-change: transform;
+      }
+      /* Very subtle glare: a soft white light that follows the cursor. Clipped
+         to the circular portrait and inset slightly to stay off the white ring.
+         --glare-strength caps how bright it gets. */
+      .hero-image-link::after {
+        content: "";
+        position: absolute;
+        inset: 6px; /* matches the img border so the glare stays on the photo */
+        border-radius: 50%;
+        pointer-events: none;
+        opacity: calc(var(--glare) * var(--glare-strength, 0.28));
+        background: radial-gradient(
+          circle at var(--mx) var(--my),
+          rgba(255, 255, 255, 0.9),
+          transparent 45%
+        );
+        mix-blend-mode: soft-light;
       }
       /* Cancel the global a:hover dim/underline — over the photo it reads as a
          grayish wash. The tilt is the only hover affordance we want here. */
@@ -238,22 +260,40 @@ const selectedResearch = (
         if (link._tiltCleanup) link._tiltCleanup();
 
         // Extremely subtle: a few degrees of tilt that follows the cursor.
-        const MAX_TILT = 3; // degrees
+        const MAX_TILT = 4; // degrees
         const EASE = 0.12; // lerp factor/frame → smooth ramp & settle
 
         let rx = 0,
           ry = 0,
+          mx = 50,
+          my = 50,
+          glare = 0,
           trx = 0,
           try_ = 0,
+          tmx = 50,
+          tmy = 50,
+          tglare = 0,
           raf = null;
 
         function tick() {
           raf = null;
           rx += (trx - rx) * EASE;
           ry += (try_ - ry) * EASE;
+          mx += (tmx - mx) * EASE;
+          my += (tmy - my) * EASE;
+          glare += (tglare - glare) * EASE;
           link.style.setProperty("--rx", rx.toFixed(3) + "deg");
           link.style.setProperty("--ry", ry.toFixed(3) + "deg");
-          if (Math.abs(trx - rx) > 0.01 || Math.abs(try_ - ry) > 0.01)
+          link.style.setProperty("--mx", mx.toFixed(2) + "%");
+          link.style.setProperty("--my", my.toFixed(2) + "%");
+          link.style.setProperty("--glare", glare.toFixed(3));
+          if (
+            Math.abs(trx - rx) > 0.01 ||
+            Math.abs(try_ - ry) > 0.01 ||
+            Math.abs(tmx - mx) > 0.05 ||
+            Math.abs(tmy - my) > 0.05 ||
+            Math.abs(tglare - glare) > 0.002
+          )
             schedule();
         }
         function schedule() {
@@ -269,12 +309,16 @@ const selectedResearch = (
           link.style.transition = "none";
           try_ = (px - 0.5) * 2 * MAX_TILT; // rotateY: left→right
           trx = -(py - 0.5) * 2 * MAX_TILT; // rotateX: top→back
+          tmx = px * 100;
+          tmy = py * 100;
+          tglare = 1;
           schedule();
         }
         function onLeave() {
           link.style.transition = "";
           trx = 0;
           try_ = 0;
+          tglare = 0;
           schedule();
         }
 
