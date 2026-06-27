@@ -331,14 +331,47 @@ const brandLogoSvg = logoSvg
     flex-shrink: 0;
     /* Integral sign + "e" color: black in light mode, theme cyan in dark. */
     --brand-logo-primary: #000;
+    /* Neon-glow colors per symbol. The cyan/primary glow follows the theme;
+       in light mode the symbol is black, so we glow with the theme cyan
+       rather than black so it actually reads as light. */
+    --brand-glow-primary: #77a4f5;
+    --brand-glow-secondary: #ff49ff;
   }
   .brand-logo :global(svg) {
     width: 100%;
     height: 100%;
     display: block;
+    /* An <svg> clips to its viewBox by default, which would chop the per-path
+       drop-shadow glow at the artwork's edges. Let it paint outside the
+       viewport so the halo can spread. */
+    overflow: visible;
   }
   :global(html[data-theme="dark"]) .brand-logo {
-    --brand-logo-primary: #66ccff;
+    --brand-logo-primary: var(--color-accent);
+    --brand-glow-primary: var(--color-accent);
+  }
+
+  /* Neon-tube hover glow: each symbol emits its own color via stacked
+     drop-shadows (tight bright core + softer outer halo). Applied per path
+     class so the two-tone logo produces a two-tone glow. */
+  .brand-logo :global(.cls-1),
+  .brand-logo :global(.cls-2) {
+    transition: filter 0.3s ease;
+  }
+  .brand:hover .brand-logo :global(.cls-1) {
+    filter: drop-shadow(0 0 6px var(--brand-glow-primary))
+      drop-shadow(0 0 16px var(--brand-glow-primary));
+  }
+  .brand:hover .brand-logo :global(.cls-2) {
+    filter: drop-shadow(0 0 6px var(--brand-glow-secondary))
+      drop-shadow(0 0 16px var(--brand-glow-secondary));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .brand-logo :global(.cls-1),
+    .brand-logo :global(.cls-2) {
+      transition: none;
+    }
   }
 
   .internal-links {
