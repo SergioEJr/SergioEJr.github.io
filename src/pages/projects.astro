@@ -137,13 +137,27 @@ for (const p of projects)
         /* ── Glare / outline tunables (CSS side) ──────────────────────────
            Edit these; they take effect on save (CSS, no script caching).
            --glare-strength: peak opacity of the bulk accent glow (0..1).
+                             Set per-theme below — stronger in dark mode.
            --glare-radius:   how far the bulk glow spreads from the cursor.
            --outline-accent: peak % of accent in the border near the cursor.
-           --outline-radius: how far along the border the accent reaches. */
-        --glare-strength: 0.1;
-        --glare-radius: 55%;
+           --outline-radius: size of the activated outline region (bigger = the
+                             accent lights up more of the border around cursor).
+           --outline-falloff: where the accent fully fades back to the resting
+                             color, as a % of --outline-radius (lower = softer/
+                             more spread, higher = tighter).
+           --outline-glow:   opacity (0..1) of the wider accent glow that bleeds
+                             inward from the edge near the cursor — this is what
+                             gives the activation visible thickness beyond the
+                             hairline border. 0 = just the thin border ring.
+           --outline-glow-size: how far (px) that inner glow reaches into the
+                             card from the edge. */
+        --glare-strength: 0.15; /* light mode — more noticeable */
+        --glare-radius: 60%;
         --outline-accent: 95%;
-        --outline-radius: 130px;
+        --outline-radius: 1000px;
+        --outline-falloff: 50%;
+        --outline-glow: 0.8;
+        --outline-glow-size: 2px;
         transform: perspective(1200px) rotateX(var(--rx)) rotateY(var(--ry))
           translateY(var(--lift));
         transition:
@@ -154,6 +168,13 @@ for (const p of projects)
           0 4px 6px -1px rgba(0, 0, 0, 0.05),
           0 2px 4px -1px rgba(0, 0, 0, 0.03);
       }
+      /* Dark mode: keep the bulk glow subtle, but push the outline accent
+         harder — accent-vs-dark-border has less contrast than vs the light
+         border, so it needs a higher mix to read as strongly. */
+      :global(html[data-theme="dark"]) .project-card {
+        --glare-strength: 0.05;
+        --outline-accent: 130%;
+      }
       /* Glare: a soft radial light that follows the cursor, sitting above
 			   the card content but below the badges/links (z-index handled below).
 			   --mx/--my are the pointer position (in %), --glare is the opacity.
@@ -162,7 +183,7 @@ for (const p of projects)
         content: "";
         position: absolute;
         inset: 0;
-        z-index: 3;
+        z-index: 1;
         pointer-events: none;
         border-radius: inherit;
         /* Bulk glow: a soft accent light that follows the cursor. Opacity is the
@@ -197,7 +218,7 @@ for (const p of projects)
               calc(var(--outline-accent) * var(--glare, 0) * var(--edge, 0)),
             var(--color-border)
           ),
-          var(--color-border) 70%
+          var(--color-border) var(--outline-falloff)
         );
         -webkit-mask:
           linear-gradient(#fff 0 0) content-box,
@@ -208,16 +229,54 @@ for (const p of projects)
           linear-gradient(#fff 0 0);
         mask-composite: exclude;
       }
+      /* Inner edge glow: a wider, soft accent that bleeds inward from the border
+         near the cursor, giving the activation real thickness beyond the 1px
+         ring. Same --mx/--my/--glare/--edge drivers. The mask is a feathered
+         band hugging the card edge: opaque at the border, fading to transparent
+         --outline-glow-size px inward (so it glows along the edge, not the
+         center). The accent radial still localizes it near the cursor. */
+      .edge-glow {
+        position: absolute;
+        inset: 0;
+        /* Above the image/content (z-index 2) so the edge glow rides over the
+           hero image too, instead of being clipped where the picture starts.
+           It's pointer-events:none, so it doesn't block the click overlay. */
+        z-index: 3;
+        pointer-events: none;
+        border-radius: inherit;
+        opacity: calc(var(--glare, 0) * var(--edge, 0) * var(--outline-glow));
+        background: radial-gradient(
+          var(--outline-radius) circle at var(--mx, 50%) var(--my, 50%),
+          var(--color-accent),
+          transparent var(--outline-falloff)
+        );
+        /* Feathered edge band via a mask that is opaque at the border edges and
+           fades inward. Built from the xor of the full box and an inset box that
+           is itself softened by the gradient stops. */
+        -webkit-mask:
+          linear-gradient(#fff 0 0) content-box,
+          linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask:
+          linear-gradient(#fff 0 0) content-box,
+          linear-gradient(#fff 0 0);
+        mask-composite: exclude;
+        padding: var(--outline-glow-size);
+      }
       /* Whole card clickable via the title's stretched link */
       .card-link {
         color: inherit;
         text-decoration: none;
       }
-      .card-link::after {
-        content: "";
+      /* Whole-card click target. Anchored to .project-card (not the content
+         wrapper, which now has its own stacking context), so it covers the
+         entire card — image included — and sits above the content (z-index 2)
+         so clicks anywhere navigate. Interactive children (repo icon, badges)
+         raise themselves above this to stay separately clickable. */
+      .card-link-overlay {
         position: absolute;
         inset: 0;
-        z-index: 1;
+        z-index: 3;
       }
       .project-footer {
         display: flex;
@@ -229,7 +288,7 @@ for (const p of projects)
       /* Repo icon sits above the stretched link so it stays separately clickable */
       .repo-icon {
         position: relative;
-        z-index: 2;
+        z-index: 4;
         display: inline-flex;
         color: var(--color-text-muted);
         transition:
@@ -242,7 +301,9 @@ for (const p of projects)
       }
       .project-card:hover {
         box-shadow: var(--shadow-lg);
-        border-color: var(--color-accent);
+        /* Note: no border-color change here — the cursor-following ::after ring
+           is the only thing that should accent the outline. Coloring the whole
+           border on hover washed out that localized effect. */
       }
       /* When not tilting (no JS / reduced motion), still give a gentle lift. */
       .project-card:hover {
@@ -250,6 +311,7 @@ for (const p of projects)
       }
       .project-image {
         position: relative;
+        z-index: 2; /* above the cursor glow (z-index 1), like the text content */
         width: 100%;
         aspect-ratio: 16 / 9;
         overflow: hidden;
@@ -314,6 +376,10 @@ for (const p of projects)
         flex-direction: column;
         padding: 1.75rem;
         flex: 1;
+        /* Sit above the cursor glow (z-index 1) so text stays crisp and is not
+           grayed out by the glow painting over it. */
+        position: relative;
+        z-index: 2;
       }
       .project-year {
         font-size: 0.75rem;
@@ -418,6 +484,13 @@ for (const p of projects)
                 class="project-card"
                 data-categories={project.data.categories.join(",")}
               >
+                <span class="edge-glow" aria-hidden="true" />
+                <a
+                  class="card-link-overlay"
+                  href={url(`/projects/${project.id}/`)}
+                  aria-label={project.data.title}
+                  tabindex="-1"
+                />
                 <div class="project-image">
                   <img
                     src={
@@ -572,8 +645,13 @@ for (const p of projects)
         const MAX_TILT = 1; // peak rotation toward the cursor, in degrees
         const LIFT = -8; // peak vertical lift on hover, in px (negative = up)
         const EASE = 0.14; // 0..1 lerp factor/frame — higher = snappier, lower = floatier
-        const EDGE_BAND = 120; // px from a border within which the outline lights up
-        //   (cursor deeper than this into the content → outline stays neutral)
+        // Edge gate: how far (px) the cursor can be from the nearest border and
+        // still activate the outline. Cursor deeper than this → outline stays
+        // neutral. NOTE: this saturates — the cursor can be at most ~half the
+        // card's short side from an edge (~140px), so any value beyond that
+        // makes the outline always-on (no gating). To make the lit *arc* bigger,
+        // use --outline-radius in the CSS, not this.
+        const EDGE_BAND = 400;
         // ────────────────────────────────────────────────────────────────────
 
         // Per-card animation state: current (rendered) vs target values.

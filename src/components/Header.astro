@@ -6,8 +6,12 @@ import { url } from "../utils/paths";
 import logoSvg from "../../public/logo.svg?raw";
 
 const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
+// The integral sign and "e" (the .cls-1 paths, #6cf) are recolored via a CSS
+// var so they can follow the theme; the pink "f" glyphs (.cls-2) keep their
+// color. Match both fill and stroke, with or without the leading #.
 const brandLogoSvg = logoSvg
   .replace(/<\?xml[^>]*>\s*/, "")
+  .replaceAll("#6cf", "var(--brand-logo-primary)")
   .replaceAll("#00deff", "var(--brand-logo-primary)");
 ---
 
@@ -325,7 +329,8 @@ const brandLogoSvg = logoSvg
     width: 2.7rem;
     height: 2.7rem;
     flex-shrink: 0;
-    --brand-logo-primary: #0f172a;
+    /* Integral sign + "e" color: black in light mode, theme cyan in dark. */
+    --brand-logo-primary: #000;
   }
   .brand-logo :global(svg) {
     width: 100%;
@@ -333,7 +338,7 @@ const brandLogoSvg = logoSvg
     display: block;
   }
   :global(html[data-theme="dark"]) .brand-logo {
-    --brand-logo-primary: #00deff;
+    --brand-logo-primary: #66ccff;
   }
 
   .internal-links {
