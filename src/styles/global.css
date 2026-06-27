@@ -363,11 +363,13 @@ a:hover {
 
 .pub-authors {
 	margin: 0.25rem 0;
+	font-size: 0.95rem;
 	color: var(--color-text-muted);
 }
 
 .pub-venue {
 	font-style: italic;
+	font-size: 0.95rem;
 	color: var(--color-text-muted);
 }
 

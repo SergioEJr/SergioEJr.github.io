@@ -25,12 +25,13 @@ const brandLogoSvg = logoSvg
       </a>
     </h2>
 
-    <div class="internal-links">
+    <div class="internal-links" transition:persist="internal-links">
       <HeaderLink href={url("/")}>Home</HeaderLink>
       <HeaderLink href={url("/publications")}>Research</HeaderLink>
       <HeaderLink href={url("/projects")}>Projects</HeaderLink>
       <HeaderLink href={url("/blog")}>Journal</HeaderLink>
       <HeaderLink href={url("/about")}>About</HeaderLink>
+      <span class="nav-underline" aria-hidden="true"></span>
     </div>
 
     <div class="header-actions">
@@ -254,6 +255,87 @@ const brandLogoSvg = logoSvg
         { signal },
       );
     });
+
+    setupNavUnderline(signal);
+  }
+
+  // Sliding underline under the active nav link. The `.internal-links`
+  // container persists across client-side navigations (transition:persist), so
+  // the same underline element survives the swap and animates from the old
+  // link's position to the new one.
+  function setupNavUnderline(signal: AbortSignal) {
+    const nav = document.querySelector<HTMLElement>(".internal-links");
+    const underline = nav?.querySelector<HTMLElement>(".nav-underline");
+    if (!nav || !underline) return;
+
+    const links = Array.from(nav.querySelectorAll<HTMLAnchorElement>("a"));
+
+    const normalize = (path: string) => {
+      const noBase = path.replace(/\/+$/, "");
+      return noBase === "" ? "/" : noBase;
+    };
+    const here = normalize(location.pathname);
+
+    // Find the link matching the current URL (longest matching prefix wins so
+    // e.g. /blog/some-post highlights "Journal").
+    let active: HTMLAnchorElement | null = null;
+    let bestLen = -1;
+    for (const a of links) {
+      const target = normalize(new URL(a.href).pathname);
+      const matches =
+        target === here || (target !== "/" && here.startsWith(target + "/"));
+      if (matches && target.length > bestLen) {
+        bestLen = target.length;
+        active = a;
+      }
+    }
+    // Exact home match only (so "/" doesn't win on every page).
+    if (here === "/") {
+      active =
+        links.find((a) => normalize(new URL(a.href).pathname) === "/") || active;
+    }
+
+    links.forEach((a) => a.classList.toggle("active", a === active));
+
+    const moveTo = (el: HTMLElement | null, animate: boolean) => {
+      if (!el) {
+        underline.classList.remove("is-visible");
+        return;
+      }
+      const navRect = nav.getBoundingClientRect();
+      const rect = el.getBoundingClientRect();
+      underline.classList.toggle("no-anim", !animate);
+      underline.style.setProperty("--underline-x", `${rect.left - navRect.left}px`);
+      underline.style.setProperty("--underline-width", `${rect.width}px`);
+      underline.classList.add("is-visible");
+    };
+
+    // Snap the underline under the active link without animating. On a
+    // navigation the persisted element still holds the previous page's
+    // position, and sliding it across to the clicked page reads as a glitch
+    // (the bar "flies in" from the old link). The user clicked a specific
+    // link, so the bar should simply already be there. The slide animation is
+    // reserved for hover, where it feels intentional.
+    moveTo(active, false);
+    // Commit the snapped position with the transition disabled (a forced
+    // reflow flushes it), then re-enable transitions so hover still animates.
+    // Without the reflow the position change and the class removal collapse
+    // into one style recalc and the move animates anyway.
+    void underline.offsetWidth;
+    underline.classList.remove("no-anim");
+
+    // Follow hover, snap back to active on leave.
+    links.forEach((a) => {
+      a.addEventListener("mouseenter", () => moveTo(a, true), { signal });
+    });
+    nav.addEventListener("mouseleave", () => moveTo(active, true), { signal });
+
+    // Reposition on resize (widths change → line would drift).
+    window.addEventListener(
+      "resize",
+      () => moveTo(nav.querySelector<HTMLElement>("a.active"), false),
+      { signal },
+    );
   }
 
   setupHeaderControls();
@@ -378,23 +460,73 @@ const brandLogoSvg = logoSvg
     display: flex;
     align-items: center;
     gap: 0.25rem;
+    /* Anchor for the sliding underline. */
+    position: relative;
+    /* Glow color for nav links + underline. In light mode the accent is a dark
+       navy that wouldn't read as a glow, so glow with the brighter accent
+       blue; in dark mode the accent itself is bright enough. */
+    --nav-glow: #77a4f5;
+  }
+  :global(html[data-theme="dark"]) .internal-links {
+    --nav-glow: var(--color-accent);
   }
   .internal-links :global(a) {
     padding: 0.5em 0.75em;
     color: var(--color-text-main);
-    border-bottom: 2px solid transparent;
     text-decoration: none;
     font-size: 0.95rem;
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition:
+      color 0.2s ease,
+      text-shadow 0.2s ease;
   }
+  /* Active link takes the accent color (the sliding underline marks it); no
+     glow unless hovered. */
+  .internal-links :global(a.active) {
+    color: var(--color-accent);
+  }
+  /* Neon glow only on hover, matching the logo's accent-colored glow. */
   .internal-links :global(a:hover) {
     color: var(--color-accent);
+    text-shadow:
+      0 0 6px var(--nav-glow),
+      0 0 14px var(--nav-glow);
   }
-  .internal-links :global(a.active) {
-    text-decoration: none;
-    border-bottom-color: var(--color-accent);
-    color: var(--color-accent);
+
+  /* Shared underline that slides between links. JS positions it via custom
+     props; the transition makes it glide from the old link to the new one. */
+  .nav-underline {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    width: var(--underline-width, 0);
+    transform: translateX(var(--underline-x, 0));
+    background-color: var(--color-accent);
+    border-radius: 2px;
+    box-shadow:
+      0 0 6px var(--nav-glow),
+      0 0 12px var(--nav-glow);
+    opacity: 0;
+    transition:
+      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.2s ease;
+    pointer-events: none;
+  }
+  .nav-underline.is-visible {
+    opacity: 1;
+  }
+  /* Skip the slide animation on first paint (before any nav happens) so the
+     underline appears already in place rather than flying in from the left. */
+  .nav-underline.no-anim {
+    transition: opacity 0.2s ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nav-underline {
+      transition: opacity 0.2s ease;
+    }
   }
 
   .dropdown {
@@ -452,6 +584,12 @@ const brandLogoSvg = logoSvg
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    /* Glow color for the action icons, mirroring the nav links. Light-mode
+       accent is too dark to read as a glow, so use the brighter blue there. */
+    --nav-glow: #77a4f5;
+  }
+  :global(html[data-theme="dark"]) .header-actions {
+    --nav-glow: var(--color-accent);
   }
 
   .search-toggle,
@@ -466,7 +604,9 @@ const brandLogoSvg = logoSvg
     align-items: center;
     justify-content: center;
     color: var(--color-text-main);
-    transition: background-color 0.2s ease;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
   }
   .search-toggle:hover,
   #theme-toggle:hover {
@@ -485,12 +625,27 @@ const brandLogoSvg = logoSvg
     align-items: center;
     justify-content: center;
     color: var(--color-text-main);
-    transition: background-color 0.2s ease;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
   }
 
   .github-link:hover {
     background-color: var(--color-bg-offset);
     color: var(--color-accent);
+  }
+
+  /* Neon glow on the action icons on hover. The SVGs use currentColor, so the
+     glow is a drop-shadow filter on the icon itself (text-shadow wouldn't
+     affect the strokes). */
+  .header-actions :global(svg) {
+    transition: filter 0.2s ease;
+  }
+  .github-link:hover :global(svg),
+  .search-toggle:hover :global(svg),
+  #theme-toggle:hover :global(svg) {
+    filter:
+      drop-shadow(0 0 5px var(--nav-glow)) drop-shadow(0 0 12px var(--nav-glow));
   }
 
   .mobile-menu-header {
