@@ -52,10 +52,13 @@ html {
 	box-sizing: border-box;
 	scroll-behavior: smooth;
 	background-color: var(--color-bg);
-	/* Always reserve space for the vertical scrollbar so the layout width never
-	   changes when the scrollbar appears/disappears (e.g. the home intro toggling
-	   `overflow: hidden`, or short vs. long pages). Without this, content shifts
-	   sideways by the scrollbar width on those transitions. */
+	/* Always show the vertical scrollbar track so the layout width never changes
+	   when content goes from non-scrollable to scrollable (e.g. the home intro
+	   un-locking scroll, or short vs. long pages). `overflow-y: scroll` keeps the
+	   track reserved in EVERY browser — unlike `scrollbar-gutter: stable`, which
+	   some browsers drop once the axis computes to `visible`. The gutter prop is
+	   kept too as a belt-and-suspenders for overlay-scrollbar platforms. */
+	overflow-y: scroll;
 	scrollbar-gutter: stable;
 }
 
