@@ -72,7 +72,13 @@ const selectedResearch = (
         overflow-x: clip;
       }
       :global(html[data-home-intro]) {
-        overflow: hidden;
+        /* Lock the vertical axis during the intro but KEEP the scrollbar track
+           (overflow-y stays `scroll` from the html rule), so the page width never
+           changes when the intro ends. We block actual scrolling by pinning the
+           scroll position via JS (see initHomeIntro), not by hiding overflow —
+           hiding it would remove the track and shift the layout. Horizontal is
+           clipped so the full-bleed hero can't cause a sideways scrollbar. */
+        overflow-x: clip;
         /* ---- Intro timeline knobs ----
            Phase 1  navbar fades in       [0 .. NAV_FADE]
            Phase 2  navbar neon flicker    [NAV_FADE .. +GLOW]   (in series w/ P1)
@@ -1006,6 +1012,26 @@ const selectedResearch = (
       function initHomeIntro() {
         const root = document.documentElement;
         if (!root.hasAttribute("data-home-intro")) return;
+
+        // Block scrolling during the intro WITHOUT hiding overflow (which would
+        // remove the scrollbar track and shift the layout when the intro ends).
+        // We just pin the window to the top until the intro completes; the
+        // scrollbar track stays visible the whole time (html { overflow-y:
+        // scroll }), so there's no width change.
+        const lockScroll = (e) => {
+          if (window.scrollY !== 0) window.scrollTo(0, 0);
+          if (e && e.cancelable) e.preventDefault();
+        };
+        window.scrollTo(0, 0);
+        window.addEventListener("scroll", lockScroll, { passive: true });
+        window.addEventListener("wheel", lockScroll, { passive: false });
+        window.addEventListener("touchmove", lockScroll, { passive: false });
+        const releaseScrollLock = () => {
+          window.removeEventListener("scroll", lockScroll);
+          window.removeEventListener("wheel", lockScroll);
+          window.removeEventListener("touchmove", lockScroll);
+        };
+
         // Hold the intro state until everything finishes. The phases can OVERLAP
         // now (the sim may start mid-flicker), so the end is the latest of:
         //   - Phase 2 nav flicker end   (nav-fade + glow)
@@ -1060,6 +1086,7 @@ const selectedResearch = (
         window.setTimeout(
           () => {
             root.removeAttribute("data-home-intro");
+            releaseScrollLock();
           },
           Math.max(cssEnd, activationEnd, cueEnd) + 120,
         );
