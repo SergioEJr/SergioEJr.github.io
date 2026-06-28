@@ -145,6 +145,16 @@ main {
 	animation: none !important;
 }
 
+/* Keep the navbar's snapshot above the page-content (<main>) snapshot during a
+   swap. The overlay's groups paint in generation order — root first, then named
+   groups in DOM order — so <main>'s group would otherwise sit above the header's
+   for the one swap frame, flashing content over the sticky navbar (Chrome/Firefox).
+   The header group is named via `view-transition-name: site-header` in Header.astro;
+   raising its z-index pins it on top so the navbar never gets covered. */
+::view-transition-group(site-header) {
+	z-index: 2147483647;
+}
+
 h1,
 h2,
 h3,
