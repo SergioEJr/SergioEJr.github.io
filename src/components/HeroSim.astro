@@ -78,7 +78,7 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     const DPR = Math.min(window.devicePixelRatio || 1, 2);
     let W = 0; // CSS px
     let H = 0;
-    const MAX_SIM_W = 1512; // 14-inch MacBook-ish CSS viewport width
+    const MAX_SIM_W = 1080; // 14-inch MacBook-ish CSS viewport width
     // CONSTANT DENSITY: legibility depends on particles-per-area, not raw count.
     // We keep one particle per DENSITY px² so the gas looks identical at any
     // window size — until we hit MAX_PARTICLES (perf cap), past which big screens
@@ -86,7 +86,7 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     // for legibility in the tighter viewport.
     const DENSITY = 12; // px² per particle (smaller = denser)
     const MOBILE_DENSITY = 9;
-    const MAX_PARTICLES = 100000;
+    const MAX_PARTICLES = 60000;
     const isMobileSim = () => W < 600;
     const density = () => (isMobileSim() ? MOBILE_DENSITY : DENSITY);
     const targetCount = () => {
@@ -98,8 +98,7 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     // TWEAKABLE PARAMETERS — all the knobs for tuning the look live here.
     //   DENSITY ........ gas density (px² per particle; smaller = denser) [above]
     //   MAX_PARTICLES .. perf cap on particle count                      [above]
-    //   V0 ............. how fast particles drift
-    //   DR ............. how much they wander (rotational diffusion)
+    //   DIFFUSION ...... Brownian "temperature" (px/s of random drift)
     //   DOT_R .......... particle size (px radius)
     //   GLOW ........... glow on activated (inside-letter) particles
     //   ALPHA_OUT ...... opacity of the ambient (outside) gas
@@ -109,12 +108,26 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     //   CURSOR_R / CURSOR_PUSH . cursor repulsion size / strength
     //   Grid look (opacity, size, bleed, fade) is in the <style> below.
     // ===================================================================
-    const V0 = 100; // self-propulsion speed (px/s) — gentle drift
-    const DR = 1.4; // rotational diffusion (rad^2/s) — heading random walk
+    // Pure Brownian motion (no self-propulsion / no orientation): each particle
+    // gets a random kick every frame. We dropped the ABP model — the wall
+    // boundary-layer phenomenon is no longer the point (letters are revealed by
+    // recoloring, not accumulation), so the heading state, rotational diffusion,
+    // and per-particle Math.cos/Math.sin are pure cost. Brownian motion costs one
+    // table lookup per axis instead, which Firefox in particular handles far
+    // better than 100k live trig calls per frame.
+    const DIFFUSION = 300; // random-drift magnitude (px/s) — gas "temperature"
     const DOT_R = 1.0; // particle radius (px) — small for crisp, dense letters
     const MOBILE_DOT_R = 0.8;
     const dotRadius = () => (isMobileSim() ? MOBILE_DOT_R : DOT_R);
-    const GLOW = 4; // shadowBlur on activated particles (cohesive letter glow)
+    // GLOW SIZE knob — the shadowBlur radius (px) baked into the name/JR sprites.
+    // Larger = bigger, softer halo around the activated letters. The sprite canvas
+    // auto-sizes to (dotRadius + GLOW) so the halo is never clipped.
+    const GLOW = 6; // halo radius (px)
+    // GLOW DENSITY knob — how many times the shadow is stacked into the sprite.
+    // Higher = denser, more opaque halo, so overlapping particles merge into one
+    // cohesive glowing body (the original effect) instead of separate soft dots.
+    // 1 = single faint halo; 3–5 reads as a continuous body. Tune alongside GLOW.
+    const GLOW_STACK = 2;
     const ALPHA_OUT = 0.4; // ambient gas opacity
     const ALPHA_IN = 1.0; // activated (name) particle opacity
     const CURSOR_R = 20; // cursor repulsion radius (px)
@@ -136,12 +149,25 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     let py = new Float32Array(0);
     let pvx = new Float32Array(0);
     let pvy = new Float32Array(0);
-    let pth = new Float32Array(0);
     // Per-particle render group, reused each frame (0=gas, 1=name, 2=JR). Filled
     // by render()'s single classification pass; avoids re-evaluating isInside* in
     // each draw pass AND avoids allocating anything per frame.
     let pgroup = new Uint8Array(0);
     let count = 0;
+
+    // Pre-computed pool of unit Gaussian random numbers. Generating ~200k random
+    // values per frame (one per axis per particle) via Math.random()+Box-Muller in
+    // the hot loop bottlenecks Firefox badly. Instead we fill this pool ONCE and
+    // pull from it by index with a cheap bitwise wrap. The pool is far larger than
+    // the per-frame draw and we advance the start offset each frame, so particles
+    // don't visibly reuse the same kick pattern. Power-of-two size → mask wrap.
+    const RANDOM_POOL_SIZE = 1 << 16; // 65536
+    const RANDOM_MASK = RANDOM_POOL_SIZE - 1;
+    const randomPool = new Float32Array(RANDOM_POOL_SIZE);
+    let poolCursor = 0; // advanced per frame so the noise isn't perfectly periodic
+    function fillRandomPool() {
+      for (let i = 0; i < RANDOM_POOL_SIZE; i++) randomPool[i] = gaussian();
+    }
     let raf: number | null = null;
     let last = 0;
     let running = false;
@@ -250,6 +276,64 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       dotColor = isDark
         ? DARK_GAS || cs.getPropertyValue("--color-text-muted").trim() || "#888"
         : LIGHT_GAS;
+    }
+
+    // ---- Particle sprites (GLOWING groups only) -------------------------
+    // The expensive per-frame cost was ctx.shadowBlur, which only ever applied to
+    // the GLOWING groups (name + JR). We bake those two sprites ONCE here (the
+    // only place shadowBlur is touched) and blit them with drawImage per frame.
+    // The ambient GAS is NOT a sprite: it has no glow and a 1px dot scaled out of
+    // a padded sprite box gets bilinear-smeared into a soft gray blob (the muddy
+    // look). The gas keeps its original crisp batched rect-path + single fill,
+    // which was never the bottleneck. Sprites are sized to THEIR OWN content
+    // (dot + glow halo) and DPR-scaled; the blit dest size is each sprite's css.
+    const sprites: (HTMLCanvasElement | null)[] = [null, null];
+    let spriteCssSize = 0; // CSS px (square) — same for both glow sprites
+    let spriteHalf = 0; // half of spriteCssSize (center offset)
+    function bakeSprite(color: string, glow: number): HTMLCanvasElement {
+      // Sprite holds the dot plus room for the glow halo on every side. Drawn at
+      // device resolution (DPR) so the dot stays crisp, blit back to CSS px.
+      //
+      // COHESION: the original live drop-shadow looked like one continuous body
+      // because each particle's halo was DENSE (it stacked the shadow with a
+      // double fill), so where neighbouring halos overlapped they saturated into a
+      // solid glow rather than reading as separate soft dots. We recreate that by
+      // stacking the shadow GLOW_STACK times into the baked sprite: a denser,
+      // more opaque halo that merges with its neighbours when blitted. Cost is
+      // paid ONCE here, not per frame.
+      const r = dotRadius();
+      const cssSize = spriteCssSize;
+      const dev = Math.max(1, Math.round(cssSize * DPR));
+      const c = document.createElement("canvas");
+      c.width = dev;
+      c.height = dev;
+      const sc = c.getContext("2d");
+      if (sc) {
+        sc.setTransform(DPR, 0, 0, DPR, 0, 0);
+        const cx = cssSize / 2;
+        const s = r * 2;
+        sc.fillStyle = color;
+        if (glow > 0) {
+          sc.shadowColor = color;
+          sc.shadowBlur = glow;
+          // Stack the glow so the halo is dense enough to merge with neighbours.
+          for (let k = 0; k < GLOW_STACK; k++)
+            sc.fillRect(cx - r, cx - r, s, s);
+        } else {
+          sc.fillRect(cx - r, cx - r, s, s);
+        }
+      }
+      return c;
+    }
+    function buildSprites() {
+      // Reads the theme colors resolved by readColors() (insideColor / JR_COLOR)
+      // — no color logic of its own, so light & dark stay correct. Must be called
+      // AFTER readColors() and after resize() (depends on DPR/dotRadius).
+      const r = dotRadius();
+      spriteCssSize = Math.ceil((r + GLOW) * 2); // dot + glow halo on all sides
+      spriteHalf = spriteCssSize / 2;
+      sprites[0] = bakeSprite(insideColor, GLOW); // name — accent + glow
+      sprites[1] = bakeSprite(JR_COLOR, GLOW); // JR — magenta + glow
     }
 
     // ---- Wall field construction ---------------------------------------
@@ -390,20 +474,8 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       }
     }
 
-    // Field cell index for a CSS-px position (clamped to bounds).
-    function cellAt(px: number, py: number) {
-      const fx = Math.min(fieldW - 1, Math.max(0, (px / FIELD_STEP) | 0));
-      const fy = Math.min(fieldH - 1, Math.max(0, (py / FIELD_STEP) | 0));
-      return fy * fieldW + fx;
-    }
-    // True when a position falls inside a name glyph (→ heading-accent color).
-    function isInside(px: number, py: number) {
-      return dist[cellAt(px, py)] < 0;
-    }
-    // True when a position falls inside the "JR" superscript (→ magenta).
-    function isInsideJR(px: number, py: number) {
-      return jrMask[cellAt(px, py)] === 1;
-    }
+    // Position → field-cell classification is inlined in render()'s single
+    // per-particle pass (cached locals, no function-call overhead × ~100k).
 
     // ---- Sizing ---------------------------------------------------------
     function resize() {
@@ -438,6 +510,7 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
 
       clearEdgeFade(); // gradient depends on W/H
       buildField();
+      buildSprites(); // dot radius can change at the mobile breakpoint
       seedParticles();
     }
 
@@ -450,8 +523,8 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
         py = new Float32Array(MAX_PARTICLES);
         pvx = new Float32Array(MAX_PARTICLES);
         pvy = new Float32Array(MAX_PARTICLES);
-        pth = new Float32Array(MAX_PARTICLES);
         pgroup = new Uint8Array(MAX_PARTICLES);
+        fillRandomPool();
       }
       const want = Math.min(targetCount(), MAX_PARTICLES);
       // Top up new particles (spawn anywhere — they pass through letters freely).
@@ -461,7 +534,6 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
         py[i] = Math.random() * H;
         pvx[i] = 0;
         pvy[i] = 0;
-        pth[i] = Math.random() * Math.PI * 2;
       }
       count = want;
     }
@@ -481,137 +553,179 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     }
 
     // ---- Step + render --------------------------------------------------
-    // No inter-particle force: the gas is a cloud of independent ABPs. Uniform
-    // random spawn + rotational diffusion keeps them well spread, so we can run
-    // tens of thousands of particles cheaply (each step is O(N), no neighbours).
+    // Pure Brownian motion: the gas is a cloud of independent particles, each
+    // kicked by a random force every frame (no orientation, no self-propulsion,
+    // no neighbours → O(N), no trig). Random kicks come from a precomputed pool
+    // (table lookup + bitwise wrap) instead of Math.random() in the loop, which
+    // is the single biggest Firefox win here.
+    //
+    // Everything the loop reads is cached into a LOCAL const before the loop
+    // opens. Reaching out to closure/object scope (cursor.x, W, this-canvas
+    // config) on every one of ~100k iterations forces the JS engine — Safari's
+    // especially — to repeatedly traverse scope chains; locals stay in registers.
     function step(dt: number) {
-      const noise = Math.sqrt(2 * DR * dt); // heading random-walk magnitude
-      const curR2 = CURSOR_R * CURSOR_R;
+      const n = count;
+      const w = W;
+      const h = H;
+      const diff = DIFFUSION * dt; // per-frame random-walk magnitude
+      const damp = DAMP;
+      const maxSp = MAX_SPEED;
+      const curR = CURSOR_R;
+      const curR2 = curR * curR;
+      const curPush = CURSOR_PUSH;
       const curActive = cursor.active;
       const cx = cursor.x;
       const cy = cursor.y;
-      for (let i = 0; i < count; i++) {
-        // Self-propulsion + rotational diffusion (the "active" part).
-        const th = pth[i] + noise * gaussian();
-        pth[i] = th;
-        let ax = V0 * Math.cos(th);
-        let ay = V0 * Math.sin(th);
+      const pool = randomPool;
+      const mask = RANDOM_MASK;
+      // Advance the pool window each frame so the noise isn't perfectly periodic.
+      let p = poolCursor;
+      // Local aliases for the typed arrays (avoids re-reading the closure vars).
+      const X = px;
+      const Y = py;
+      const VX = pvx;
+      const VY = pvy;
+
+      for (let i = 0; i < n; i++) {
+        // Random Brownian kick: one pooled Gaussian per axis.
+        let ax = pool[p++ & mask] * diff;
+        let ay = pool[p++ & mask] * diff;
 
         // The glyphs exert NO force — particles pass through freely; the name is
         // revealed purely by recoloring inside-glyph particles (see render()).
         // Cursor repulsion well is the one interaction left.
-        let x = px[i];
-        let y = py[i];
+        let x = X[i];
+        let y = Y[i];
         if (curActive) {
           const dx = x - cx;
           const dy = y - cy;
           const d2 = dx * dx + dy * dy;
           if (d2 < curR2 && d2 > 0.01) {
             const d = Math.sqrt(d2);
-            const f = (CURSOR_PUSH * (1 - d / CURSOR_R)) / d;
-            ax += dx * f;
-            ay += dy * f;
+            const f = (curPush * (1 - d / curR)) / d;
+            ax += dx * f * dt;
+            ay += dy * f * dt;
           }
         }
 
-        // Integrate (semi-implicit) with damping + speed clamp.
-        let vx = (pvx[i] + ax * dt) * DAMP;
-        let vy = (pvy[i] + ay * dt) * DAMP;
-        const sp = Math.hypot(vx, vy);
-        if (sp > MAX_SPEED) {
-          vx = (vx / sp) * MAX_SPEED;
-          vy = (vy / sp) * MAX_SPEED;
+        // Integrate velocity with damping + speed clamp (so the cursor push and
+        // the random drift both decay rather than accumulating forever).
+        let vx = (VX[i] + ax) * damp;
+        let vy = (VY[i] + ay) * damp;
+        const sp2 = vx * vx + vy * vy;
+        if (sp2 > maxSp * maxSp) {
+          const s = maxSp / Math.sqrt(sp2);
+          vx *= s;
+          vy *= s;
         }
-        pvx[i] = vx;
-        pvy[i] = vy;
+        VX[i] = vx;
+        VY[i] = vy;
         x += vx * dt;
         y += vy * dt;
 
         // Toroidal wrap so the field stays full.
-        if (x < 0) x += W;
-        else if (x >= W) x -= W;
-        if (y < 0) y += H;
-        else if (y >= H) y -= H;
-        px[i] = x;
-        py[i] = y;
+        if (x < 0) x += w;
+        else if (x >= w) x -= w;
+        if (y < 0) y += h;
+        else if (y >= h) y -= h;
+        X[i] = x;
+        Y[i] = y;
       }
+      // Step the window forward by a prime-ish stride so successive frames don't
+      // realign to the same slice of the pool.
+      poolCursor = (poolCursor + 1009) & mask;
     }
 
     function render() {
       ctx.clearRect(0, 0, W, H);
-      // Batched draw for speed at high particle counts: build the two paths
-      // (outside gas vs. inside-letter), then a single fill each. Squares (rect)
-      // are far cheaper than arcs at tens of thousands of dots. isInside() is
-      // evaluated once per particle and the result reused for both passes.
-      const half = dotRadius();
-      const sz = half * 2;
+      // Particles are drawn by blitting pre-baked sprites (see buildSprites): a
+      // single classification pass tags each particle's group, then one
+      // drawImage per particle per group. No per-frame path building or
+      // shadowBlur — that's the cross-browser speedup.
       const introT = introElapsed();
       const introActive = isFinite(introT);
       const ambientAlpha = ambientIntroAlpha(introT);
       const activatedAlpha = activatedIntroAlpha(introT);
 
-      // SINGLE classification pass: evaluate isInside*/once per particle and
-      // record its group in pgroup (0=gas, 1=name, 2=JR). Then draw each group
-      // with immediate-mode beginPath/rect/fill — NO per-frame allocation (an
-      // earlier Path2D-per-frame version leaked memory badly). During the intro,
-      // inside/JR particles also render as gas until the activation lights them.
+      // SINGLE classification pass: evaluate inside/JR once per particle and
+      // record its group in pgroup (0=gas, 1=name, 2=JR). Each group is then
+      // blitted with its pre-baked sprite — no per-frame allocation. During the
+      // intro, inside/JR particles render as gas until the activation lights them.
       let anyInside = false;
       let anyJR = false;
-      for (let i = 0; i < count; i++) {
-        const x = px[i];
-        const y = py[i];
-        let g = 0;
-        if (isInsideJR(x, y)) {
-          g = 2;
-          anyJR = true;
-        } else if (isInside(x, y)) {
-          g = 1;
-          anyInside = true;
+      // Inlined classification with cached locals (no per-particle cellAt/isInside
+      // function calls — scope traversal × ~100k is exactly what Safari penalizes).
+      {
+        const n = count;
+        const X = px;
+        const Y = py;
+        const D = dist;
+        const JR = jrMask;
+        const G = pgroup;
+        const fw = fieldW;
+        const fh = fieldH;
+        const inv = 1 / FIELD_STEP;
+        const maxX = fw - 1;
+        const maxY = fh - 1;
+        for (let i = 0; i < n; i++) {
+          let fx = (X[i] * inv) | 0;
+          let fy = (Y[i] * inv) | 0;
+          if (fx < 0) fx = 0;
+          else if (fx > maxX) fx = maxX;
+          if (fy < 0) fy = 0;
+          else if (fy > maxY) fy = maxY;
+          const c = fy * fw + fx;
+          let g = 0;
+          if (JR[c] === 1) {
+            g = 2;
+            anyJR = true;
+          } else if (D[c] < 0) {
+            g = 1;
+            anyInside = true;
+          }
+          G[i] = g;
         }
-        pgroup[i] = g;
       }
 
-      // Pass 1: ambient gas (group 0, plus groups 1/2 during the intro pre-light).
+      const sName = sprites[0];
+      const sJR = sprites[1];
+      const ssz = spriteCssSize;
+      const soff = spriteHalf;
+
+      // Pass 1: ambient GAS — crisp batched rect-path + single fill (NO glow, NO
+      // shadowBlur, so it was never the bottleneck). Drawn as 1px squares at exact
+      // pixel positions, which a scaled sprite blit can't match without smearing.
+      // Includes groups 1/2 during the intro pre-light (before they activate).
+      const half = dotRadius();
+      const sz = half * 2;
       ctx.beginPath();
       for (let i = 0; i < count; i++) {
         if (pgroup[i] === 0 || introActive) {
           ctx.rect(px[i] - half, py[i] - half, sz, sz);
         }
       }
-      ctx.shadowBlur = 0;
       ctx.globalAlpha = ALPHA_OUT * ambientAlpha;
       ctx.fillStyle = dotColor;
       ctx.fill();
 
-      if (anyInside && activatedAlpha > 0) {
-        // Inside the letters: heading accent + a soft GLOW so the activated
-        // particles read as one cohesive letter shape (makes the name pop).
-        ctx.beginPath();
-        for (let i = 0; i < count; i++) {
-          if (pgroup[i] === 1) ctx.rect(px[i] - half, py[i] - half, sz, sz);
-        }
+      // Passes 2/3: GLOWING groups — blit the pre-baked glow sprite per particle
+      // (drawImage is hardware-accelerated everywhere; the glow is baked in once,
+      // so no per-frame shadowBlur — the actual cross-browser fix).
+      if (anyInside && activatedAlpha > 0 && sName) {
         ctx.globalAlpha = ALPHA_IN * activatedAlpha;
-        ctx.fillStyle = insideColor;
-        ctx.shadowColor = insideColor;
-        ctx.shadowBlur = GLOW * activatedAlpha;
-        ctx.fill();
-        ctx.fill(); // second fill stacks the glow for a denser core
-        ctx.shadowBlur = 0;
+        for (let i = 0; i < count; i++) {
+          if (pgroup[i] === 1)
+            ctx.drawImage(sName, px[i] - soff, py[i] - soff, ssz, ssz);
+        }
       }
 
-      if (anyJR && activatedAlpha > 0) {
+      if (anyJR && activatedAlpha > 0 && sJR) {
         // "JR" superscript: magenta, matching the logo's pink glyphs.
-        ctx.beginPath();
-        for (let i = 0; i < count; i++) {
-          if (pgroup[i] === 2) ctx.rect(px[i] - half, py[i] - half, sz, sz);
-        }
         ctx.globalAlpha = ALPHA_IN * activatedAlpha;
-        ctx.fillStyle = JR_COLOR;
-        ctx.shadowColor = JR_COLOR;
-        ctx.shadowBlur = GLOW * activatedAlpha;
-        ctx.fill();
-        ctx.fill();
-        ctx.shadowBlur = 0;
+        for (let i = 0; i < count; i++) {
+          if (pgroup[i] === 2)
+            ctx.drawImage(sJR, px[i] - soff, py[i] - soff, ssz, ssz);
+        }
       }
 
       // SOFT EDGES (baked into the canvas, not CSS mask — robust across
@@ -688,15 +802,36 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       return u * m;
     }
 
+    // Fixed-timestep accumulator. requestAnimationFrame fires at the display's
+    // refresh rate, which varies wildly across machines (60 / 120 / 144 / 240 Hz
+    // — many MacBooks and gaming monitors are well above 60). If physics ran once
+    // per rAF with the raw frame delta, the simulation would run faster on
+    // high-refresh displays and the Brownian noise (whose variance scales with the
+    // timestep) would look different on every machine. Instead we accumulate real
+    // elapsed time and advance the physics in FIXED 60 Hz substeps, so the sim is
+    // identical regardless of refresh rate and survives frame skips. We render
+    // once per rAF after catching up.
+    const FIXED_DT = 1 / 60;
+    const MAX_FRAME = 1 / 12; // clamp huge gaps (backgrounded tab) → at most a
+    //                           few substeps, never a runaway catch-up storm
+    let accumulator = 0;
     function frame(now: number) {
       raf = null;
       if (!running) return;
-      let dt = (now - last) / 1000;
+      let elapsed = (now - last) / 1000;
       last = now;
-      // Cap dt so a backgrounded/janky tab doesn't explode the sim on resume.
-      if (!isFinite(dt) || dt <= 0) dt = 1 / 60;
-      dt = Math.min(dt, 1 / 30);
-      step(dt);
+      if (!isFinite(elapsed) || elapsed <= 0) elapsed = FIXED_DT;
+      if (elapsed > MAX_FRAME) elapsed = MAX_FRAME;
+      accumulator += elapsed;
+      // Cap the number of catch-up substeps so a slow device (where each step
+      // costs more than FIXED_DT) can't spiral into ever-growing backlogs.
+      let steps = 0;
+      while (accumulator >= FIXED_DT && steps < 4) {
+        step(FIXED_DT);
+        accumulator -= FIXED_DT;
+        steps++;
+      }
+      if (steps === 4) accumulator = 0; // drop backlog; keep real-time, not slo-mo
       render();
       schedule();
     }
@@ -772,8 +907,12 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       }
 
       // Recolor (and rebuild, in case weight/color changed) on theme toggle.
+      // buildSprites() MUST run after readColors() so the rebaked sprites carry
+      // the new theme's colors; the observer fires before the next rAF, so
+      // render() never blits stale-colored sprites.
       const mo = new MutationObserver(() => {
         readColors();
+        buildSprites();
         buildField();
       });
       mo.observe(document.documentElement, {
