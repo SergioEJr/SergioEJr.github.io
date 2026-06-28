@@ -29,49 +29,181 @@ const selectedResearch = (
   <head>
     <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
     <style>
-      /* The hero fills exactly one viewport below the sticky header, so on
-         landing the visitor sees only the simulation + description + buttons.
-         svh (small viewport height) is stable on mobile — it doesn't jump when
-         the browser URL bar shows/hides like vh does. --header-h matches the
-         nav height in Header.astro. */
-      .hero {
+      /* ============================================================
+         PINNED-SCRUB HERO
+         Two stacked layers (sim + card) inside a sticky stage. A tall spacer
+         section gives the scroll distance; JS writes --hero-progress (0..1) onto
+         .hero-scroll as you scroll through it, and the layers crossfade. Only
+         one is ever visible. --header-h matches the sticky nav height.
+         ============================================================ */
+      .hero-scroll {
         --header-h: 4.5rem;
-        min-height: calc(100svh - var(--header-h));
-        padding: 1rem 0 1.25rem;
+        /* Scroll distance for the crossfade. Kept short so the swap is snappy:
+           combined with scroll-snap (below) a small flick past the midpoint lets
+           the browser glide the rest of the way, so you can't park half-done. */
+        --hero-travel: 70svh;
+        --hero-progress: 0;
+        position: relative;
+        height: calc(100svh - var(--header-h) + var(--hero-travel));
+        /* Visible overflow so HeroSim's full-bleed canvas/grid feather past the
+           content column (mobile re-clips below). */
+        overflow-x: visible;
+      }
+      /* Snap points so the page settles on either the sim (top) or the card (end
+         of the pin) — never mid-crossfade. The sentinels are zero-impact markers.
+         The JS uses MANDATORY snap (scoped to <html> only while this page is
+         mounted) so there is no in-between resting state: the browser always
+         settles on one of these two points. A third snap point at the top of the
+         content below (.hero-after-snap) gives mandatory a valid downward target
+         so it never traps you in the hero. */
+      .hero-snap-top {
+        position: absolute;
+        top: 0;
+        height: 1px;
+        width: 1px;
+        scroll-snap-align: start;
+        pointer-events: none;
+      }
+      .hero-snap-end {
+        position: absolute;
+        bottom: 0;
+        height: 1px;
+        width: 1px;
+        scroll-snap-align: end;
+        pointer-events: none;
+      }
+      .home-main {
+        /* Remove the global top padding on the homepage so the pinned hero starts
+           immediately below the header and scroll progress begins on first input. */
+        padding-top: 0;
+      }
+      .hero-stage {
+        position: sticky;
+        top: var(--header-h);
+        height: calc(100svh - var(--header-h));
+        display: grid; /* stack the two layers in one cell */
+      }
+      .hero-layer {
+        grid-area: 1 / 1;
+        min-width: 0;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        gap: 1.5rem;
-        /* Desktop needs visible overflow so HeroSim's full-bleed canvas/grid can
-           feather outside the text column. Mobile restores clipping below. */
+      }
+
+      /* --- Sim layer: visible at progress 0, fully faded by ~0.5 (so by the
+         snap midpoint the swap is essentially done and the snap lands clean) --- */
+      .hero-layer-sim {
         position: relative;
-        overflow-x: visible;
+        align-items: center;
+        opacity: clamp(0, calc(1 - var(--hero-progress) / 0.5), 1);
+        /* Drift up & away slightly as it fades so the swap has motion. */
+        transform: translateY(calc(var(--hero-progress) * -4vh));
+        /* Once mostly faded, stop intercepting the pointer so the card's links
+           and the page below are interactive. */
+        pointer-events: auto;
       }
-      /* The sim box takes the leftover vertical space; intro/buttons size to
-         content. min-height keeps it usable on short screens. */
-      .hero > :global(.hero-sim) {
-        flex: 1 1 auto;
+      .hero-layer-sim > :global(.hero-sim) {
+        flex: 0 1 auto;
+        width: 100%;
+        height: min(100%, 44rem);
         min-height: 14rem;
+        max-height: 44rem;
       }
-      .hero-intro {
-        flex: 0 0 auto;
-        max-width: 46rem;
+
+      .hero-scroll-cue {
+        position: absolute;
+        bottom: 1.5rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.7rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+        /* Fades as soon as the user starts scrolling. */
+        opacity: clamp(0, calc(1 - var(--hero-progress) / 0.15), 1);
+        animation: heroCueBob 1.8s ease-in-out infinite;
+        pointer-events: none;
+      }
+      @keyframes heroCueBob {
+        0%,
+        100% {
+          translate: 0 0;
+        }
+        50% {
+          translate: 0 4px;
+        }
+      }
+
+      /* --- Card layer: hidden until ~0.4, fully in by ~0.85 (slightly trails
+         the sim so they briefly overlap instead of flashing empty bg) --- */
+      .hero-layer-card {
+        opacity: clamp(0, calc((var(--hero-progress) - 0.4) / 0.45), 1);
+        transform: translateY(calc((1 - var(--hero-progress)) * 5vh));
+        /* Not interactive until it's substantially visible (set by JS toggling
+           the data-hero-active attribute below). */
+        pointer-events: none;
+      }
+      .hero-scroll[data-hero-active="card"] .hero-layer-card {
+        pointer-events: auto;
+      }
+      .hero-scroll[data-hero-active="card"] .hero-layer-sim {
+        pointer-events: none;
+      }
+
+      .hero-card {
+        display: flex;
+        align-items: center;
+        gap: 3.5rem;
+        max-width: var(--max-width);
         margin: 0 auto;
-        text-align: center;
+        padding: 0 1rem;
+        width: 100%;
       }
-      .hero-intro p {
-        font-size: 1.05rem;
-        line-height: 1.6;
-        margin: 0 0 1.5rem;
+      .hero-portrait {
+        flex: 0 0 auto;
+      }
+      .hero-portrait img {
+        display: block;
+        width: 240px;
+        height: 240px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 6px solid var(--color-bg);
+        box-shadow:
+          0 0 0 1px var(--color-border),
+          0 12px 28px rgba(0, 0, 0, 0.4);
+      }
+      .hero-copy {
+        flex: 1 1 auto;
+      }
+      .hero-copy h1 {
+        font-size: 3rem;
+        margin: 0 0 0.4rem;
+        line-height: 1.05;
       }
       .hero-role {
         color: var(--color-accent);
+        font-family: var(--font-sans);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.95rem;
+        font-weight: 600;
+        margin: 0 0 1.25rem;
+      }
+      .hero-bio {
+        font-size: 1.05rem;
+        line-height: 1.6;
+        margin: 0 0 1.75rem;
       }
       .hero-buttons {
         display: flex;
         gap: 1rem;
         flex-wrap: wrap;
-        justify-content: center;
       }
 
       .pub-mini-item {
@@ -96,44 +228,140 @@ const selectedResearch = (
         color: var(--color-text-muted);
       }
 
-      @media (min-width: 769px) {
-        .hero > :global(.hero-sim) {
-          /* Keep large monitors from diluting the fixed particle budget across
-             an overly tall domain; roughly matches a 14-inch laptop feel. */
-          max-height: 44rem;
+      /* --- Mobile: drop the pinned scrub. Sticky pinning + the sim's
+         overflow-x clipping fight each other on touch, and a scrub feels worse
+         than a simple stack on a phone. Show the sim (one screen) then the card
+         stacked below; both always visible, no crossfade. --- */
+      @media (max-width: 768px) {
+        .hero-scroll {
+          height: auto;
+          overflow-x: clip;
+        }
+        .hero-stage {
+          position: static;
+          height: auto;
+          display: flex;
+          flex-direction: column;
+          gap: 2rem;
+        }
+        .hero-layer {
+          /* Cancel all scrub-driven transforms/opacity. */
+          opacity: 1 !important;
+          transform: none !important;
+          pointer-events: auto !important;
+        }
+        .hero-layer-sim {
+          min-height: calc(100svh - var(--header-h) - 2rem);
+        }
+        .hero-scroll-cue {
+          display: none;
+        }
+        .hero-card {
+          flex-direction: column;
+          text-align: center;
+          gap: 1.5rem;
+        }
+        .hero-portrait img {
+          width: 200px;
+          height: 200px;
+        }
+        .hero-buttons {
+          justify-content: center;
+        }
+        .hero-copy h1 {
+          font-size: 2.25rem;
         }
       }
 
-      @media (max-width: 768px) {
-        .hero {
-          gap: 1.25rem;
-          overflow-x: clip;
+      /* --- Reduced motion: no pin, no crossfade — just stack the two views. --- */
+      @media (prefers-reduced-motion: reduce) {
+        .hero-scroll {
+          height: auto;
         }
-        .hero-intro p {
-          font-size: 0.95rem;
+        .hero-stage {
+          position: static;
+          height: auto;
+          display: flex;
+          flex-direction: column;
+          gap: 2rem;
+        }
+        .hero-layer {
+          opacity: 1 !important;
+          transform: none !important;
+          pointer-events: auto !important;
+        }
+        .hero-layer-sim {
+          min-height: calc(100svh - var(--header-h) - 2rem);
+        }
+        .hero-scroll-cue {
+          display: none;
         }
       }
     </style>
   </head>
   <body>
     <Header />
-    <main transition:animate={pageFade}>
-      <section class="hero">
-        <HeroSim />
-        <div class="hero-intro">
-          <p>
-            <strong class="hero-role"
-              >PhD Student in Physics · MIT.</strong
-            >
-            I work on <strong
-              >nonequilibrium statistical physics and biophysics</strong
-            >, building models, simulations, and tools to understand how simple
-            local rules produce predictable large-scale behavior in complex
-            systems — and increasingly applying that toolkit beyond academia.
-          </p>
-          <div class="hero-buttons">
-            <a href={url("/publications")} class="btn">View Research</a>
-            <a href={url("/about")} class="btn btn-outline">About</a>
+    <main class="home-main" transition:animate={pageFade}>
+      {
+        /* Pinned-scrub hero: on landing the visitor sees ONLY the full-screen
+          simulation. Scrolling through the tall .hero-scroll spacer keeps the
+          .hero-stage pinned (sticky) and crossfades the sim out as the
+          two-column "card" (portrait + name + bio + CTAs) fades in — only one
+          view is visible at a time. JS sets --hero-progress (0→1) from scroll;
+          CSS maps it to the two layers' opacity/transform. Reduced-motion and
+          mobile fall back to a simple stacked layout (see <style>). */
+      }
+      <section class="hero-scroll" data-hero-scroll>
+        {/* Snap markers: settle on the sim (top) or the card (end of the pin). */}
+        <div class="hero-snap-top" aria-hidden="true"></div>
+        <div class="hero-snap-end" aria-hidden="true"></div>
+        <div class="hero-stage">
+          <div class="hero-layer hero-layer-sim" data-hero-sim-layer>
+            <HeroSim />
+            <div class="hero-scroll-cue" aria-hidden="true">
+              <span>scroll</span>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                ><path d="M12 5v14M19 12l-7 7-7-7"></path></svg
+              >
+            </div>
+          </div>
+
+          <div class="hero-layer hero-layer-card" data-hero-card>
+            <div class="hero-card">
+              <div class="hero-portrait">
+                <img
+                  src={url("/about/profile.jpeg")}
+                  width={260}
+                  height={260}
+                  alt="Sergio Eraso"
+                  decoding="async"
+                />
+              </div>
+              <div class="hero-copy">
+                <h1>Sergio Eraso</h1>
+                <p class="hero-role">PhD Student in Physics · MIT</p>
+                <p class="hero-bio">
+                  I work on <strong
+                    >nonequilibrium statistical physics and biophysics</strong
+                  >, building models, simulations, and tools to understand how
+                  simple local rules produce predictable large-scale behavior in
+                  complex systems — and increasingly applying that toolkit
+                  beyond academia.
+                </p>
+                <div class="hero-buttons">
+                  <a href={url("/publications")} class="btn">View Research</a>
+                  <a href={url("/about")} class="btn btn-outline">About</a>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -204,5 +432,150 @@ const selectedResearch = (
       </div>
     </main>
     <Footer />
+
+    <script is:inline>
+      // Pinned-scrub progress. The .hero-scroll section is taller than the
+      // viewport; while its top is above the header and its bottom is still
+      // below, the .hero-stage is pinned. We map how far we've scrolled THROUGH
+      // that extra distance to 0..1 and write it as --hero-progress, which the
+      // CSS turns into the sim→card crossfade. data-hero-active flips to "card"
+      // past the midpoint so only the active layer captures the pointer.
+      function initHeroScroll() {
+        const section = document.querySelector("[data-hero-scroll]");
+        if (!section) return;
+        if (section._heroScrollCleanup) section._heroScrollCleanup();
+
+        const stage = section.querySelector(".hero-stage");
+        const docEl = document.documentElement;
+        const mqReduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+        const mqMobile = window.matchMedia("(max-width: 768px)");
+
+        let raf = null;
+
+        function isFallback() {
+          return mqReduce.matches || mqMobile.matches;
+        }
+
+        // Native scroll-snap makes the transition feel snappy on wheel AND
+        // trackpad without intercepting input (which caused lag/jitter): the
+        // browser settles on the nearest snap point. Scoped to <html> only while
+        // this page is mounted; off in the stacked fallbacks.
+        //
+        // The snap is MANDATORY so there is NO in-between resting state — the
+        // browser always lands on the sim or the card, never mid-crossfade. But
+        // mandatory with only those two points would TRAP you at the card (it has
+        // no point below to release to). So snap is toggled by scroll position
+        // (setSnapForProgress): mandatory only while you're inside the transition
+        // band, and switched OFF once the card is committed so the content below
+        // scrolls completely freely. Hysteresis (ON_BELOW/OFF_ABOVE) stops it
+        // flickering at the boundary.
+        //
+        // SNAP GLIDE SPEED ── the one tunable for how the snap settles.
+        //   "auto"   → the snap happens INSTANTLY (snappiest, no glide).
+        //   "smooth" → the browser glides to the snap point (softer, slower).
+        // Native scroll-snap has no duration knob — these two are the only
+        // options. We override the site-wide `scroll-behavior: smooth` only while
+        // the snap is active, then restore it so in-page anchor links elsewhere
+        // still glide. Flip this to taste:
+        const SNAP_GLIDE = "auto";
+        const OFF_ABOVE = 0.985; // committed to card → release snap (read content)
+        const ON_BELOW = 0.9; // scrolled back up into the band → re-arm snap
+        let snapArmed = false;
+
+        function enableSnapCss(on) {
+          if (on) {
+            docEl.style.scrollSnapType = "y mandatory";
+            docEl.style.scrollPaddingTop = "4.5rem"; // = --header-h
+            docEl.style.scrollBehavior = SNAP_GLIDE;
+          } else {
+            docEl.style.scrollSnapType = "";
+            docEl.style.scrollPaddingTop = "";
+            docEl.style.scrollBehavior = "";
+          }
+        }
+        // Arm/disarm mandatory snap based on how far through the transition we
+        // are, so it governs only the sim↔card swap and never traps the content.
+        function setSnapForProgress(p) {
+          if (isFallback()) {
+            if (snapArmed) {
+              snapArmed = false;
+              enableSnapCss(false);
+            }
+            return;
+          }
+          if (snapArmed && p >= OFF_ABOVE) {
+            snapArmed = false;
+            enableSnapCss(false);
+          } else if (!snapArmed && p < ON_BELOW) {
+            snapArmed = true;
+            enableSnapCss(true);
+          }
+        }
+        function applySnap() {
+          // Reset to a known state, then let scroll position decide.
+          snapArmed = false;
+          enableSnapCss(false);
+          setSnapForProgress(progress());
+        }
+        function metrics() {
+          const headerH =
+            (stage && parseFloat(getComputedStyle(stage).top)) || 4.5 * 16;
+          const pinned = window.innerHeight - headerH;
+          const travel = Math.max(1, section.offsetHeight - pinned);
+          const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+          const start = sectionTop - headerH;
+          return { start, end: start + travel, travel };
+        }
+        function progress() {
+          const m = metrics();
+          return Math.min(1, Math.max(0, (window.scrollY - m.start) / m.travel));
+        }
+
+        function update() {
+          raf = null;
+          // In the stacked fallbacks there's no scrub.
+          if (isFallback()) {
+            section.style.setProperty("--hero-progress", "0");
+            section.removeAttribute("data-hero-active");
+            return;
+          }
+          const p = progress();
+          section.style.setProperty("--hero-progress", p.toFixed(4));
+          section.setAttribute("data-hero-active", p > 0.5 ? "card" : "sim");
+          setSnapForProgress(p);
+        }
+        function onScroll() {
+          if (raf == null) raf = requestAnimationFrame(update);
+        }
+
+        window.addEventListener("scroll", onScroll, { passive: true });
+        window.addEventListener("resize", onScroll);
+        const onMqChange = () => {
+          applySnap();
+          update();
+        };
+        mqReduce.addEventListener("change", onMqChange);
+        mqMobile.addEventListener("change", onMqChange);
+        applySnap();
+        update();
+
+        section._heroScrollCleanup = () => {
+          window.removeEventListener("scroll", onScroll);
+          window.removeEventListener("resize", onScroll);
+          mqReduce.removeEventListener("change", onMqChange);
+          mqMobile.removeEventListener("change", onMqChange);
+          if (raf != null) cancelAnimationFrame(raf);
+          // Drop the page-scoped snap + behavior override so other pages scroll
+          // normally (and keep the global `scroll-behavior: smooth`).
+          docEl.style.scrollSnapType = "";
+          docEl.style.scrollPaddingTop = "";
+          docEl.style.scrollBehavior = "";
+          delete section._heroScrollCleanup;
+        };
+      }
+
+      initHeroScroll();
+      document.addEventListener("astro:page-load", initHeroScroll);
+    </script>
   </body>
 </html>
