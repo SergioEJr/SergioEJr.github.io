@@ -40,10 +40,15 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
 
   // Reusable per-mount controller so ClientRouter navigations don't stack loops.
   function initHeroSim() {
+    // Tear down any previous instance FIRST. The cleanup handle is stored on
+    // `window` (not on the [data-hero-sim] element) because ClientRouter swaps in
+    // a brand-new element on every navigation back to home — a handle stored on
+    // the old element would be discarded with it, leaving its RAF loop + observers
+    // running forever and stacking a new loop each visit (the lag regression).
+    (window as any).__heroSimCleanup?.();
+
     const rootEl = document.querySelector<HTMLElement>("[data-hero-sim]");
     if (!rootEl) return;
-    // Tear down a previous instance (re-init on astro:page-load).
-    (rootEl as any)._simCleanup?.();
 
     const canvasEl =
       rootEl.querySelector<HTMLCanvasElement>(".hero-sim-canvas");
@@ -776,7 +781,7 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
         attributeFilter: ["data-theme"],
       });
 
-      (root as any)._simCleanup = () => {
+      (window as any).__heroSimCleanup = () => {
         stop();
         io.disconnect();
         mo.disconnect();
@@ -785,7 +790,7 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
         root.removeEventListener("pointerleave", onLeave);
         window.removeEventListener("resize", onResize);
         if (resizeT) clearTimeout(resizeT);
-        delete (root as any)._simCleanup;
+        delete (window as any).__heroSimCleanup;
       };
 
       if (isOnScreen()) start();
@@ -794,6 +799,11 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
 
   initHeroSim();
   document.addEventListener("astro:page-load", initHeroSim);
+  // Stop the sim the instant we navigate AWAY from home (before the swap), so its
+  // RAF loop never lingers into other pages or overlaps the next instance.
+  document.addEventListener("astro:before-swap", () =>
+    (window as any).__heroSimCleanup?.(),
+  );
 </script>
 
 <style>

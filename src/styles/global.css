@@ -105,37 +105,19 @@ main {
 	padding: 3rem 1rem;
 }
 
-::view-transition-group(root),
-::view-transition-old(root),
-::view-transition-new(root) {
-	animation: none;
-}
-
-/* iOS Safari paints the view-transition backdrop white for a frame while the
-   <main> content cross-fades (the area behind the snapshot should be
-   transparent but isn't). Pin it to the themed page color so there is never a
-   white flash — especially blinding in dark mode. Desktop ignores this since
-   its backdrop is already transparent. */
-::view-transition {
-	background-color: var(--color-bg);
-}
-
-@keyframes siteFadeIn {
-	from {
-		opacity: 0;
-	}
-	to {
-		opacity: 1;
-	}
-}
-
-@keyframes siteFadeOut {
-	from {
-		opacity: 1;
-	}
-	to {
-		opacity: 0;
-	}
+/* INSTANT page swaps — no view-transition animation at all.
+   A cross-fade (even just on <main>) leaves a window where the page snapshots
+   composite against the browser's default white view-transition base, producing
+   a whole-page white flash on navigation in every browser. Killing the animation
+   removes that window entirely: the new page simply replaces the old one in one
+   frame, with no snapshot fade and so no flash. (pageTransition.ts is also a
+   no-op now; this CSS is the belt-and-suspenders that overrides any UA default
+   and any per-element transition:animate scoping.) */
+::view-transition-group(*),
+::view-transition-image-pair(*),
+::view-transition-old(*),
+::view-transition-new(*) {
+	animation: none !important;
 }
 
 h1,

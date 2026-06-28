@@ -1030,7 +1030,11 @@ const selectedResearch = (
           window.removeEventListener("scroll", lockScroll);
           window.removeEventListener("wheel", lockScroll);
           window.removeEventListener("touchmove", lockScroll);
+          window.__homeIntroReleaseScroll = null;
         };
+        // If the user navigates AWAY mid-intro, release the lock so its window
+        // listeners don't linger onto other pages.
+        window.__homeIntroReleaseScroll = releaseScrollLock;
 
         // Hold the intro state until everything finishes. The phases can OVERLAP
         // now (the sim may start mid-flicker), so the end is the latest of:
@@ -1094,6 +1098,9 @@ const selectedResearch = (
 
       initHomeIntro();
       document.addEventListener("astro:page-load", initHomeIntro);
+      document.addEventListener("astro:before-swap", () => {
+        window.__homeIntroReleaseScroll?.();
+      });
 
       // Scroll reveal for below-hero content. Reveal once when each [data-reveal]
       // scrolls into view; no un-reveal (so it doesn't flicker on scroll-up).
