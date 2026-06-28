@@ -285,11 +285,16 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
         return FALLBACK;
       }
     }
-    let introStart: number | null = document.documentElement.hasAttribute(
-      "data-home-intro",
-    )
-      ? performance.now() + readSimIntroDelayMs()
-      : null;
+    // Absolute time (performance.now domain) when the sim phase — gas fade + name
+    // flicker — begins. Resolved LAZILY on the first render frame, NOT here at
+    // module-init: at init, var(--intro-sim-at) isn't yet applicable to a probe
+    // element, so readSimIntroDelayMs() returns 0 and the flicker would anchor
+    // ~1s too early (firing in the still-invisible canvas, worse as --intro-sim-at
+    // grows). By the first frame the styles have settled and the canvas's
+    // introCanvasFade animation exists, so we anchor to its real start instant.
+    const introWanted =
+      document.documentElement.hasAttribute("data-home-intro");
+    let introStart: number | null = null;
     // The particle canvas is centered in the viewport and capped to a laptop-like
     // width so huge monitors don't dilute the fixed particle budget. canvasLeft
     // is the canvas's left in viewport coords, used to convert viewport positions
@@ -315,10 +320,36 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     const JR_COLOR = "#ff49ff";
     const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
     function introElapsed() {
-      if (introStart === null) return Infinity;
+      if (!introWanted) return Infinity;
       if (!document.documentElement.hasAttribute("data-home-intro")) {
-        introStart = null;
         return Infinity;
+      }
+      // Latch the sim-phase start once, on the first frame it's resolvable. Prefer
+      // the canvas's introCanvasFade animation: its startTime + delay is the exact
+      // instant (in performance.now terms) the gas begins, frame-accurate and
+      // immune to the module-init "delay reads as 0" problem. Fall back to
+      // now()+resolved-delay (styles are settled by first frame, so the delay is
+      // correct now even though it wasn't at module-init) — and DON'T latch the
+      // fallback, so a later frame can still upgrade to the precise animation
+      // anchor. Once latched to the animation, the clock spans the whole flicker.
+      if (introStart === null) {
+        try {
+          const a = canvas
+            .getAnimations()
+            .find(
+              (x) => (x as CSSAnimation).animationName === "introCanvasFade",
+            ) as CSSAnimation | undefined;
+          const st = a?.startTime;
+          if (a && st != null) {
+            const delay = a.effect?.getComputedTiming().delay ?? 0;
+            introStart = (st as number) + (delay as number);
+          }
+        } catch {}
+        if (introStart === null) {
+          // Animation not readable yet this frame: report a pre-start time (the
+          // gas hasn't begun), so ambient/activation stay at 0 until we latch.
+          return -readSimIntroDelayMs();
+        }
       }
       return performance.now() - introStart;
     }

@@ -103,7 +103,7 @@ const selectedResearch = (
              var(--intro-glow-at)                         → starts with Phase 2
              calc(var(--intro-glow-at) + 0.65s)           → mid Phase 2
              calc(var(--intro-nav-fade) + var(--intro-glow-dur)) → after Phase 2 */
-        --intro-sim-at: calc(var(--intro-glow-at) + 0.1s);
+        --intro-sim-at: calc(var(--intro-glow-at) - 0.2s);
       }
 
       /* Phase 1 — the whole navbar fades in first (before any glow). */
@@ -206,14 +206,31 @@ const selectedResearch = (
         animation: introCanvasFade var(--intro-sim-dur, 0.45s) ease-out
           calc(var(--intro-sim-at, 2.1s) + 0.02s) both;
       }
+      /* Header + sim layers fade in on the scripted intro timeline. The card
+         layer is NOT here on purpose: it's a scroll-progress crossfade (its own
+         opacity clamp is 0 at the top and reveals on scroll), so holding it at
+         opacity:0 during the intro would fight that and leave it stuck visible
+         when scrolling back up. Letting it follow scroll progress gives the
+         correct behavior both during and after the intro. */
       :global(html[data-home-intro] .site-header),
       :global(html[data-home-intro] .hero-sim-grid),
-      :global(html[data-home-intro] .hero-sim-canvas),
-      :global(html[data-home-intro] .hero-layer-card),
-      :global(html[data-home-intro] .hero-after-snap),
+      :global(html[data-home-intro] .hero-sim-canvas) {
+        opacity: 0;
+      }
+      /* True below-the-fold content (no scroll-progress opacity of its own) is
+         held hidden during the intro so it doesn't pop in early. */
       :global(html[data-home-intro] .grid-2),
       :global(html[data-home-intro] main > hr) {
         opacity: 0;
+      }
+      /* If the user scrolls past the hero mid-intro (the scroll lock breaks),
+         reveal that below-the-fold content so they don't land on a blank page.
+         The card and sim are untouched here — they follow scroll progress / the
+         scripted timeline respectively. */
+      :global(html[data-home-intro][data-intro-scrolled] .grid-2),
+      :global(html[data-home-intro][data-intro-scrolled] main > hr) {
+        opacity: 1;
+        transition: opacity 0.3s ease-out;
       }
       /* Final beat of the intro: the "scroll" cue fades in once the name has
          finished igniting (sim start + the activation flicker length), so it
@@ -1013,6 +1030,10 @@ const selectedResearch = (
         const root = document.documentElement;
         if (!root.hasAttribute("data-home-intro")) return;
 
+        // Reveal the scroll cue (idempotent — re-adding the class is a no-op).
+        const showCue = () =>
+          root.querySelector(".hero-scroll-cue")?.classList.add("cue-in");
+
         // Block scrolling during the intro WITHOUT hiding overflow (which would
         // remove the scrollbar track and shift the layout when the intro ends).
         // We just pin the window to the top until the intro completes; the
@@ -1026,12 +1047,53 @@ const selectedResearch = (
         window.addEventListener("scroll", lockScroll, { passive: true });
         window.addEventListener("wheel", lockScroll, { passive: false });
         window.addEventListener("touchmove", lockScroll, { passive: false });
+        let released = false;
         const releaseScrollLock = () => {
+          if (released) return;
+          released = true;
           window.removeEventListener("scroll", lockScroll);
           window.removeEventListener("wheel", lockScroll);
           window.removeEventListener("touchmove", lockScroll);
+          window.removeEventListener("wheel", onScrollIntent);
+          window.removeEventListener("touchstart", onScrollIntent);
+          window.removeEventListener("keydown", onScrollIntent);
           window.__homeIntroReleaseScroll = null;
+          // If they broke the lock before the cue appeared, show it now so the
+          // page reads as intentionally scrollable.
+          showCue();
         };
+        // RESPONSIVENESS: the lock only exists to play the intro "from the top".
+        // It is INDEPENDENT of the animation (CSS + the sim's RAF loop, both
+        // driven by data-home-intro / the cue timer — none of which read
+        // scrollY), so the moment the user actually tries to scroll we release
+        // the lock and let them go; the intro keeps playing underneath, no
+        // glitch. A short floor stops a stray load-time event from skipping it.
+        // Without interaction, the timed release at the end still fires (below).
+        const INTRO_SCROLL_FLOOR = 350; // ms before user intent can break the lock
+        const introStart = performance.now();
+        const SCROLL_KEYS = new Set([
+          "ArrowDown",
+          "ArrowUp",
+          "PageDown",
+          "PageUp",
+          "End",
+          "Home",
+          " ",
+        ]);
+        const onScrollIntent = (e) => {
+          // Ignore zoom/modifier gestures; only genuine scroll intent releases.
+          if (e.type === "keydown" && !SCROLL_KEYS.has(e.key)) return;
+          if (performance.now() - introStart < INTRO_SCROLL_FLOOR) return;
+          // Force-reveal below-the-fold content (it's held at opacity:0 during
+          // the intro) so scrolling away from the hero doesn't show a blank page.
+          root.setAttribute("data-intro-scrolled", "");
+          releaseScrollLock();
+        };
+        window.addEventListener("wheel", onScrollIntent, { passive: true });
+        window.addEventListener("touchstart", onScrollIntent, {
+          passive: true,
+        });
+        window.addEventListener("keydown", onScrollIntent);
         // If the user navigates AWAY mid-intro, release the lock so its window
         // listeners don't linger onto other pages.
         window.__homeIntroReleaseScroll = releaseScrollLock;
@@ -1080,16 +1142,15 @@ const selectedResearch = (
 
         // Final beat: trigger the scroll-cue fade-in (CSS transition) once the
         // name has finished igniting.
-        const CUE_AT = simAt + 2750; // start of the cue fade (after the name flicker settles)
+        const CUE_AT = simAt + 600; // start of the cue fade (earlier: as the name ignites)
         const CUE_DUR = 600; // must match the CSS transition duration
         const cueEnd = CUE_AT + CUE_DUR;
-        window.setTimeout(() => {
-          root.querySelector(".hero-scroll-cue")?.classList.add("cue-in");
-        }, CUE_AT);
+        window.setTimeout(showCue, CUE_AT);
 
         window.setTimeout(
           () => {
             root.removeAttribute("data-home-intro");
+            root.removeAttribute("data-intro-scrolled");
             releaseScrollLock();
           },
           Math.max(cssEnd, activationEnd, cueEnd) + 120,
