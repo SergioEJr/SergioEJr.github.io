@@ -52,6 +52,11 @@ html {
 	box-sizing: border-box;
 	scroll-behavior: smooth;
 	background-color: var(--color-bg);
+	/* Always reserve space for the vertical scrollbar so the layout width never
+	   changes when the scrollbar appears/disappears (e.g. the home intro toggling
+	   `overflow: hidden`, or short vs. long pages). Without this, content shifts
+	   sideways by the scrollbar width on those transitions. */
+	scrollbar-gutter: stable;
 }
 
 /* Minimal Scrollbar for Browser and Modals */

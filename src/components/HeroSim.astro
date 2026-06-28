@@ -38,14 +38,6 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
 <script>
   type Vec = { x: number; y: number };
 
-  interface Particle {
-    x: number;
-    y: number;
-    vx: number;
-    vy: number;
-    theta: number; // heading for self-propulsion
-  }
-
   // Reusable per-mount controller so ClientRouter navigations don't stack loops.
   function initHeroSim() {
     const rootEl = document.querySelector<HTMLElement>("[data-hero-sim]");
@@ -130,10 +122,57 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     const LIGHT_GAS = "#b3b3b3";
 
     // ---- State ----------------------------------------------------------
-    let particles: Particle[] = [];
+    // Particles are stored in parallel typed arrays (Structure-of-Arrays) rather
+    // than an array of {x,y,vx,vy,theta} objects: contiguous memory, far smaller
+    // heap, and almost no per-frame GC churn at tens of thousands of particles.
+    // `count` is the live particle count (arrays are allocated to MAX_PARTICLES
+    // once and reused; we never reallocate per resize, just change `count`).
+    let px = new Float32Array(0);
+    let py = new Float32Array(0);
+    let pvx = new Float32Array(0);
+    let pvy = new Float32Array(0);
+    let pth = new Float32Array(0);
+    // Per-particle render group, reused each frame (0=gas, 1=name, 2=JR). Filled
+    // by render()'s single classification pass; avoids re-evaluating isInside* in
+    // each draw pass AND avoids allocating anything per frame.
+    let pgroup = new Uint8Array(0);
+    let count = 0;
     let raf: number | null = null;
     let last = 0;
     let running = false;
+    // The intro's simulation phase (gas fade-in + activation flicker) begins at
+    // the SAME absolute time as the CSS sim fade — the --intro-sim-at custom
+    // property on <html data-home-intro> (which can overlap Phase 2). Custom
+    // properties read back via getComputedStyle are UNRESOLVED (e.g. the literal
+    // "calc(...)"), so we can't just parse it. Instead we let the browser resolve
+    // it for us: set it as an animation-delay on a throwaway probe element and
+    // read the resolved seconds back. This keeps JS perfectly in lockstep with
+    // the CSS no matter how --intro-sim-at is authored.
+    function readSimIntroDelayMs(): number {
+      const FALLBACK = 1750;
+      try {
+        const probe = document.createElement("div");
+        probe.style.position = "absolute";
+        probe.style.animationName = "introCanvasFade";
+        probe.style.animationDuration = "1s";
+        // var() resolves against <html> where --intro-sim-at is defined.
+        probe.style.animationDelay = "var(--intro-sim-at)";
+        document.documentElement.appendChild(probe);
+        const resolved = getComputedStyle(probe).animationDelay; // e.g. "1.75s"
+        probe.remove();
+        const v = resolved.endsWith("ms")
+          ? parseFloat(resolved)
+          : parseFloat(resolved) * 1000;
+        return isFinite(v) ? v : FALLBACK;
+      } catch {
+        return FALLBACK;
+      }
+    }
+    let introStart: number | null = document.documentElement.hasAttribute(
+      "data-home-intro",
+    )
+      ? performance.now() + readSimIntroDelayMs()
+      : null;
     // The particle canvas is centered in the viewport and capped to a laptop-like
     // width so huge monitors don't dilute the fixed particle budget. canvasLeft
     // is the canvas's left in viewport coords, used to convert viewport positions
@@ -157,6 +196,43 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     let insideColor = "#003366"; // inside a letter: the heading accent color
     // "JR" superscript color — the logo's pink, so the sim echoes the brand.
     const JR_COLOR = "#ff49ff";
+    const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+    function introElapsed() {
+      if (introStart === null) return Infinity;
+      if (!document.documentElement.hasAttribute("data-home-intro")) {
+        introStart = null;
+        return Infinity;
+      }
+      return performance.now() - introStart;
+    }
+    // t is ms since the sim intro phase began (canvas starting to appear);
+    // negative before that. The GAS fades in uniformly (no flicker) over the
+    // first ~600ms; during this the name is INVISIBLE (activation still 0), so
+    // there's a clear "uniform gas, no name" beat before the name ignites.
+    function ambientIntroAlpha(t: number) {
+      if (!isFinite(t)) return 1;
+      if (t <= 0) return 0;
+      return clamp01(t / 600);
+    }
+    // The ACTIVATION (inside-name color+glow) ignites like a neon tube AFTER the
+    // gas is fully up: held off through the gas fade, then a few stutter pulses,
+    // then settles fully on. This is the ONLY thing that flickers — the gas and
+    // grid never do.
+    function activatedIntroAlpha(t: number) {
+      if (!isFinite(t)) return 1;
+      if (t < 750) return 0; // gas-only beat; name hidden
+      if (t < 800) return 0.25; // first stutter on
+      if (t < 870) return 0; // off
+      if (t < 915) return 0.7; // flick
+      if (t < 955) return 0.05; // off
+      if (t < 1010) return 0.9; // bright flick
+      if (t < 1055) return 0.18; // dip
+      if (t < 1110) return 0.55; // half flick
+      if (t < 1150) return 0.1; // off
+      if (t < 1210) return 1; // on
+      if (t < 1255) return 0.45; // final little stutter
+      return 1; // settled, fully lit
+    }
     function readColors() {
       const cs = getComputedStyle(document.documentElement);
       // Inside-text color = the color used for headings in this theme.
@@ -346,12 +422,12 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       // Rescale existing particles to the new domain so the gas stays UNIFORM
       // across a resize. Without this, the canvas grows/shrinks but the old
       // positions keep their pixel coords, leaving dense and empty bands.
-      if (prevW > 0 && prevH > 0 && particles.length) {
+      if (prevW > 0 && prevH > 0 && count) {
         const sx = W / prevW;
         const sy = H / prevH;
-        for (const p of particles) {
-          p.x *= sx;
-          p.y *= sy;
+        for (let i = 0; i < count; i++) {
+          px[i] *= sx;
+          py[i] *= sy;
         }
       }
 
@@ -362,19 +438,27 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
 
     // ---- Particles ------------------------------------------------------
     function seedParticles() {
-      const want = targetCount();
-      // Preserve existing positions on resize where possible; just top up / trim.
-      if (particles.length > want) particles.length = want;
-      while (particles.length < want) {
-        // Particles pass through letters freely, so spawn anywhere.
-        particles.push({
-          x: Math.random() * W,
-          y: Math.random() * H,
-          vx: 0,
-          vy: 0,
-          theta: Math.random() * Math.PI * 2,
-        });
+      // Allocate the typed arrays ONCE (to the perf cap) and reuse them; resizes
+      // only change `count`, never reallocate, so there's no per-resize GC.
+      if (px.length === 0) {
+        px = new Float32Array(MAX_PARTICLES);
+        py = new Float32Array(MAX_PARTICLES);
+        pvx = new Float32Array(MAX_PARTICLES);
+        pvy = new Float32Array(MAX_PARTICLES);
+        pth = new Float32Array(MAX_PARTICLES);
+        pgroup = new Uint8Array(MAX_PARTICLES);
       }
+      const want = Math.min(targetCount(), MAX_PARTICLES);
+      // Top up new particles (spawn anywhere — they pass through letters freely).
+      // Existing particles keep their state; we only grow/shrink the live `count`.
+      for (let i = count; i < want; i++) {
+        px[i] = Math.random() * W;
+        py[i] = Math.random() * H;
+        pvx[i] = 0;
+        pvy[i] = 0;
+        pth[i] = Math.random() * Math.PI * 2;
+      }
+      count = want;
     }
 
     // ---- Pointer --------------------------------------------------------
@@ -396,23 +480,28 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     // random spawn + rotational diffusion keeps them well spread, so we can run
     // tens of thousands of particles cheaply (each step is O(N), no neighbours).
     function step(dt: number) {
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
+      const noise = Math.sqrt(2 * DR * dt); // heading random-walk magnitude
+      const curR2 = CURSOR_R * CURSOR_R;
+      const curActive = cursor.active;
+      const cx = cursor.x;
+      const cy = cursor.y;
+      for (let i = 0; i < count; i++) {
         // Self-propulsion + rotational diffusion (the "active" part).
-        p.theta += Math.sqrt(2 * DR * dt) * gaussian();
-        let ax = V0 * Math.cos(p.theta);
-        let ay = V0 * Math.sin(p.theta);
+        const th = pth[i] + noise * gaussian();
+        pth[i] = th;
+        let ax = V0 * Math.cos(th);
+        let ay = V0 * Math.sin(th);
 
-        // The glyphs exert NO force — particles pass through the letters freely.
-        // The name is revealed purely by recoloring particles while they're
-        // inside a glyph (see render()).
-
-        // Cursor repulsion well (the one interaction left).
-        if (cursor.active) {
-          const dx = p.x - cursor.x;
-          const dy = p.y - cursor.y;
+        // The glyphs exert NO force — particles pass through freely; the name is
+        // revealed purely by recoloring inside-glyph particles (see render()).
+        // Cursor repulsion well is the one interaction left.
+        let x = px[i];
+        let y = py[i];
+        if (curActive) {
+          const dx = x - cx;
+          const dy = y - cy;
           const d2 = dx * dx + dy * dy;
-          if (d2 < CURSOR_R * CURSOR_R && d2 > 0.01) {
+          if (d2 < curR2 && d2 > 0.01) {
             const d = Math.sqrt(d2);
             const f = (CURSOR_PUSH * (1 - d / CURSOR_R)) / d;
             ax += dx * f;
@@ -421,21 +510,25 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
         }
 
         // Integrate (semi-implicit) with damping + speed clamp.
-        p.vx = (p.vx + ax * dt) * DAMP;
-        p.vy = (p.vy + ay * dt) * DAMP;
-        const sp = Math.hypot(p.vx, p.vy);
+        let vx = (pvx[i] + ax * dt) * DAMP;
+        let vy = (pvy[i] + ay * dt) * DAMP;
+        const sp = Math.hypot(vx, vy);
         if (sp > MAX_SPEED) {
-          p.vx = (p.vx / sp) * MAX_SPEED;
-          p.vy = (p.vy / sp) * MAX_SPEED;
+          vx = (vx / sp) * MAX_SPEED;
+          vy = (vy / sp) * MAX_SPEED;
         }
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
+        pvx[i] = vx;
+        pvy[i] = vy;
+        x += vx * dt;
+        y += vy * dt;
 
         // Toroidal wrap so the field stays full.
-        if (p.x < 0) p.x += W;
-        else if (p.x >= W) p.x -= W;
-        if (p.y < 0) p.y += H;
-        else if (p.y >= H) p.y -= H;
+        if (x < 0) x += W;
+        else if (x >= W) x -= W;
+        if (y < 0) y += H;
+        else if (y >= H) y -= H;
+        px[i] = x;
+        py[i] = y;
       }
     }
 
@@ -447,63 +540,70 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       // evaluated once per particle and the result reused for both passes.
       const half = dotRadius();
       const sz = half * 2;
+      const introT = introElapsed();
+      const introActive = isFinite(introT);
+      const ambientAlpha = ambientIntroAlpha(introT);
+      const activatedAlpha = activatedIntroAlpha(introT);
 
-      // Classify each particle once into JR (magenta) / name (accent) / outside
-      // (ambient gas), then draw each group as one batched fill. JR is checked
-      // first (it's a small disjoint mask); the result is reused so isInside /
-      // isInsideJR are each evaluated at most once per particle.
-      ctx.beginPath();
+      // SINGLE classification pass: evaluate isInside*/once per particle and
+      // record its group in pgroup (0=gas, 1=name, 2=JR). Then draw each group
+      // with immediate-mode beginPath/rect/fill — NO per-frame allocation (an
+      // earlier Path2D-per-frame version leaked memory badly). During the intro,
+      // inside/JR particles also render as gas until the activation lights them.
       let anyInside = false;
       let anyJR = false;
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        if (isInsideJR(p.x, p.y)) {
+      for (let i = 0; i < count; i++) {
+        const x = px[i];
+        const y = py[i];
+        let g = 0;
+        if (isInsideJR(x, y)) {
+          g = 2;
           anyJR = true;
-          continue;
-        }
-        if (isInside(p.x, p.y)) {
+        } else if (isInside(x, y)) {
+          g = 1;
           anyInside = true;
-          continue;
         }
-        ctx.rect(p.x - half, p.y - half, sz, sz);
+        pgroup[i] = g;
+      }
+
+      // Pass 1: ambient gas (group 0, plus groups 1/2 during the intro pre-light).
+      ctx.beginPath();
+      for (let i = 0; i < count; i++) {
+        if (pgroup[i] === 0 || introActive) {
+          ctx.rect(px[i] - half, py[i] - half, sz, sz);
+        }
       }
       ctx.shadowBlur = 0;
-      ctx.globalAlpha = ALPHA_OUT;
+      ctx.globalAlpha = ALPHA_OUT * ambientAlpha;
       ctx.fillStyle = dotColor;
       ctx.fill();
 
-      if (anyInside) {
+      if (anyInside && activatedAlpha > 0) {
         // Inside the letters: heading accent + a soft GLOW so the activated
-        // particles read as one cohesive letter shape (this makes the name pop,
-        // especially in light mode). The shadow is set once and applies to the
-        // whole batched fill, so it stays cheap.
+        // particles read as one cohesive letter shape (makes the name pop).
         ctx.beginPath();
-        for (let i = 0; i < particles.length; i++) {
-          const p = particles[i];
-          if (isInsideJR(p.x, p.y) || !isInside(p.x, p.y)) continue;
-          ctx.rect(p.x - half, p.y - half, sz, sz);
+        for (let i = 0; i < count; i++) {
+          if (pgroup[i] === 1) ctx.rect(px[i] - half, py[i] - half, sz, sz);
         }
-        ctx.globalAlpha = ALPHA_IN;
+        ctx.globalAlpha = ALPHA_IN * activatedAlpha;
         ctx.fillStyle = insideColor;
         ctx.shadowColor = insideColor;
-        ctx.shadowBlur = GLOW;
+        ctx.shadowBlur = GLOW * activatedAlpha;
         ctx.fill();
         ctx.fill(); // second fill stacks the glow for a denser core
         ctx.shadowBlur = 0;
       }
 
-      if (anyJR) {
+      if (anyJR && activatedAlpha > 0) {
         // "JR" superscript: magenta, matching the logo's pink glyphs.
         ctx.beginPath();
-        for (let i = 0; i < particles.length; i++) {
-          const p = particles[i];
-          if (!isInsideJR(p.x, p.y)) continue;
-          ctx.rect(p.x - half, p.y - half, sz, sz);
+        for (let i = 0; i < count; i++) {
+          if (pgroup[i] === 2) ctx.rect(px[i] - half, py[i] - half, sz, sz);
         }
-        ctx.globalAlpha = ALPHA_IN;
+        ctx.globalAlpha = ALPHA_IN * activatedAlpha;
         ctx.fillStyle = JR_COLOR;
         ctx.shadowColor = JR_COLOR;
-        ctx.shadowBlur = GLOW;
+        ctx.shadowBlur = GLOW * activatedAlpha;
         ctx.fill();
         ctx.fill();
         ctx.shadowBlur = 0;

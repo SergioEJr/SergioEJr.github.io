@@ -28,6 +28,22 @@ const selectedResearch = (
 <html lang="en">
   <head>
     <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+    <script is:inline>
+      (() => {
+        const KEY = "homeIntroLastSeenAt";
+        const TTL = 6 * 60 * 60 * 1000;
+        const root = document.documentElement;
+        try {
+          if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+          const last = Number(localStorage.getItem(KEY) || 0);
+          const now = Date.now();
+          if (true) {
+            root.setAttribute("data-home-intro", "pending");
+            localStorage.setItem(KEY, String(now));
+          }
+        } catch {}
+      })();
+    </script>
     <style>
       /* ============================================================
          PINNED-SCRUB HERO
@@ -48,6 +64,315 @@ const selectedResearch = (
         /* Visible overflow so HeroSim's full-bleed canvas/grid feather past the
            content column (mobile re-clips below). */
         overflow-x: visible;
+      }
+      :global(html),
+      :global(body) {
+        overflow-x: clip;
+      }
+      :global(html[data-home-intro]) {
+        overflow: hidden;
+        /* ---- Intro timeline knobs ----
+           Phase 1  navbar fades in       [0 .. NAV_FADE]
+           Phase 2  navbar neon flicker    [NAV_FADE .. +GLOW]   (in series w/ P1)
+           Phase 3  simulation fades+flicks[SIM_AT .. +SIM]      (INDEPENDENT —
+                    may start any time, including mid-Phase-2; see --intro-sim-at)
+           The JS removes data-home-intro after the LATEST phase completes. */
+        --intro-nav-fade: 1.1s; /* phase 1: nav fade-in (slow + dramatic) */
+        --intro-glow-dur: 1.3s; /* phase 2: nav flicker (after fade-in) */
+        --intro-sim-dur: 0.7s; /* phase 3: sim grid+canvas flicker-in */
+        /* Phase 1 → Phase 2 are still in series (glow starts when the fade ends). */
+        --intro-glow-at: var(--intro-nav-fade);
+        /* --intro-sim-at: WHEN the simulation phase begins, as an ABSOLUTE time
+           from page load. It no longer has to wait for Phase 2 to finish — set it
+           to whatever you like and the sim (gas fade + name flicker) will start
+           there, even mid-Phase-2. The gas fade-in (CSS) and the name-activation
+           flicker (HeroSim reads this same var) both key off it, so they stay in
+           sync. The default below = start right when the nav flicker begins
+           (overlapping all of Phase 2); raise it to delay, lower it to overlap
+           earlier. Examples:
+             var(--intro-glow-at)                         → starts with Phase 2
+             calc(var(--intro-glow-at) + 0.65s)           → mid Phase 2
+             calc(var(--intro-nav-fade) + var(--intro-glow-dur)) → after Phase 2 */
+        --intro-sim-at: calc(var(--intro-glow-at) + 0.1s);
+      }
+
+      /* Phase 1 — the whole navbar fades in first (before any glow). */
+      :global(html[data-home-intro] .site-header) {
+        animation: introNavFadeIn var(--intro-nav-fade, 0.45s) ease-out both;
+      }
+      @keyframes introNavFadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      /* Phase 2 — neon flicker on the navbar, starting AFTER the fade-in. Most
+         elements' resting state has no glow, so their flicker fades to none at
+         100%. The flicker portion is stepped; the fade-out tail is linear. */
+      :global(html[data-home-intro] .site-header .brand-logo .cls-1) {
+        animation: introLogoPrimaryGlow var(--intro-glow-dur, 1.1s) linear
+          var(--intro-glow-at, 0.45s) both;
+      }
+      :global(html[data-home-intro] .site-header .brand-logo .cls-2) {
+        animation: introLogoSecondaryGlow var(--intro-glow-dur, 1.1s) linear
+          var(--intro-glow-at, 0.45s) both;
+      }
+      :global(html[data-home-intro] .internal-links a) {
+        animation: introTextGlow var(--intro-glow-dur, 1.1s) linear
+          var(--intro-glow-at, 0.45s) both;
+      }
+      /* The magicbar's RESTING state already glows, so its intro flicker must end
+         IN the glowing state (not fade to none) for a seamless handoff. */
+      :global(html[data-home-intro] .nav-underline) {
+        animation: introUnderlineGlow var(--intro-glow-dur, 1.1s) linear
+          var(--intro-glow-at, 0.45s) both;
+      }
+      :global(html[data-home-intro] .header-actions svg),
+      :global(html[data-home-intro] #menu-toggle svg) {
+        animation: introIconGlow var(--intro-glow-dur, 1.1s) linear
+          var(--intro-glow-at, 0.45s) both;
+      }
+
+      /* Phase 3 — simulation gas fades in (uniform, no flicker); the NAME
+         activation flicker is driven in HeroSim. Starts at --intro-sim-at, which
+         is independent of Phase 2 and may overlap it. */
+      :global(html[data-home-intro] .hero-sim-grid) {
+        animation: introGridFade var(--intro-sim-dur, 0.45s) ease-out
+          var(--intro-sim-at, 2.1s) both;
+      }
+      :global(html[data-home-intro] .hero-sim-canvas) {
+        animation: introCanvasFade var(--intro-sim-dur, 0.45s) ease-out
+          calc(var(--intro-sim-at, 2.1s) + 0.02s) both;
+      }
+      :global(html[data-home-intro] .site-header),
+      :global(html[data-home-intro] .hero-sim-grid),
+      :global(html[data-home-intro] .hero-sim-canvas),
+      :global(html[data-home-intro] .hero-scroll-cue),
+      :global(html[data-home-intro] .hero-layer-card),
+      :global(html[data-home-intro] .hero-after-snap),
+      :global(html[data-home-intro] .grid-2),
+      :global(html[data-home-intro] main > hr) {
+        opacity: 0;
+      }
+      /* Each glow flickers like a neon tube warming up: four quick stepped
+         pulses (tight adjacent-% pairs read as instant on/off even under linear
+         timing) through ~40%, then a SHORT sustained "on" (41–62%), then a smooth
+         ramp DOWN to none by 100% so the glow fades out instead of snapping off.
+         Off frames: 0–8, 12–15, 19–22, 26–30, 35–40. On frames: 9–11, 16–18,
+         23–25, 31–34, 41–62. */
+      @keyframes introLogoPrimaryGlow {
+        0%,
+        8%,
+        12%,
+        15%,
+        19%,
+        22%,
+        26%,
+        30%,
+        35%,
+        40% {
+          filter: none;
+        }
+        9%,
+        11%,
+        16%,
+        18%,
+        23%,
+        25%,
+        31%,
+        34%,
+        41%,
+        62% {
+          filter: drop-shadow(0 0 6px var(--brand-glow-primary))
+            drop-shadow(0 0 16px var(--brand-glow-primary));
+        }
+        /* Eased fade-out tail: extra steps so the glow drifts gently to zero
+           instead of a linear drop that visually completes early (looks abrupt in
+           light mode). Same total duration — just better-distributed. */
+        80% {
+          filter: drop-shadow(0 0 4px var(--brand-glow-primary))
+            drop-shadow(0 0 11px var(--brand-glow-primary));
+        }
+        92% {
+          filter: drop-shadow(0 0 2px var(--brand-glow-primary))
+            drop-shadow(0 0 6px var(--brand-glow-primary));
+        }
+        100% {
+          filter: drop-shadow(0 0 0 transparent) drop-shadow(0 0 0 transparent);
+        }
+      }
+      @keyframes introLogoSecondaryGlow {
+        0%,
+        8%,
+        12%,
+        15%,
+        19%,
+        22%,
+        26%,
+        30%,
+        35%,
+        40% {
+          filter: none;
+        }
+        9%,
+        11%,
+        16%,
+        18%,
+        23%,
+        25%,
+        31%,
+        34%,
+        41%,
+        62% {
+          filter: drop-shadow(0 0 6px var(--brand-glow-secondary))
+            drop-shadow(0 0 16px var(--brand-glow-secondary));
+        }
+        80% {
+          filter: drop-shadow(0 0 4px var(--brand-glow-secondary))
+            drop-shadow(0 0 11px var(--brand-glow-secondary));
+        }
+        92% {
+          filter: drop-shadow(0 0 2px var(--brand-glow-secondary))
+            drop-shadow(0 0 6px var(--brand-glow-secondary));
+        }
+        100% {
+          filter: drop-shadow(0 0 0 transparent) drop-shadow(0 0 0 transparent);
+        }
+      }
+      @keyframes introTextGlow {
+        0%,
+        8%,
+        12%,
+        15%,
+        19%,
+        22%,
+        26%,
+        30%,
+        35%,
+        40% {
+          text-shadow: none;
+        }
+        9%,
+        11%,
+        16%,
+        18%,
+        23%,
+        25%,
+        31%,
+        34%,
+        41%,
+        62% {
+          text-shadow:
+            0 0 6px var(--nav-glow, var(--color-accent)),
+            0 0 14px var(--nav-glow, var(--color-accent));
+        }
+        80% {
+          text-shadow:
+            0 0 4px var(--nav-glow, var(--color-accent)),
+            0 0 10px var(--nav-glow, var(--color-accent));
+        }
+        92% {
+          text-shadow:
+            0 0 2px var(--nav-glow, var(--color-accent)),
+            0 0 5px var(--nav-glow, var(--color-accent));
+        }
+        100% {
+          text-shadow:
+            0 0 0 transparent,
+            0 0 0 transparent;
+        }
+      }
+      @keyframes introIconGlow {
+        0%,
+        8%,
+        12%,
+        15%,
+        19%,
+        22%,
+        26%,
+        30%,
+        35%,
+        40% {
+          filter: none;
+        }
+        9%,
+        11%,
+        16%,
+        18%,
+        23%,
+        25%,
+        31%,
+        34%,
+        41%,
+        62% {
+          filter: drop-shadow(0 0 5px var(--nav-glow, var(--color-accent)))
+            drop-shadow(0 0 12px var(--nav-glow, var(--color-accent)));
+        }
+        80% {
+          filter: drop-shadow(0 0 3px var(--nav-glow, var(--color-accent)))
+            drop-shadow(0 0 8px var(--nav-glow, var(--color-accent)));
+        }
+        92% {
+          filter: drop-shadow(0 0 1px var(--nav-glow, var(--color-accent)))
+            drop-shadow(0 0 4px var(--nav-glow, var(--color-accent)));
+        }
+        100% {
+          filter: drop-shadow(0 0 0 transparent) drop-shadow(0 0 0 transparent);
+        }
+      }
+      @keyframes introUnderlineGlow {
+        0%,
+        8%,
+        12%,
+        15%,
+        19%,
+        22%,
+        26%,
+        30%,
+        35%,
+        40% {
+          box-shadow: none;
+        }
+        9%,
+        11%,
+        16%,
+        18%,
+        23%,
+        25%,
+        31%,
+        34%,
+        41%,
+        100% {
+          /* Hold the glow all the way to 100% — the magicbar's resting state
+             glows, so ending lit makes the handoff seamless (no fade-out). */
+          box-shadow:
+            0 0 6px var(--nav-glow, var(--color-accent)),
+            0 0 12px var(--nav-glow, var(--color-accent));
+        }
+      }
+      @keyframes introGridFade {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 0.24;
+        }
+      }
+      /* The canvas fades in UNIFORMLY (the whole gas appears at one ambient
+         color, name not yet visible). The neon "activation" flicker — the
+         inside-name particles igniting their color+glow — is driven inside the
+         simulation's render loop (HeroSim.astro: activatedIntroAlpha), NOT here,
+         so only the activation flickers, never the gas as a whole. */
+      @keyframes introCanvasFade {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
       }
       /* Snap points so the page settles on either the sim (top) or the card (end
          of the pin) — never mid-crossfade. The sentinels are zero-impact markers.
@@ -251,7 +576,13 @@ const selectedResearch = (
           pointer-events: auto !important;
         }
         .hero-layer-sim {
+          height: calc(100svh - var(--header-h) - 2rem);
           min-height: calc(100svh - var(--header-h) - 2rem);
+        }
+        .hero-layer-sim > :global(.hero-sim) {
+          flex: 1 1 auto;
+          height: 100%;
+          max-height: none;
         }
         .hero-scroll-cue {
           display: none;
@@ -273,7 +604,25 @@ const selectedResearch = (
         }
       }
 
-      /* --- Reduced motion: no pin, no crossfade — just stack the two views. --- */
+      /* --- Scroll reveal: the below-hero content (Selected Research, Latest
+         Posts) starts slightly down + transparent and eases in when scrolled into
+         view (JS adds .is-revealed via IntersectionObserver). --reveal-delay
+         staggers the two columns. --- */
+      [data-reveal] {
+        opacity: 0;
+        transform: translateY(22px);
+        transition:
+          opacity 0.6s ease-out var(--reveal-delay, 0s),
+          transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay, 0s);
+        will-change: opacity, transform;
+      }
+      [data-reveal].is-revealed {
+        opacity: 1;
+        transform: none;
+      }
+
+      /* --- Reduced motion: no pin, no crossfade — just stack the two views, and
+         no reveal animation (content is shown immediately). --- */
       @media (prefers-reduced-motion: reduce) {
         .hero-scroll {
           height: auto;
@@ -296,6 +645,11 @@ const selectedResearch = (
         .hero-scroll-cue {
           display: none;
         }
+        [data-reveal] {
+          opacity: 1;
+          transform: none;
+          transition: none;
+        }
       }
     </style>
   </head>
@@ -312,7 +666,9 @@ const selectedResearch = (
           mobile fall back to a simple stacked layout (see <style>). */
       }
       <section class="hero-scroll" data-hero-scroll>
-        {/* Snap markers: settle on the sim (top) or the card (end of the pin). */}
+        {
+          /* Snap markers: settle on the sim (top) or the card (end of the pin). */
+        }
         <div class="hero-snap-top" aria-hidden="true"></div>
         <div class="hero-snap-end" aria-hidden="true"></div>
         <div class="hero-stage">
@@ -369,7 +725,7 @@ const selectedResearch = (
       <hr style="margin: 3rem 0; border-top: 1px solid var(--color-border);" />
 
       <div class="grid-2" style="gap: 4rem; margin-top: 0;">
-        <section>
+        <section data-reveal>
           <h2 style="margin-top: 0;">Selected Research</h2>
           <div class="publication-list">
             {
@@ -403,7 +759,7 @@ const selectedResearch = (
           </div>
         </section>
 
-        <section>
+        <section data-reveal style="--reveal-delay: 0.08s;">
           <h2 style="margin-top: 0;">Latest Posts</h2>
           <ul style="list-style: none; padding: 0;">
             {
@@ -522,13 +878,17 @@ const selectedResearch = (
             (stage && parseFloat(getComputedStyle(stage).top)) || 4.5 * 16;
           const pinned = window.innerHeight - headerH;
           const travel = Math.max(1, section.offsetHeight - pinned);
-          const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+          const sectionTop =
+            section.getBoundingClientRect().top + window.scrollY;
           const start = sectionTop - headerH;
           return { start, end: start + travel, travel };
         }
         function progress() {
           const m = metrics();
-          return Math.min(1, Math.max(0, (window.scrollY - m.start) / m.travel));
+          return Math.min(
+            1,
+            Math.max(0, (window.scrollY - m.start) / m.travel),
+          );
         }
 
         function update() {
@@ -576,6 +936,93 @@ const selectedResearch = (
 
       initHeroScroll();
       document.addEventListener("astro:page-load", initHeroScroll);
+
+      function initHomeIntro() {
+        const root = document.documentElement;
+        if (!root.hasAttribute("data-home-intro")) return;
+        // Hold the intro state until everything finishes. The phases can OVERLAP
+        // now (the sim may start mid-flicker), so the end is the latest of:
+        //   - Phase 2 nav flicker end   (nav-fade + glow)
+        //   - sim CSS fade end          (--intro-sim-at + --intro-sim-dur)
+        //   - sim activation flicker end(--intro-sim-at + ~1300ms)
+        const cs = getComputedStyle(root);
+        const ms = (name, fallback) => {
+          const raw = cs.getPropertyValue(name).trim();
+          if (!raw) return fallback;
+          const v = raw.endsWith("ms")
+            ? parseFloat(raw)
+            : parseFloat(raw) * 1000;
+          return isFinite(v) ? v : fallback;
+        };
+        // Resolve --intro-sim-at (a calc()) the same way HeroSim does: read it
+        // back as a browser-resolved animation-delay from a throwaway probe.
+        const resolveSimAt = () => {
+          try {
+            const probe = document.createElement("div");
+            probe.style.position = "absolute";
+            probe.style.animationName = "introCanvasFade";
+            probe.style.animationDuration = "1s";
+            probe.style.animationDelay = "var(--intro-sim-at)";
+            root.appendChild(probe);
+            const r = getComputedStyle(probe).animationDelay;
+            probe.remove();
+            const v = r.endsWith("ms") ? parseFloat(r) : parseFloat(r) * 1000;
+            return isFinite(v) ? v : 1750;
+          } catch {
+            return 1750;
+          }
+        };
+        const navFlickerEnd =
+          ms("--intro-nav-fade", 1100) + ms("--intro-glow-dur", 1300);
+        const simAt = resolveSimAt();
+        const cssEnd = Math.max(
+          navFlickerEnd,
+          simAt + ms("--intro-sim-dur", 700),
+        );
+        const activationEnd = simAt + 1300; // matches HeroSim activatedIntroAlpha end
+        window.setTimeout(
+          () => {
+            root.removeAttribute("data-home-intro");
+          },
+          Math.max(cssEnd, activationEnd) + 120,
+        );
+      }
+
+      initHomeIntro();
+      document.addEventListener("astro:page-load", initHomeIntro);
+
+      // Scroll reveal for below-hero content. Reveal once when each [data-reveal]
+      // scrolls into view; no un-reveal (so it doesn't flicker on scroll-up).
+      function initReveal() {
+        const items = document.querySelectorAll("[data-reveal]");
+        if (!items.length) return;
+        if (
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+          !("IntersectionObserver" in window)
+        ) {
+          items.forEach((el) => el.classList.add("is-revealed"));
+          return;
+        }
+        const io = new IntersectionObserver(
+          (entries, obs) => {
+            for (const e of entries) {
+              if (e.isIntersecting) {
+                e.target.classList.add("is-revealed");
+                obs.unobserve(e.target);
+              }
+            }
+          },
+          // Trigger a bit before fully in view so it feels responsive.
+          { rootMargin: "0px 0px -12% 0px", threshold: 0.05 },
+        );
+        items.forEach((el) => {
+          el.classList.remove("is-revealed");
+          io.observe(el);
+        });
+      }
+
+      initReveal();
+      document.addEventListener("astro:page-load", initReveal);
     </script>
   </body>
 </html>
