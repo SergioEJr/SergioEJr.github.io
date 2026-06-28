@@ -80,8 +80,10 @@ const selectedResearch = (
         --intro-nav-fade: 1.1s; /* phase 1: nav fade-in (slow + dramatic) */
         --intro-glow-dur: 1.3s; /* phase 2: nav flicker (after fade-in) */
         --intro-sim-dur: 0.7s; /* phase 3: sim grid+canvas flicker-in */
-        /* Phase 1 → Phase 2 are still in series (glow starts when the fade ends). */
-        --intro-glow-at: var(--intro-nav-fade);
+        /* Phase 2 starts shortly BEFORE the fade fully finishes (the nav is
+           already mostly visible by then), trimming the dead gap between the
+           fade-in and the flicker. Lower the offset to overlap more. */
+        --intro-glow-at: calc(var(--intro-nav-fade) - 0.35s);
         /* --intro-sim-at: WHEN the simulation phase begins, as an ABSOLUTE time
            from page load. It no longer has to wait for Phase 2 to finish — set it
            to whatever you like and the sim (gas fade + name flicker) will start
@@ -150,12 +152,25 @@ const selectedResearch = (
       :global(html[data-home-intro] .site-header),
       :global(html[data-home-intro] .hero-sim-grid),
       :global(html[data-home-intro] .hero-sim-canvas),
-      :global(html[data-home-intro] .hero-scroll-cue),
       :global(html[data-home-intro] .hero-layer-card),
       :global(html[data-home-intro] .hero-after-snap),
       :global(html[data-home-intro] .grid-2),
       :global(html[data-home-intro] main > hr) {
         opacity: 0;
+      }
+      /* Final beat of the intro: the "scroll" cue fades in once the name has
+         finished igniting (sim start + the activation flicker length), so it
+         appears last and concludes the sequence instead of snapping in. */
+      /* The scroll cue is the final beat of the intro. It's held hidden during
+         the intro and faded in via a CSS TRANSITION (not a delayed keyframe —
+         compositor-run keyframe opacity was rendering as a snap on this layer).
+         JS adds .cue-in at the right moment to trigger the transition. */
+      :global(html[data-home-intro] .hero-scroll-cue) {
+        opacity: 0;
+        transition: opacity 0.6s ease-out;
+      }
+      :global(html[data-home-intro] .hero-scroll-cue.cue-in) {
+        opacity: 1;
       }
       /* Each glow flickers like a neon tube warming up: four quick stepped
          pulses (tight adjacent-% pairs read as instant on/off even under linear
@@ -189,16 +204,16 @@ const selectedResearch = (
           filter: drop-shadow(0 0 6px var(--brand-glow-primary))
             drop-shadow(0 0 16px var(--brand-glow-primary));
         }
-        /* Eased fade-out tail: extra steps so the glow drifts gently to zero
-           instead of a linear drop that visually completes early (looks abrupt in
-           light mode). Same total duration — just better-distributed. */
-        80% {
-          filter: drop-shadow(0 0 4px var(--brand-glow-primary))
-            drop-shadow(0 0 11px var(--brand-glow-primary));
+        /* Fade-out tail: drop most of the glow EARLY (by ~78%) so the final
+           stretch is already near-zero and trails gently to nothing — avoids the
+           abrupt cut you get when it stays bright until the very end. */
+        72% {
+          filter: drop-shadow(0 0 3px var(--brand-glow-primary))
+            drop-shadow(0 0 8px var(--brand-glow-primary));
         }
-        92% {
-          filter: drop-shadow(0 0 2px var(--brand-glow-primary))
-            drop-shadow(0 0 6px var(--brand-glow-primary));
+        82% {
+          filter: drop-shadow(0 0 1px var(--brand-glow-primary))
+            drop-shadow(0 0 3px var(--brand-glow-primary));
         }
         100% {
           filter: drop-shadow(0 0 0 transparent) drop-shadow(0 0 0 transparent);
@@ -230,13 +245,13 @@ const selectedResearch = (
           filter: drop-shadow(0 0 6px var(--brand-glow-secondary))
             drop-shadow(0 0 16px var(--brand-glow-secondary));
         }
-        80% {
-          filter: drop-shadow(0 0 4px var(--brand-glow-secondary))
-            drop-shadow(0 0 11px var(--brand-glow-secondary));
+        72% {
+          filter: drop-shadow(0 0 3px var(--brand-glow-secondary))
+            drop-shadow(0 0 8px var(--brand-glow-secondary));
         }
-        92% {
-          filter: drop-shadow(0 0 2px var(--brand-glow-secondary))
-            drop-shadow(0 0 6px var(--brand-glow-secondary));
+        82% {
+          filter: drop-shadow(0 0 1px var(--brand-glow-secondary))
+            drop-shadow(0 0 3px var(--brand-glow-secondary));
         }
         100% {
           filter: drop-shadow(0 0 0 transparent) drop-shadow(0 0 0 transparent);
@@ -269,15 +284,15 @@ const selectedResearch = (
             0 0 6px var(--nav-glow, var(--color-accent)),
             0 0 14px var(--nav-glow, var(--color-accent));
         }
-        80% {
+        72% {
           text-shadow:
-            0 0 4px var(--nav-glow, var(--color-accent)),
-            0 0 10px var(--nav-glow, var(--color-accent));
+            0 0 3px var(--nav-glow, var(--color-accent)),
+            0 0 7px var(--nav-glow, var(--color-accent));
         }
-        92% {
+        82% {
           text-shadow:
-            0 0 2px var(--nav-glow, var(--color-accent)),
-            0 0 5px var(--nav-glow, var(--color-accent));
+            0 0 1px var(--nav-glow, var(--color-accent)),
+            0 0 3px var(--nav-glow, var(--color-accent));
         }
         100% {
           text-shadow:
@@ -311,13 +326,13 @@ const selectedResearch = (
           filter: drop-shadow(0 0 5px var(--nav-glow, var(--color-accent)))
             drop-shadow(0 0 12px var(--nav-glow, var(--color-accent)));
         }
-        80% {
-          filter: drop-shadow(0 0 3px var(--nav-glow, var(--color-accent)))
-            drop-shadow(0 0 8px var(--nav-glow, var(--color-accent)));
+        72% {
+          filter: drop-shadow(0 0 2px var(--nav-glow, var(--color-accent)))
+            drop-shadow(0 0 6px var(--nav-glow, var(--color-accent)));
         }
-        92% {
+        82% {
           filter: drop-shadow(0 0 1px var(--nav-glow, var(--color-accent)))
-            drop-shadow(0 0 4px var(--nav-glow, var(--color-accent)));
+            drop-shadow(0 0 2px var(--nav-glow, var(--color-accent)));
         }
         100% {
           filter: drop-shadow(0 0 0 transparent) drop-shadow(0 0 0 transparent);
@@ -945,6 +960,7 @@ const selectedResearch = (
         //   - Phase 2 nav flicker end   (nav-fade + glow)
         //   - sim CSS fade end          (--intro-sim-at + --intro-sim-dur)
         //   - sim activation flicker end(--intro-sim-at + ~1300ms)
+        //   - scroll-cue fade-in end    (--intro-sim-at + 1.3s + 0.6s)
         const cs = getComputedStyle(root);
         const ms = (name, fallback) => {
           const raw = cs.getPropertyValue(name).trim();
@@ -980,11 +996,21 @@ const selectedResearch = (
           simAt + ms("--intro-sim-dur", 700),
         );
         const activationEnd = simAt + 1300; // matches HeroSim activatedIntroAlpha end
+
+        // Final beat: trigger the scroll-cue fade-in (CSS transition) once the
+        // name has finished igniting.
+        const CUE_AT = simAt + 2750; // start of the cue fade (after the name flicker settles)
+        const CUE_DUR = 600; // must match the CSS transition duration
+        const cueEnd = CUE_AT + CUE_DUR;
+        window.setTimeout(() => {
+          root.querySelector(".hero-scroll-cue")?.classList.add("cue-in");
+        }, CUE_AT);
+
         window.setTimeout(
           () => {
             root.removeAttribute("data-home-intro");
           },
-          Math.max(cssEnd, activationEnd) + 120,
+          Math.max(cssEnd, activationEnd, cueEnd) + 120,
         );
       }
 
