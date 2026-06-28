@@ -208,6 +208,15 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     const ALPHA_IN = 1.0; // activated (name) particle opacity
     const CURSOR_R = 20; // cursor repulsion radius (px)
     const CURSOR_PUSH = 5000; // cursor repulsion strength (pushes the gas)
+    // CLICK EXPLOSION — a click fires a one-shot radial impulse: particles within
+    // BLAST_R get shoved outward, strongest at the center, falling off to the edge.
+    // The impulse decays over BLAST_DECAY frames (then the normal DAMP settles the
+    // gas back), so there's no lingering force or cleanup. MAX_SPEED is briefly
+    // lifted during a blast so the explosion actually shoots rather than clamping.
+    const BLAST_R = 50; // explosion radius (px)
+    const BLAST_PUSH = 30000; // explosion strength (outward px/s impulse at center)
+    const BLAST_DECAY = 0.9; // per-frame falloff of the blast strength (<1)
+    const BLAST_SPEED = 900; // px/s clamp while a blast is active (lets it shoot)
     const DAMP = 0.9; // velocity damping per step
     const MAX_SPEED = 140; // px/s clamp
     // Outside-gas color per theme. Light mode: a mid gray (darker than before so
@@ -833,6 +842,20 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       cursor.active = false;
     }
 
+    // One-shot radial explosion from the last click. `strength` decays each frame
+    // (BLAST_DECAY) until it falls below a tiny threshold, at which point the blast
+    // is inert and the loop skips it. A new click just overwrites it (one blast at
+    // a time keeps the hot loop's branch cheap).
+    const blast = { x: 0, y: 0, strength: 0 };
+    function onDown(e: PointerEvent) {
+      const rect = root.getBoundingClientRect();
+      blast.x = e.clientX - canvasLeft;
+      blast.y = e.clientY - rect.top;
+      blast.strength = BLAST_PUSH;
+      // Wake the sim if it was paused (e.g. tab refocus) so the blast animates.
+      start();
+    }
+
     // ---- Step + render --------------------------------------------------
     // Pure Brownian motion: the gas is a cloud of independent particles, each
     // kicked by a random force every frame (no orientation, no self-propulsion,
@@ -857,6 +880,15 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       const curActive = cursor.active;
       const cx = cursor.x;
       const cy = cursor.y;
+      // Click explosion: active only while strength is meaningful. The clamp is
+      // lifted to BLAST_SPEED so the impulse actually shoots outward this frame.
+      const blastActive = blast.strength > 1;
+      const bx = blast.x;
+      const by = blast.y;
+      const blastR = BLAST_R;
+      const blastR2 = blastR * blastR;
+      const blastStr = blast.strength;
+      const maxSpEff = blastActive ? BLAST_SPEED : maxSp;
       const pool = randomPool;
       const mask = RANDOM_MASK;
       // Advance the pool window each frame so the noise isn't perfectly periodic.
@@ -889,13 +921,28 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
           }
         }
 
+        // Click explosion: a one-shot radial impulse outward from the blast point,
+        // strongest at the center and fading to zero at BLAST_R.
+        if (blastActive) {
+          const dx = x - bx;
+          const dy = y - by;
+          const d2 = dx * dx + dy * dy;
+          if (d2 < blastR2 && d2 > 0.01) {
+            const d = Math.sqrt(d2);
+            const f = (blastStr * (1 - d / blastR)) / d;
+            ax += dx * f * dt;
+            ay += dy * f * dt;
+          }
+        }
+
         // Integrate velocity with damping + speed clamp (so the cursor push and
-        // the random drift both decay rather than accumulating forever).
+        // the random drift both decay rather than accumulating forever). During a
+        // blast the clamp is raised (maxSpEff) so the explosion actually shoots.
         let vx = (VX[i] + ax) * damp;
         let vy = (VY[i] + ay) * damp;
         const sp2 = vx * vx + vy * vy;
-        if (sp2 > maxSp * maxSp) {
-          const s = maxSp / Math.sqrt(sp2);
+        if (sp2 > maxSpEff * maxSpEff) {
+          const s = maxSpEff / Math.sqrt(sp2);
           vx *= s;
           vy *= s;
         }
@@ -915,6 +962,11 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       // Step the window forward by a prime-ish stride so successive frames don't
       // realign to the same slice of the pool.
       poolCursor = (poolCursor + 1009) & mask;
+      // Decay the click explosion so it's a one-shot burst that fades out.
+      if (blastActive) {
+        blast.strength *= BLAST_DECAY;
+        if (blast.strength <= 1) blast.strength = 0;
+      }
     }
 
     // SINGLE classification pass: evaluate inside/JR once per particle and record
@@ -1235,6 +1287,8 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
         root.addEventListener("pointermove", onMove);
         root.addEventListener("pointerleave", onLeave);
       }
+      // Click/tap explosion works on both mouse and touch (a tap should burst too).
+      root.addEventListener("pointerdown", onDown);
 
       // Debounced resize → rebuild field + canvas.
       let resizeT: number | null = null;
@@ -1296,6 +1350,7 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
         document.removeEventListener("visibilitychange", onVisibility);
         root.removeEventListener("pointermove", onMove);
         root.removeEventListener("pointerleave", onLeave);
+        root.removeEventListener("pointerdown", onDown);
         window.removeEventListener("resize", onResize);
         canvas.removeEventListener("webglcontextlost", onContextLost as any);
         canvas.removeEventListener(
