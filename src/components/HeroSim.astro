@@ -40,13 +40,6 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
 
   // Reusable per-mount controller so ClientRouter navigations don't stack loops.
   function initHeroSim() {
-    // Tear down any previous instance FIRST. The cleanup handle is stored on
-    // `window` (not on the [data-hero-sim] element) because ClientRouter swaps in
-    // a brand-new element on every navigation back to home — a handle stored on
-    // the old element would be discarded with it, leaving its RAF loop + observers
-    // running forever and stacking a new loop each visit (the lag regression).
-    (window as any).__heroSimCleanup?.();
-
     const rootEl = document.querySelector<HTMLElement>("[data-hero-sim]");
     if (!rootEl) return;
 
@@ -54,14 +47,85 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       rootEl.querySelector<HTMLCanvasElement>(".hero-sim-canvas");
     const nameEl = rootEl.querySelector<HTMLElement>(".hero-sim-name");
     if (!canvasEl || !nameEl) return;
-    const ctx2d = canvasEl.getContext("2d", { alpha: true });
-    if (!ctx2d) return;
+
+    // IDEMPOTENCY GUARD. initHeroSim runs twice on first load (module eval +
+    // astro:page-load) on the SAME canvas element. A canvas can hold only one
+    // context, and getContext() returns that same object on every call — so a
+    // second init that tears down and re-acquires the live canvas's WebGL context
+    // leaves it permanently lost (a blank hero). If THIS canvas is already bound,
+    // do nothing. A real navigation back to home swaps in a fresh canvas element
+    // (no mark), so that still re-initialises correctly.
+    if ((canvasEl as any).__heroSimBound) return;
+    (canvasEl as any).__heroSimBound = true;
+
+    // Tear down any PREVIOUS instance (from a prior home visit — a different,
+    // now-detached canvas element). The cleanup handle is stored on `window`
+    // (not on the [data-hero-sim] element) because ClientRouter swaps in a
+    // brand-new element on every navigation back to home — a handle stored on the
+    // old element would be discarded with it, leaving its RAF loop + observers
+    // running forever and stacking a new loop each visit (the lag regression).
+    (window as any).__heroSimCleanup?.();
 
     // Non-null aliases so TypeScript keeps the narrowing inside the nested
-    // closures below (querySelector/getContext return nullable types).
+    // closures below (querySelector returns nullable types).
     const root: HTMLElement = rootEl;
     const canvas: HTMLCanvasElement = canvasEl;
-    const ctx: CanvasRenderingContext2D = ctx2d;
+
+    // RENDER BACKEND: prefer WebGL (all particles drawn in a few GPU calls — the
+    // only way to keep Firefox smooth at the SAME density as Chrome, since
+    // Canvas2D's per-particle draw-call overhead is what crawls there). A visible
+    // canvas can hold only ONE context type, so we try WebGL first and fall back
+    // to Canvas2D only if it's unavailable/blocklisted. The Canvas2D path then
+    // renders a single STATIC frame (no 60k-call animation) — the right tradeoff,
+    // since browsers lacking WebGL are the low-power devices that would choke on
+    // the Canvas2D animation anyway. The offscreen field/sprite builders use their
+    // OWN 2d canvases, unaffected by this choice.
+    // PROBE WebGL on a throwaway canvas first (a real context can only be taken
+    // once per canvas, and we must not "use up" the visible canvas on WebGL if it
+    // can't actually compile our shader — we'd be unable to fall back to 2D). The
+    // probe checks both context creation AND a trivial shader compile.
+    const webglSupported = (() => {
+      try {
+        const t = document.createElement("canvas");
+        const g = (t.getContext("webgl") ||
+          t.getContext("experimental-webgl")) as WebGLRenderingContext | null;
+        if (!g) return false;
+        const sh = g.createShader(g.VERTEX_SHADER);
+        if (!sh) return false;
+        g.shaderSource(sh, "void main(){gl_Position=vec4(0.0);}");
+        g.compileShader(sh);
+        const ok = !!g.getShaderParameter(sh, g.COMPILE_STATUS);
+        g.deleteShader(sh);
+        return ok;
+      } catch {
+        return false;
+      }
+    })();
+
+    let gl: WebGLRenderingContext | null = null;
+    if (webglSupported) {
+      try {
+        gl =
+          (canvas.getContext("webgl", {
+            alpha: true,
+            premultipliedAlpha: true,
+            antialias: false,
+            depth: false,
+            stencil: false,
+          }) as WebGLRenderingContext | null) ||
+          (canvas.getContext(
+            "experimental-webgl",
+          ) as WebGLRenderingContext | null);
+      } catch {
+        gl = null;
+      }
+    }
+    const useGL = !!gl;
+    // 2D context only when WebGL is unavailable (static fallback frame).
+    const ctx: CanvasRenderingContext2D | null = useGL
+      ? null
+      : canvas.getContext("2d", { alpha: true });
+    if (!useGL && !ctx) return;
 
     // Each name line is rendered as its own wall (frontmatter consts aren't in
     // script scope, so read the lines from the DOM).
@@ -78,7 +142,7 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     const DPR = Math.min(window.devicePixelRatio || 1, 2);
     let W = 0; // CSS px
     let H = 0;
-    const MAX_SIM_W = 1080; // 14-inch MacBook-ish CSS viewport width
+    const MAX_SIM_W = 1440; // 14-inch MacBook-ish CSS viewport width
     // CONSTANT DENSITY: legibility depends on particles-per-area, not raw count.
     // We keep one particle per DENSITY px² so the gas looks identical at any
     // window size — until we hit MAX_PARTICLES (perf cap), past which big screens
@@ -122,13 +186,18 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     // GLOW SIZE knob — the shadowBlur radius (px) baked into the name/JR sprites.
     // Larger = bigger, softer halo around the activated letters. The sprite canvas
     // auto-sizes to (dotRadius + GLOW) so the halo is never clipped.
-    const GLOW = 6; // halo radius (px)
+    const GLOW = 8; // halo radius (px)
     // GLOW DENSITY knob — how many times the shadow is stacked into the sprite.
     // Higher = denser, more opaque halo, so overlapping particles merge into one
     // cohesive glowing body (the original effect) instead of separate soft dots.
     // 1 = single faint halo; 3–5 reads as a continuous body. Tune alongside GLOW.
-    const GLOW_STACK = 2;
-    const ALPHA_OUT = 0.4; // ambient gas opacity
+    const GLOW_STACK = 5;
+    const ALPHA_OUT = 0.4; // ambient gas opacity (Canvas2D single-fill path)
+    // WebGL draws each gas particle as a SEPARATE sprite, so overlaps ACCUMULATE
+    // (unlike the 2D path's single fill). At ALPHA_OUT=0.4 dense regions saturate
+    // to opaque light-gray (a white-out). A much lower per-particle alpha lets the
+    // accumulation settle near the intended subtle gas tone. Tune to taste.
+    const GL_ALPHA_OUT = 0.25; // ambient gas opacity (WebGL accumulating path)
     const ALPHA_IN = 1.0; // activated (name) particle opacity
     const CURSOR_R = 20; // cursor repulsion radius (px)
     const CURSOR_PUSH = 5000; // cursor repulsion strength (pushes the gas)
@@ -137,7 +206,7 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     // Outside-gas color per theme. Light mode: a mid gray (darker than before so
     // it's visible, lighter than the navy letters so the name still pops).
     const DARK_GAS = ""; // "" → use --color-text-muted
-    const LIGHT_GAS = "#b3b3b3";
+    const LIGHT_GAS = "#999999";
 
     // ---- State ----------------------------------------------------------
     // Particles are stored in parallel typed arrays (Structure-of-Arrays) rather
@@ -287,10 +356,21 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     // look). The gas keeps its original crisp batched rect-path + single fill,
     // which was never the bottleneck. Sprites are sized to THEIR OWN content
     // (dot + glow halo) and DPR-scaled; the blit dest size is each sprite's css.
-    const sprites: (HTMLCanvasElement | null)[] = [null, null];
-    let spriteCssSize = 0; // CSS px (square) — same for both glow sprites
-    let spriteHalf = 0; // half of spriteCssSize (center offset)
-    function bakeSprite(color: string, glow: number): HTMLCanvasElement {
+    // Sprites indexed by render group: 0=gas (tiny, no glow), 1=name (glow),
+    // 2=JR (glow). The gas sprite is new for the WebGL path — every group goes
+    // through the same point-sprite pipeline. (The Canvas2D fallback still draws
+    // the gas as a crisp rect-path; the gas sprite is only used by WebGL.)
+    const sprites: (HTMLCanvasElement | null)[] = [null, null, null];
+    // Per-group CSS point size (square sprite edge). Gas is small; glow groups
+    // are dot+halo. Used as gl_PointSize per group AND as the 2D blit dest size.
+    const spriteSizes: number[] = [0, 0, 0];
+    let spriteCssSize = 0; // glow sprite edge (name/JR) — also 2D blit size
+    let spriteHalf = 0; // half of spriteCssSize (center offset, 2D path)
+    function bakeSprite(
+      color: string,
+      glow: number,
+      cssSize: number,
+    ): HTMLCanvasElement {
       // Sprite holds the dot plus room for the glow halo on every side. Drawn at
       // device resolution (DPR) so the dot stays crisp, blit back to CSS px.
       //
@@ -302,7 +382,6 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       // more opaque halo that merges with its neighbours when blitted. Cost is
       // paid ONCE here, not per frame.
       const r = dotRadius();
-      const cssSize = spriteCssSize;
       const dev = Math.max(1, Math.round(cssSize * DPR));
       const c = document.createElement("canvas");
       c.width = dev;
@@ -326,14 +405,208 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       return c;
     }
     function buildSprites() {
-      // Reads the theme colors resolved by readColors() (insideColor / JR_COLOR)
-      // — no color logic of its own, so light & dark stay correct. Must be called
-      // AFTER readColors() and after resize() (depends on DPR/dotRadius).
+      // Reads the theme colors resolved by readColors() (dotColor / insideColor /
+      // JR_COLOR) — no color logic of its own, so light & dark stay correct. Must
+      // be called AFTER readColors() and after resize() (depends on DPR/dotRadius).
       const r = dotRadius();
       spriteCssSize = Math.ceil((r + GLOW) * 2); // dot + glow halo on all sides
       spriteHalf = spriteCssSize / 2;
-      sprites[0] = bakeSprite(insideColor, GLOW); // name — accent + glow
-      sprites[1] = bakeSprite(JR_COLOR, GLOW); // JR — magenta + glow
+      // Gas sprite is small (just the dot, no glow); pad by 1px so the point
+      // sprite's edges aren't clipped by texture filtering.
+      const gasCss = Math.ceil(r * 2) + 2;
+      spriteSizes[0] = gasCss;
+      spriteSizes[1] = spriteCssSize;
+      spriteSizes[2] = spriteCssSize;
+      sprites[0] = bakeSprite(dotColor, 0, gasCss); // gas — dot, no glow
+      sprites[1] = bakeSprite(insideColor, GLOW, spriteCssSize); // name + glow
+      sprites[2] = bakeSprite(JR_COLOR, GLOW, spriteCssSize); // JR + glow
+      if (useGL) uploadTextures();
+    }
+
+    // ---- WebGL renderer -------------------------------------------------
+    // Draws all particles as textured POINT sprites: positions uploaded once per
+    // frame into a single buffer, then ONE gl.drawArrays per render group (3 total
+    // instead of ~60k Canvas2D calls). The per-group texture is the SAME baked
+    // sprite the Canvas2D path uses, so the glow is pixel-identical. Blending is
+    // premultiplied-over to reproduce the Canvas2D source-over + alpha look,
+    // including the halo build-up where neighbours overlap (the cohesion effect).
+    let glProgram: WebGLProgram | null = null;
+    let glPosBuf: WebGLBuffer | null = null;
+    let glAttribPos = -1;
+    let glUResolution: WebGLUniformLocation | null = null;
+    let glUPointSize: WebGLUniformLocation | null = null;
+    let glUAlpha: WebGLUniformLocation | null = null;
+    let glUTex: WebGLUniformLocation | null = null;
+    let glUDpr: WebGLUniformLocation | null = null;
+    const glTextures: (WebGLTexture | null)[] = [null, null, null];
+    // Scratch buffer of (x,y) pairs, packed sorted-by-group each frame so every
+    // group is a contiguous vertex range drawable in one call. Sized to the cap.
+    let glPacked = new Float32Array(0);
+    // Per-group [start, length] into glPacked, filled by packGroups().
+    const glGroupStart = [0, 0, 0];
+    const glGroupLen = [0, 0, 0];
+    let glMaxPointSize = 1024;
+
+    function compileShader(type: number, src: string): WebGLShader | null {
+      if (!gl) return null;
+      const sh = gl.createShader(type);
+      if (!sh) return null;
+      gl.shaderSource(sh, src);
+      gl.compileShader(sh);
+      if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+        gl.deleteShader(sh);
+        return null;
+      }
+      return sh;
+    }
+
+    function initGL(): boolean {
+      if (!gl) return false;
+      const vsSrc = `
+        attribute vec2 aPos;       // particle position in CSS px (origin top-left)
+        uniform vec2 uResolution;  // canvas size in CSS px
+        uniform float uPointSize;  // sprite edge in CSS px
+        uniform float uDpr;        // device pixel ratio
+        void main() {
+          // CSS px → clip space. Y is flipped (canvas top-left → GL bottom-left).
+          vec2 clip = (aPos / uResolution) * 2.0 - 1.0;
+          clip.y = -clip.y;
+          gl_Position = vec4(clip, 0.0, 1.0);
+          gl_PointSize = uPointSize * uDpr;
+        }`;
+      const fsSrc = `
+        precision mediump float;
+        uniform sampler2D uTex;
+        uniform float uAlpha;
+        void main() {
+          // Sprite textures are premultiplied; scale by the group/intro alpha.
+          vec4 t = texture2D(uTex, gl_PointCoord);
+          gl_FragColor = t * uAlpha;
+        }`;
+      const vs = compileShader(gl.VERTEX_SHADER, vsSrc);
+      const fs = compileShader(gl.FRAGMENT_SHADER, fsSrc);
+      if (!vs || !fs) return false;
+      const prog = gl.createProgram();
+      if (!prog) return false;
+      gl.attachShader(prog, vs);
+      gl.attachShader(prog, fs);
+      gl.linkProgram(prog);
+      gl.deleteShader(vs);
+      gl.deleteShader(fs);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+        gl.deleteProgram(prog);
+        return false;
+      }
+      glProgram = prog;
+      glAttribPos = gl.getAttribLocation(prog, "aPos");
+      glUResolution = gl.getUniformLocation(prog, "uResolution");
+      glUPointSize = gl.getUniformLocation(prog, "uPointSize");
+      glUAlpha = gl.getUniformLocation(prog, "uAlpha");
+      glUTex = gl.getUniformLocation(prog, "uTex");
+      glUDpr = gl.getUniformLocation(prog, "uDpr");
+      glPosBuf = gl.createBuffer();
+      glPacked = new Float32Array(MAX_PARTICLES * 2);
+
+      // Premultiplied-alpha over-blend (matches Canvas2D source-over + globalAlpha).
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+      gl.disable(gl.DEPTH_TEST);
+      // Defensive: clamp point size to the hardware max (some mobile GPUs cap it).
+      const range = gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE);
+      if (range && range[1]) glMaxPointSize = range[1];
+      return true;
+    }
+
+    function makeTexture(src: HTMLCanvasElement): WebGLTexture | null {
+      if (!gl) return null;
+      const tex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      // Premultiply so the baked semi-transparent halo blends correctly.
+      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
+      // Linear filtering for a smooth sprite; clamp so edges don't wrap.
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      return tex;
+    }
+
+    function uploadTextures() {
+      if (!gl) return;
+      for (let g = 0; g < 3; g++) {
+        const src = sprites[g];
+        if (!src) continue;
+        if (glTextures[g]) gl.deleteTexture(glTextures[g]);
+        glTextures[g] = makeTexture(src);
+      }
+    }
+
+    // Pack particle positions into glPacked sorted by group, recording each
+    // group's contiguous [start,len] range so it can be drawn in one call.
+    // During the intro pre-light, name/JR particles are packed into the GAS group
+    // so they render as gas until activation lights them.
+    function packGroups(preLight: boolean) {
+      const n = count;
+      // Count per group first (so we can lay out contiguous ranges).
+      let c0 = 0,
+        c1 = 0,
+        c2 = 0;
+      if (preLight) {
+        c0 = n; // everything draws as gas
+      } else {
+        for (let i = 0; i < n; i++) {
+          const g = pgroup[i];
+          if (g === 0) c0++;
+          else if (g === 1) c1++;
+          else c2++;
+        }
+      }
+      glGroupStart[0] = 0;
+      glGroupStart[1] = c0;
+      glGroupStart[2] = c0 + c1;
+      glGroupLen[0] = c0;
+      glGroupLen[1] = c1;
+      glGroupLen[2] = c2;
+      // Write cursors (in vertex units) for each group.
+      let w0 = glGroupStart[0],
+        w1 = glGroupStart[1],
+        w2 = glGroupStart[2];
+      const P = glPacked;
+      const X = px;
+      const Y = py;
+      if (preLight) {
+        for (let i = 0; i < n; i++) {
+          const o = w0++ * 2;
+          P[o] = X[i];
+          P[o + 1] = Y[i];
+        }
+      } else {
+        for (let i = 0; i < n; i++) {
+          const g = pgroup[i];
+          let o: number;
+          if (g === 0) o = w0++ * 2;
+          else if (g === 1) o = w1++ * 2;
+          else o = w2++ * 2;
+          P[o] = X[i];
+          P[o + 1] = Y[i];
+        }
+      }
+    }
+
+    function drawGroup(g: number, alpha: number) {
+      if (!gl || alpha <= 0 || glGroupLen[g] === 0) return;
+      const tex = glTextures[g];
+      if (!tex) return;
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.uniform1i(glUTex, 0);
+      gl.uniform1f(
+        glUPointSize,
+        Math.min(spriteSizes[g], glMaxPointSize / DPR),
+      );
+      gl.uniform1f(glUAlpha, alpha);
+      gl.drawArrays(gl.POINTS, glGroupStart[g], glGroupLen[g]);
     }
 
     // ---- Wall field construction ---------------------------------------
@@ -494,7 +767,8 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       canvas.style.height = H + "px";
       canvas.width = Math.round(W * DPR);
       canvas.height = Math.round(H * DPR);
-      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      if (gl) gl.viewport(0, 0, canvas.width, canvas.height);
+      else if (ctx) ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 
       // Rescale existing particles to the new domain so the gas stays UNIFORM
       // across a resize. Without this, the canvas grows/shrinks but the old
@@ -636,66 +910,109 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       poolCursor = (poolCursor + 1009) & mask;
     }
 
+    // SINGLE classification pass: evaluate inside/JR once per particle and record
+    // its group in pgroup (0=gas, 1=name, 2=JR). Shared by both backends. Inlined
+    // with cached locals (no per-particle function calls — scope traversal × ~60k
+    // is exactly what Safari/Firefox penalize). Returns whether any name/JR exist.
+    let classAnyInside = false;
+    let classAnyJR = false;
+    function classify() {
+      let anyInside = false;
+      let anyJR = false;
+      const n = count;
+      const X = px;
+      const Y = py;
+      const D = dist;
+      const JR = jrMask;
+      const G = pgroup;
+      const fw = fieldW;
+      const inv = 1 / FIELD_STEP;
+      const maxX = fw - 1;
+      const maxY = fieldH - 1;
+      for (let i = 0; i < n; i++) {
+        let fx = (X[i] * inv) | 0;
+        let fy = (Y[i] * inv) | 0;
+        if (fx < 0) fx = 0;
+        else if (fx > maxX) fx = maxX;
+        if (fy < 0) fy = 0;
+        else if (fy > maxY) fy = maxY;
+        const c = fy * fw + fx;
+        let g = 0;
+        if (JR[c] === 1) {
+          g = 2;
+          anyJR = true;
+        } else if (D[c] < 0) {
+          g = 1;
+          anyInside = true;
+        }
+        G[i] = g;
+      }
+      classAnyInside = anyInside;
+      classAnyJR = anyJR;
+    }
+
     function render() {
-      ctx.clearRect(0, 0, W, H);
-      // Particles are drawn by blitting pre-baked sprites (see buildSprites): a
-      // single classification pass tags each particle's group, then one
-      // drawImage per particle per group. No per-frame path building or
-      // shadowBlur — that's the cross-browser speedup.
       const introT = introElapsed();
       const introActive = isFinite(introT);
       const ambientAlpha = ambientIntroAlpha(introT);
       const activatedAlpha = activatedIntroAlpha(introT);
+      classify();
+      if (gl) renderGL(introActive, ambientAlpha, activatedAlpha);
+      else if (ctx) render2D(introActive, ambientAlpha, activatedAlpha);
+    }
 
-      // SINGLE classification pass: evaluate inside/JR once per particle and
-      // record its group in pgroup (0=gas, 1=name, 2=JR). Each group is then
-      // blitted with its pre-baked sprite — no per-frame allocation. During the
-      // intro, inside/JR particles render as gas until the activation lights them.
-      let anyInside = false;
-      let anyJR = false;
-      // Inlined classification with cached locals (no per-particle cellAt/isInside
-      // function calls — scope traversal × ~100k is exactly what Safari penalizes).
-      {
-        const n = count;
-        const X = px;
-        const Y = py;
-        const D = dist;
-        const JR = jrMask;
-        const G = pgroup;
-        const fw = fieldW;
-        const fh = fieldH;
-        const inv = 1 / FIELD_STEP;
-        const maxX = fw - 1;
-        const maxY = fh - 1;
-        for (let i = 0; i < n; i++) {
-          let fx = (X[i] * inv) | 0;
-          let fy = (Y[i] * inv) | 0;
-          if (fx < 0) fx = 0;
-          else if (fx > maxX) fx = maxX;
-          if (fy < 0) fy = 0;
-          else if (fy > maxY) fy = maxY;
-          const c = fy * fw + fx;
-          let g = 0;
-          if (JR[c] === 1) {
-            g = 2;
-            anyJR = true;
-          } else if (D[c] < 0) {
-            g = 1;
-            anyInside = true;
-          }
-          G[i] = g;
-        }
+    // WebGL draw: pack positions sorted-by-group, upload once, then ≤3 draw calls
+    // (gas, name, JR) — vs ~60k Canvas2D calls. The edge fade is a CSS mask on the
+    // canvas element (set in resize), so there's no per-frame fade pass here.
+    function renderGL(
+      introActive: boolean,
+      ambientAlpha: number,
+      activatedAlpha: number,
+    ) {
+      if (!gl || !glProgram) return;
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.useProgram(glProgram);
+      gl.uniform2f(glUResolution, W, H);
+      gl.uniform1f(glUDpr, DPR);
+
+      // During the intro pre-light, ALL particles render as gas until activation.
+      const preLight = introActive && activatedAlpha <= 0;
+      packGroups(preLight);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, glPosBuf);
+      const vertsUsed = (glGroupStart[2] + glGroupLen[2]) * 2 || count * 2;
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        glPacked.subarray(0, vertsUsed),
+        gl.DYNAMIC_DRAW,
+      );
+      gl.enableVertexAttribArray(glAttribPos);
+      gl.vertexAttribPointer(glAttribPos, 2, gl.FLOAT, false, 0, 0);
+
+      // Gas (group 0) — also carries name/JR during the pre-light beat. Lower
+      // per-particle alpha because GL gas overlaps accumulate (see GL_ALPHA_OUT).
+      drawGroup(0, GL_ALPHA_OUT * ambientAlpha);
+      if (!preLight) {
+        if (classAnyInside) drawGroup(1, ALPHA_IN * activatedAlpha);
+        if (classAnyJR) drawGroup(2, ALPHA_IN * activatedAlpha);
       }
+    }
 
-      const sName = sprites[0];
-      const sJR = sprites[1];
+    // Canvas2D draw — STATIC FALLBACK only (used when WebGL is unavailable, and
+    // for the reduced-motion single frame). Sprites: 1=name, 2=JR; gas is a crisp
+    // batched rect-path. Mirrors the pre-WebGL renderer.
+    function render2D(
+      introActive: boolean,
+      ambientAlpha: number,
+      activatedAlpha: number,
+    ) {
+      if (!ctx) return;
+      ctx.clearRect(0, 0, W, H);
+      const sName = sprites[1];
+      const sJR = sprites[2];
       const ssz = spriteCssSize;
       const soff = spriteHalf;
-
-      // Pass 1: ambient GAS — crisp batched rect-path + single fill (NO glow, NO
-      // shadowBlur, so it was never the bottleneck). Drawn as 1px squares at exact
-      // pixel positions, which a scaled sprite blit can't match without smearing.
-      // Includes groups 1/2 during the intro pre-light (before they activate).
       const half = dotRadius();
       const sz = half * 2;
       ctx.beginPath();
@@ -708,19 +1025,14 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       ctx.fillStyle = dotColor;
       ctx.fill();
 
-      // Passes 2/3: GLOWING groups — blit the pre-baked glow sprite per particle
-      // (drawImage is hardware-accelerated everywhere; the glow is baked in once,
-      // so no per-frame shadowBlur — the actual cross-browser fix).
-      if (anyInside && activatedAlpha > 0 && sName) {
+      if (classAnyInside && activatedAlpha > 0 && sName) {
         ctx.globalAlpha = ALPHA_IN * activatedAlpha;
         for (let i = 0; i < count; i++) {
           if (pgroup[i] === 1)
             ctx.drawImage(sName, px[i] - soff, py[i] - soff, ssz, ssz);
         }
       }
-
-      if (anyJR && activatedAlpha > 0 && sJR) {
-        // "JR" superscript: magenta, matching the logo's pink glyphs.
+      if (classAnyJR && activatedAlpha > 0 && sJR) {
         ctx.globalAlpha = ALPHA_IN * activatedAlpha;
         for (let i = 0; i < count; i++) {
           if (pgroup[i] === 2)
@@ -728,19 +1040,12 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
         }
       }
 
-      // SOFT EDGES (baked into the canvas, not CSS mask — robust across
-      // browsers/DPR). Erase the field toward ALL FOUR edges so the gas fades to
-      // transparent and the page background shows through — no hard rectangular
-      // boundary anywhere. A single radial gradient only reaches full opacity at
-      // the corners (its radius is the half-diagonal), leaving the top/bottom and
-      // side mid-edges under-erased — that was the visible hard edge. Instead we
-      // erase with two LINEAR gradients (one per axis), each fully opaque at its
-      // pair of edges, so every edge feathers out uniformly.
+      // Edge fade (2D path): erase toward all four edges with two linear gradients.
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = "destination-out";
-      ctx.fillStyle = edgeFadeX();
+      ctx.fillStyle = edgeFadeX()!;
       ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = edgeFadeY();
+      ctx.fillStyle = edgeFadeY()!;
       ctx.fillRect(0, 0, W, H);
       ctx.globalCompositeOperation = "source-over";
     }
@@ -758,8 +1063,25 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     function clearEdgeFade() {
       _edgeFadeX = null;
       _edgeFadeY = null;
+      // WebGL can't erase per-pixel cheaply per frame, so the GL path feathers the
+      // canvas edges with a CSS mask instead (GPU-composited, no draw cost). The
+      // 2D fallback bakes the fade into the canvas (below), so clear any mask there.
+      if (useGL) applyEdgeMask();
+      else canvas.style.removeProperty("mask-image");
     }
-    function edgeFadeX(): CanvasGradient {
+    function applyEdgeMask() {
+      const fx = Math.round(fadeX() * 100);
+      const fy = Math.round(FADE * 100);
+      const maskX = `linear-gradient(to right, transparent 0, #000 ${fx}%, #000 ${100 - fx}%, transparent 100%)`;
+      const maskY = `linear-gradient(to bottom, transparent 0, #000 ${fy}%, #000 ${100 - fy}%, transparent 100%)`;
+      const style = canvas.style as any;
+      style.webkitMaskImage = `${maskX}, ${maskY}`;
+      style.webkitMaskComposite = "source-in";
+      style.maskImage = `${maskX}, ${maskY}`;
+      style.maskComposite = "intersect";
+    }
+    function edgeFadeX(): CanvasGradient | null {
+      if (!ctx) return null;
       if (_edgeFadeX) return _edgeFadeX;
       const f = fadeX();
       const g = ctx.createLinearGradient(0, 0, W, 0);
@@ -770,7 +1092,8 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       _edgeFadeX = g;
       return g;
     }
-    function edgeFadeY(): CanvasGradient {
+    function edgeFadeY(): CanvasGradient | null {
+      if (!ctx) return null;
       if (_edgeFadeY) return _edgeFadeY;
       const g = ctx.createLinearGradient(0, 0, 0, H);
       g.addColorStop(0, "rgba(0,0,0,1)"); // erase top edge
@@ -854,12 +1177,27 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     }
 
     // ---- Wire up --------------------------------------------------------
+    // Initialize the WebGL pipeline BEFORE resize()/buildSprites() (which upload
+    // textures). If GL init fails after we already took the context (rare: shader
+    // compile/link failure), we can't get a 2D context on the same canvas — so we
+    // null out `gl` and let the renderer fall back to the static frame (the same
+    // graceful path as a no-WebGL browser). The canvas just won't animate.
+    // Init the GL pipeline before resize()/buildSprites() (which upload textures).
+    // If it fails despite the probe (e.g. program link failure), drop to null and
+    // the renderer leaves the static <h1> — extremely rare, no crash.
+    if (gl && !initGL()) gl = null;
+
     readColors();
     resize();
 
-    if (reduceMotion) {
+    // No animated 2D fallback: when WebGL is unavailable (or failed to init), and
+    // for reduced-motion, render ONE static relaxed frame and stop. Browsers
+    // without WebGL are the low-power devices a 60k-particle 2D loop would choke,
+    // so a crisp static hero is the better degradation.
+    if (reduceMotion || !gl) {
       // Static frame: let the swarm relax a few steps so an outline still forms,
-      // then draw once. No RAF.
+      // then draw once. No RAF. (If gl is null but ctx exists, render2D draws it;
+      // if gl somehow survived but reduceMotion, renderGL draws one frame.)
       for (let k = 0; k < 80; k++) step(1 / 60);
       render();
     } else {
@@ -899,6 +1237,30 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       };
       window.addEventListener("resize", onResize);
 
+      // WebGL context loss (common on mobile: backgrounding, GPU reset, memory
+      // pressure). Without handling, the tab returns to a BLANK canvas. We stop on
+      // loss and rebuild all GL resources + resume on restore.
+      const onContextLost = (e: Event) => {
+        e.preventDefault(); // required so the context CAN be restored
+        stop();
+      };
+      const onContextRestored = () => {
+        if (!gl) return;
+        if (initGL()) {
+          buildSprites(); // re-bake + re-upload textures
+          resize(); // re-set viewport + edge mask
+          if (isOnScreen()) start();
+        } else {
+          gl = null; // give up; leave static <h1>
+        }
+      };
+      canvas.addEventListener("webglcontextlost", onContextLost as any, false);
+      canvas.addEventListener(
+        "webglcontextrestored",
+        onContextRestored as any,
+        false,
+      );
+
       // Rebuild the wall field once the webfont is ready (glyph metrics change).
       if ((document as any).fonts?.ready) {
         (document as any).fonts.ready.then(() => {
@@ -928,7 +1290,28 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
         root.removeEventListener("pointermove", onMove);
         root.removeEventListener("pointerleave", onLeave);
         window.removeEventListener("resize", onResize);
+        canvas.removeEventListener("webglcontextlost", onContextLost as any);
+        canvas.removeEventListener(
+          "webglcontextrestored",
+          onContextRestored as any,
+        );
         if (resizeT) clearTimeout(resizeT);
+        // Free GL resources so a swapped-away hero doesn't leak GPU memory.
+        // NOTE: do NOT call WEBGL_lose_context.loseContext() here. Cleanup runs on
+        // BOTH navigation-away AND re-init of the SAME canvas (initHeroSim calls
+        // __heroSimCleanup first, and it runs twice on first load: module eval +
+        // astro:page-load). getContext() on a canvas always returns the same
+        // context object, and once force-lost it stays lost (recoverable only via
+        // the async webglcontextrestored event), so loseContext() would leave the
+        // re-init holding a dead context — a permanently blank canvas. Deleting the
+        // resources is enough; the context is reclaimed by GC when the swapped-away
+        // canvas element is dropped.
+        if (gl) {
+          for (const t of glTextures) if (t) gl.deleteTexture(t);
+          if (glPosBuf) gl.deleteBuffer(glPosBuf);
+          if (glProgram) gl.deleteProgram(glProgram);
+        }
+        delete (canvas as any).__heroSimBound;
         delete (window as any).__heroSimCleanup;
       };
 
