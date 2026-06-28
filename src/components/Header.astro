@@ -353,6 +353,14 @@ const brandLayerSecondary = layerFor("cls-2");
     top: 0;
     z-index: 100;
     transition: background-color 0.3s ease;
+    /* During a ClientRouter view-transition swap, the page captures old/new
+       snapshots into a top-layer overlay where the normal z-index above is
+       meaningless. <main> is named (transition:animate), so its group would
+       paint ABOVE the unnamed root group that holds this header — for one frame
+       the content snapshot flashes over the navbar (Chrome/Firefox; Safari
+       skips this compositing). Giving the header its own named group lets us
+       force its paint order above main's via ::view-transition-group below. */
+    view-transition-name: site-header;
   }
 
   header::after {
