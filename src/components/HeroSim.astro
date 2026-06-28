@@ -58,6 +58,20 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     if ((canvasEl as any).__heroSimBound) return;
     (canvasEl as any).__heroSimBound = true;
 
+    // INTRO FLASH GUARD. During the intro the canvas is held at opacity:0 by the
+    // `html[data-home-intro] .hero-sim-canvas` CSS rule, then faded in by the
+    // introCanvasFade animation. But this script synchronously acquires a WebGL
+    // context and draws the first frame; intermittently the canvas gets composited
+    // at its default opacity:1 for a frame BEFORE that cascade rule is resolved to
+    // the element — a visible "full sim burst" on some reloads. Setting opacity:0
+    // INLINE here (before any render) closes the race: there is no frame where the
+    // canvas can paint visible. The introCanvasFade animation still overrides this
+    // inline value while it runs (animations outrank inline declarations), so the
+    // fade-in is unaffected and it ends at opacity:1. Cleared on teardown.
+    if (document.documentElement.hasAttribute("data-home-intro")) {
+      canvasEl.style.opacity = "0";
+    }
+
     // Tear down any PREVIOUS instance (from a prior home visit — a different,
     // now-detached canvas element). The cleanup handle is stored on `window`
     // (not on the [data-hero-sim] element) because ClientRouter swaps in a
@@ -113,6 +127,15 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
             antialias: false,
             depth: false,
             stencil: false,
+            // WHITE-FLASH-ON-RELOAD FIX (root cause). On a full navigation Chromium
+            // snapshots the outgoing page; a live WebGL canvas whose drawing buffer
+            // was already discarded (the default, for perf) has no readable pixels
+            // at snapshot time, so the compositor falls back to OPAQUE WHITE — the
+            // rare flash. preserveDrawingBuffer keeps the buffer readable, so the
+            // snapshot reads the real (transparent) pixels instead. Small per-frame
+            // GPU cost on one hero canvas; negligible here. The unload-time clear
+            // handlers remain as cheap belt-and-suspenders.
+            preserveDrawingBuffer: true,
           }) as WebGLRenderingContext | null) ||
           (canvas.getContext(
             "experimental-webgl",
@@ -295,6 +318,22 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     const introWanted =
       document.documentElement.hasAttribute("data-home-intro");
     let introStart: number | null = null;
+    // Once the intro fade-in finishes, drop the inline opacity:0 set above. After
+    // the intro the `html[data-home-intro]` rule (and its animation) no longer
+    // apply, so a lingering inline opacity:0 would hide the canvas permanently.
+    // Clearing it on animationend hands control back to the canvas's resting CSS
+    // (opacity:1). Harmless if no intro: the listener simply never fires.
+    if (introWanted) {
+      canvasEl.addEventListener(
+        "animationend",
+        (e) => {
+          if ((e as AnimationEvent).animationName === "introCanvasFade") {
+            canvasEl.style.opacity = "";
+          }
+        },
+        { once: true },
+      );
+    }
     // The particle canvas is centered in the viewport and capped to a laptop-like
     // width so huge monitors don't dilute the fixed particle budget. canvasLeft
     // is the canvas's left in viewport coords, used to convert viewport positions
@@ -1306,9 +1345,51 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
 
       const onVisibility = () => {
         if (document.hidden) stop();
-        else if (isOnScreen()) start();
+        else if (isOnScreen()) {
+          // Returning from a background tab: the unload-guard below may have hidden
+          // the canvas if a (recoverable) pagehide fired. Un-hide before resuming so
+          // the particles reappear. start() redraws into the now-visible canvas.
+          canvas.style.visibility = "";
+          start();
+        }
       };
       document.addEventListener("visibilitychange", onVisibility);
+
+      // WHITE-FLASH-ON-RELOAD FIX (Chromium): on a full navigation/reload Chromium
+      // snapshots the outgoing page for its paint-hold, but a LIVE WebGL canvas
+      // composites into that snapshot as an opaque WHITE rectangle (the GPU surface
+      // isn't readable at snapshot time). That's the flash — only on reload, only in
+      // Chromium, only once particles are actually being drawn.
+      //
+      // Just setting `visibility:hidden` on pagehide was unreliable: the snapshot
+      // can be taken before that style change is composited (and can fire as early
+      // as beforeunload). So we attack it at three levels, all synchronous:
+      //   1. STOP the RAF loop so nothing re-draws the buffer after we clear it.
+      //   2. CLEAR the GL drawing buffer to TRANSPARENT — this fixes the surface
+      //      CONTENT, so even if the canvas is still snapshotted it's transparent,
+      //      not white. (The element-visibility approach only helps if the recalc
+      //      lands in time; clearing the buffer doesn't depend on a style commit.)
+      //   3. Hide the element too, as a belt-and-suspenders.
+      // Run on BOTH beforeunload (earliest) and pagehide. CRITICAL: only treat this
+      // as a real teardown when the page is genuinely leaving. `pagehide` ALSO fires
+      // when a tab is backgrounded into the bfcache (event.persisted === true) — a
+      // RECOVERABLE state. If we cleared + hid the canvas there, returning to the tab
+      // would leave only the grid with no particles (the regression). So bail when
+      // persisted; onVisibility handles the recoverable hide/resume instead.
+      const hideForUnload = (e?: Event) => {
+        if (e && (e as PageTransitionEvent).persisted) return; // bfcache: recoverable
+        stop();
+        if (gl) {
+          try {
+            gl.clearColor(0, 0, 0, 0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.flush();
+          } catch {}
+        }
+        canvas.style.visibility = "hidden";
+      };
+      window.addEventListener("beforeunload", hideForUnload);
+      window.addEventListener("pagehide", hideForUnload);
 
       function isOnScreen() {
         const r = root.getBoundingClientRect();
@@ -1380,6 +1461,8 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
         io.disconnect();
         mo.disconnect();
         document.removeEventListener("visibilitychange", onVisibility);
+        window.removeEventListener("beforeunload", hideForUnload);
+        window.removeEventListener("pagehide", hideForUnload);
         root.removeEventListener("pointermove", onMove);
         root.removeEventListener("pointerleave", onLeave);
         root.removeEventListener("pointerdown", onDown);

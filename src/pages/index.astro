@@ -122,11 +122,17 @@ const selectedResearch = (
       /* Phase 2 — neon flicker on the navbar, starting AFTER the fade-in. Most
          elements' resting state has no glow, so their flicker fades to none at
          100%. The flicker portion is stepped; the fade-out tail is linear. */
-      :global(html[data-home-intro] .site-header .brand-logo .cls-1) {
+      /* The logo glow filters live on each color layer's <svg> element (not the
+         inner paths) so Safari renders them — see Header.astro. */
+      :global(
+        html[data-home-intro] .site-header .brand-layer-primary svg
+      ) {
         animation: introLogoPrimaryGlow var(--intro-glow-dur, 1.1s) linear
           var(--intro-glow-at, 0.45s) both;
       }
-      :global(html[data-home-intro] .site-header .brand-logo .cls-2) {
+      :global(
+        html[data-home-intro] .site-header .brand-layer-secondary svg
+      ) {
         animation: introLogoSecondaryGlow var(--intro-glow-dur, 1.1s) linear
           var(--intro-glow-at, 0.45s) both;
       }

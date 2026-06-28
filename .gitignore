@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# Local MCP server config (chrome-devtools etc.) — keep out of VCS
+.mcp.json

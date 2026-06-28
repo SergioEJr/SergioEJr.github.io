@@ -108,10 +108,42 @@ const imageUrl =
     --color-accent: #60a5fa;
     --color-border: #334155;
   }
+  /* WHITE-FLASH-ON-RELOAD FIX (Chromium): the :root vars above default to LIGHT,
+     and dark only applies once the head script sets [data-theme="dark"]. On reload
+     Chromium can paint a frame from the parsed CSS BEFORE that script's attribute
+     mutation is committed, so the body briefly resolves --color-bg to #ffffff — a
+     white flash (only on reload, only in Chromium's paint-hold behavior). Making
+     the dark values the DEFAULT when the OS prefers dark removes that gap: a
+     pre-script paint is already dark. `:not([data-theme="light"])` keeps an
+     explicit light choice winning. The head script still sets the attribute for
+     the authoritative, OS-independent theme. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --color-bg: #0f172a;
+      --color-bg-offset: #0f172a;
+      --color-bg-header: rgba(15, 23, 42, 0.8);
+      --color-text-main: #e2e8f0;
+      --color-text-muted: #94a3b8;
+      --color-accent: #60a5fa;
+      --color-border: #334155;
+    }
+  }
   html,
   body {
     min-height: 100%;
     background-color: var(--color-bg);
+  }
+  /* Page scrollbar styling must be INLINE/critical: in global.css it applies only
+     after that external sheet loads, so the page first paints with the default
+     THICK native scrollbar and then visibly snaps to thin — a glitchy flash on
+     load. Declaring it here (before any external CSS) means the thin, theme-matched
+     scrollbar is correct from the first frame. Keep in sync with `html` in
+     global.css. Standard props only (never ::-webkit-scrollbar — see global.css). */
+  html {
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) var(--color-bg);
   }
   @media (prefers-color-scheme: dark) {
     html:not([data-theme="light"]),

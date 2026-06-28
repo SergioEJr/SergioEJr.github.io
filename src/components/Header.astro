@@ -6,13 +6,31 @@ import { url } from "../utils/paths";
 import logoSvg from "../../public/logo.svg?raw";
 
 const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
-// The integral sign and "e" (the .cls-1 paths, #6cf) are recolored via a CSS
-// var so they can follow the theme; the pink "f" glyphs (.cls-2) keep their
-// color. Match both fill and stroke, with or without the leading #.
-const brandLogoSvg = logoSvg
+
+// The logo is a two-tone mark: the integral sign + "e" (the .cls-1 paths, #6cf)
+// and the pink "f" glyphs (.cls-2). Each symbol gets its own neon glow, applied
+// as a `filter: drop-shadow()`. Safari/WebKit doesn't reliably render `filter`
+// on inner SVG nodes (paths/groups), so instead of one SVG with per-path
+// filters we split the mark into two stacked <svg> layers — one per color — and
+// filter the <svg> ELEMENT, which every browser handles. The two share the same
+// viewBox so they overlay pixel-perfectly.
+const stripped = logoSvg
   .replace(/<\?xml[^>]*>\s*/, "")
+  // The integral/e is recolored via a CSS var so it can follow the theme; the
+  // pink glyphs keep their color. Match both fill and stroke, with or without #.
   .replaceAll("#6cf", "var(--brand-logo-primary)")
   .replaceAll("#00deff", "var(--brand-logo-primary)");
+
+// Keep only the <path> elements whose class matches `cls`, leaving <defs> (the
+// shared <style>) and the <svg> wrapper intact so each layer renders identically
+// to its slice of the original.
+const layerFor = (keep: "cls-1" | "cls-2") =>
+  stripped.replace(/<path\b[^>]*class="(cls-\d)"[^>]*\/>\s*/g, (m, cls) =>
+    cls === keep ? m : "",
+  );
+
+const brandLayerPrimary = layerFor("cls-1");
+const brandLayerSecondary = layerFor("cls-2");
 ---
 
 <header class="site-header">
@@ -20,7 +38,12 @@ const brandLogoSvg = logoSvg
     <h2>
       <a href={url("/")} class="brand" aria-label={`${SITE_TITLE} — home`}>
         <span class="brand-logo" aria-hidden="true">
-          <Fragment set:html={brandLogoSvg} />
+          <span class="brand-layer brand-layer-primary">
+            <Fragment set:html={brandLayerPrimary} />
+          </span>
+          <span class="brand-layer brand-layer-secondary">
+            <Fragment set:html={brandLayerSecondary} />
+          </span>
         </span>
       </a>
     </h2>
@@ -386,6 +409,7 @@ const brandLogoSvg = logoSvg
     text-decoration: none;
   }
   .brand-logo {
+    position: relative;
     display: inline-flex;
     width: 2.7rem;
     height: 2.7rem;
@@ -398,11 +422,23 @@ const brandLogoSvg = logoSvg
     --brand-glow-primary: #77a4f5;
     --brand-glow-secondary: #ff49ff;
   }
-  .brand-logo :global(svg) {
+  /* The two color layers stack so they overlay pixel-perfectly (shared viewBox).
+     The first is in normal flow to size the box; the second is absolutely
+     positioned on top. */
+  .brand-layer {
+    display: inline-flex;
+    width: 100%;
+    height: 100%;
+  }
+  .brand-layer-secondary {
+    position: absolute;
+    inset: 0;
+  }
+  .brand-layer :global(svg) {
     width: 100%;
     height: 100%;
     display: block;
-    /* An <svg> clips to its viewBox by default, which would chop the per-path
+    /* An <svg> clips to its viewBox by default, which would chop the
        drop-shadow glow at the artwork's edges. Let it paint outside the
        viewport so the halo can spread. */
     overflow: visible;
@@ -413,24 +449,24 @@ const brandLogoSvg = logoSvg
   }
 
   /* Neon-tube hover glow: each symbol emits its own color via stacked
-     drop-shadows (tight bright core + softer outer halo). Applied per path
-     class so the two-tone logo produces a two-tone glow. */
-  .brand-logo :global(.cls-1),
-  .brand-logo :global(.cls-2) {
+     drop-shadows (tight bright core + softer outer halo). The filter is applied
+     to each layer's <svg> ELEMENT (not its inner paths) because Safari/WebKit
+     doesn't reliably render `filter` on inner SVG nodes. Splitting the mark into
+     two color layers keeps the two-tone glow while staying Safari-safe. */
+  .brand-layer :global(svg) {
     transition: filter 0.3s ease;
   }
-  .brand:hover .brand-logo :global(.cls-1) {
+  .brand:hover .brand-layer-primary :global(svg) {
     filter: drop-shadow(0 0 6px var(--brand-glow-primary))
       drop-shadow(0 0 16px var(--brand-glow-primary));
   }
-  .brand:hover .brand-logo :global(.cls-2) {
+  .brand:hover .brand-layer-secondary :global(svg) {
     filter: drop-shadow(0 0 6px var(--brand-glow-secondary))
       drop-shadow(0 0 16px var(--brand-glow-secondary));
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .brand-logo :global(.cls-1),
-    .brand-logo :global(.cls-2) {
+    .brand-layer :global(svg) {
       transition: none;
     }
   }
