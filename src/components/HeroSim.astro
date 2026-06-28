@@ -150,7 +150,7 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     // for legibility in the tighter viewport.
     const DENSITY = 12; // px² per particle (smaller = denser)
     const MOBILE_DENSITY = 9;
-    const MAX_PARTICLES = 60000;
+    const MAX_PARTICLES = 100000;
     const isMobileSim = () => W < 600;
     const density = () => (isMobileSim() ? MOBILE_DENSITY : DENSITY);
     const targetCount = () => {
@@ -186,12 +186,19 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     // GLOW SIZE knob — the shadowBlur radius (px) baked into the name/JR sprites.
     // Larger = bigger, softer halo around the activated letters. The sprite canvas
     // auto-sizes to (dotRadius + GLOW) so the halo is never clipped.
-    const GLOW = 8; // halo radius (px)
+    const GLOW = 4; // halo radius (px)
     // GLOW DENSITY knob — how many times the shadow is stacked into the sprite.
-    // Higher = denser, more opaque halo, so overlapping particles merge into one
-    // cohesive glowing body (the original effect) instead of separate soft dots.
-    // 1 = single faint halo; 3–5 reads as a continuous body. Tune alongside GLOW.
-    const GLOW_STACK = 5;
+    // This controls the HALO FALLOFF near the dot, which is what makes activated
+    // particles read as "fuzzy" (glow hugs the dot, opaque near the core) vs.
+    // "pointy" (glow goes transparent right at the dot edge, so each particle is a
+    // discernible point in faint haze). A single shadowBlur pass is already quite
+    // transparent next to the core; each extra stacked fill re-adds opacity that's
+    // densest near the center and thins outward, so higher values pull the near-
+    // core opacity UP without spreading the outer edge — exactly the tight, opaque
+    // hug of the original live drop-shadow. Measured near-core alpha (2px out):
+    // stack2≈52, stack4≈93, stack6≈125. 6 restores the original fuzzy look; it
+    // also keeps overlapping halos merging into one cohesive body. Tune w/ GLOW.
+    const GLOW_STACK = 3;
     const ALPHA_OUT = 0.4; // ambient gas opacity (Canvas2D single-fill path)
     // WebGL draws each gas particle as a SEPARATE sprite, so overlaps ACCUMULATE
     // (unlike the 2D path's single fill). At ALPHA_OUT=0.4 dense regions saturate
