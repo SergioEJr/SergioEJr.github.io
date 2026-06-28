@@ -670,9 +670,27 @@ const selectedResearch = (
           transform: none !important;
           pointer-events: auto !important;
         }
+        /* On desktop the card is hidden at scroll-top by its scroll-progress
+           opacity clamp, so it never shows during the intro. Mobile stacks the
+           layers and forces .hero-layer opacity to 1 (above), which would reveal
+           the card — and its headshot — on landing, flashing it before the sim
+           fades in. Hold the card hidden during the intro so only the simulation
+           is visible on arrival; it follows the sim's fade-in timing. After the
+           intro clears (data-home-intro removed) the card shows normally. */
+        :global(html[data-home-intro]) .hero-layer-card {
+          animation: introCanvasFade var(--intro-sim-dur, 0.45s) ease-out
+            calc(var(--intro-sim-at, 2.1s) + 0.04s) both;
+        }
         .hero-layer-sim {
-          height: calc(100svh - var(--header-h) - 2rem);
-          min-height: calc(100svh - var(--header-h) - 2rem);
+          /* Fill the entire first screen below the header so the simulation is
+             the ONLY thing visible on landing — the card (and its headshot, plus
+             the stage's row gap) all sit fully below the fold. Use `lvh` (LARGE
+             viewport): on iOS the toolbars are expanded on landing, so `svh`
+             would leave the sim shorter than the visible screen and the headshot
+             would peek at the bottom. `lvh` sizes to the toolbars-hidden height,
+             guaranteeing the sim covers the initial view with no resize jitter. */
+          height: calc(100lvh - var(--header-h));
+          min-height: calc(100lvh - var(--header-h));
         }
         .hero-layer-sim > :global(.hero-sim) {
           flex: 1 1 auto;
@@ -735,7 +753,12 @@ const selectedResearch = (
           pointer-events: auto !important;
         }
         .hero-layer-sim {
-          min-height: calc(100svh - var(--header-h) - 2rem);
+          /* Fill the first screen so the headshot stays below the fold even when
+             the scripted intro is skipped (reduced-motion sets no data-home-intro,
+             so the intro card-hide never runs — this layout must stand alone).
+             `lvh` for the same iOS toolbar reason as the mobile block above. */
+          height: calc(100lvh - var(--header-h));
+          min-height: calc(100lvh - var(--header-h));
         }
         .hero-scroll-cue {
           display: none;
