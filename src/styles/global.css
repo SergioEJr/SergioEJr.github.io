@@ -52,33 +52,58 @@ html {
 	box-sizing: border-box;
 	scroll-behavior: smooth;
 	background-color: var(--color-bg);
-	/* Always show the vertical scrollbar track so the layout width never changes
-	   when content goes from non-scrollable to scrollable (e.g. the home intro
-	   un-locking scroll, or short vs. long pages). `overflow-y: scroll` keeps the
-	   track reserved in EVERY browser — unlike `scrollbar-gutter: stable`, which
-	   some browsers drop once the axis computes to `visible`. The gutter prop is
-	   kept too as a belt-and-suspenders for overlay-scrollbar platforms. */
+	/* Keep the vertical scrollbar GUTTER reserved on every page so the layout
+	   width never changes between routes (short vs. long pages, or the home intro
+	   un-locking scroll). `scrollbar-gutter: stable` is the real fix: it reserves
+	   the gutter even for overlay scrollbars (Safari with "show scrollbars: when
+	   scrolling", where `overflow-y: scroll` alone reserves nothing). `overflow-y:
+	   scroll` is kept as a belt-and-suspenders for browsers/versions without
+	   `scrollbar-gutter` support. IMPORTANT: do NOT add a custom
+	   `html::-webkit-scrollbar` — in Safari that switches the page to legacy
+	   custom-scrollbar mode and silently disables `scrollbar-gutter: stable`,
+	   bringing the overlay gutter (and the cross-page shift) back. */
 	overflow-y: scroll;
 	scrollbar-gutter: stable;
+	/* Thin, theme-matched PAGE scrollbar via the CSS STANDARD properties
+	   (`scrollbar-width`/`scrollbar-color`), NOT `::-webkit-scrollbar`. These don't
+	   put WebKit into legacy custom-scrollbar mode, so the gutter stays stable
+	   across ClientRouter swaps (see the long note below). `scrollbar-color` is
+	   `<thumb> <track>`; the track uses the page bg so the reserved gutter blends in
+	   instead of showing a contrasting band. Supported in Firefox, Chrome 121+, and
+	   Safari 18.2+; older browsers just get the default native scrollbar. */
+	scrollbar-width: thin;
+	scrollbar-color: var(--color-border) var(--color-bg);
 }
 
-/* Minimal Scrollbar for Browser and Modals */
-::-webkit-scrollbar {
+/* Minimal scrollbar styling for INNER scrollers ONLY (modals, code blocks, the
+   TOC, search results, the bibtex panel). This must NEVER match the page/root
+   scroller. Root cause of the Safari cross-page layout shift (debugged at length):
+   when a `::-webkit-scrollbar` rule matches the PAGE scrollbar (which WebKit binds
+   to <html>/<body>), Safari switches the page into legacy custom-scrollbar mode.
+   That mode plays badly with Astro's ClientRouter — it swaps <body> on every
+   navigation, and the custom page scrollbar fails to re-attach to the new body and
+   COLLAPSES to 0 width, defeating `scrollbar-gutter: stable` and shifting the whole
+   layout. The old blanket `* ::-webkit-scrollbar` rule matched `body`'s scrollbar
+   and triggered exactly this. Fix: scope to `body *` — DESCENDANTS of body only —
+   so the rule styles every inner scroll container but can never match the page
+   scrollbar (which WebKit binds to <html>/<body> themselves, not their children),
+   leaving it native and gutter-stable. DO NOT broaden this back to `*`/`html`/`body`. */
+body *::-webkit-scrollbar {
 	width: 8px;
 	height: 8px;
 }
 
-::-webkit-scrollbar-track {
+body *::-webkit-scrollbar-track {
 	background: var(--color-bg);
 }
 
-::-webkit-scrollbar-thumb {
+body *::-webkit-scrollbar-thumb {
 	background-color: var(--color-border);
 	border-radius: 10px;
 	border: 2px solid var(--color-bg);
 }
 
-::-webkit-scrollbar-thumb:hover {
+body *::-webkit-scrollbar-thumb:hover {
 	background-color: var(--color-text-muted);
 }
 
