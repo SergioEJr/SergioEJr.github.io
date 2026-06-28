@@ -63,9 +63,22 @@ const imageUrl = typeof image === 'string'
 		const applyPreferredTheme = () => paintTheme(resolvePreferredTheme());
 		const markThemeReady = () => root.setAttribute('data-theme-ready', 'true');
 		applyPreferredTheme();
+		// During a client-side swap the new <body> can paint for a frame with the
+		// default (light) theme colors before the dark theme cascades, so every
+		// themed element runs its `transition: background-color/color` from
+		// light→dark — a 300ms whole-page white-ish sweep (the "flash" seen after
+		// visiting a page that re-applies the theme). Re-engage the transition
+		// suppression (html:not([data-theme-ready]) { transition:none }) for the
+		// duration of the swap by dropping data-theme-ready before the swap and
+		// restoring it only after the new page has painted.
+		document.addEventListener('astro:before-swap', () => {
+			root.removeAttribute('data-theme-ready');
+		});
 		document.addEventListener('astro:after-swap', () => {
 			applyPreferredTheme();
-			markThemeReady();
+			// Keep suppression active through the first painted frame, then lift it
+			// so subsequent theme toggles still animate smoothly.
+			requestAnimationFrame(() => requestAnimationFrame(markThemeReady));
 		});
 		document.addEventListener('astro:page-load', markThemeReady);
 		window.addEventListener('load', markThemeReady, { once: true });
