@@ -70,6 +70,7 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     // closures below (querySelector returns nullable types).
     const root: HTMLElement = rootEl;
     const canvas: HTMLCanvasElement = canvasEl;
+    const name: HTMLElement = nameEl;
 
     // RENDER BACKEND: prefer WebGL (all particles drawn in a few GPU calls — the
     // only way to keep Firefox smooth at the SAME density as Chrome, since
@@ -647,7 +648,7 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       // measureText) on the span's center — canvas "middle" baseline doesn't
       // match CSS line-height:1 centering for serif fonts (asymmetric
       // ascent/descent), which would otherwise offset the SDF from the text.
-      const cs = getComputedStyle(nameEl);
+      const cs = getComputedStyle(name);
       const scale = 1 / FIELD_STEP;
       const family = cs.fontFamily || "Georgia, serif";
       const weight = cs.fontWeight || "700";
