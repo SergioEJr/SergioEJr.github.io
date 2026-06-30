@@ -189,13 +189,22 @@ const { count = 46, class: className = "" } = Astro.props;
         const lx = light.x;
         const ly = light.y;
 
+        // Theme-aware treatment. On DARK the field is additive-ish: a translucent
+        // colored glow plus particles that brighten toward white near the light.
+        // On LIGHT that reads as gray haze on white, so we boost glow saturation
+        // and DARKEN particles toward a deeper accent (so they show on white).
+        const dark =
+          document.documentElement.getAttribute("data-theme") === "dark";
+        const glowK = dark ? 1 : 1.6; // light mode needs a stronger glow to read
+
         ctx!.clearRect(0, 0, W, H);
 
         // Dust glow: soft radial cloud centered on the light.
         const gr = Math.min(W, H) * LOOK.glow;
+        const gA = LOOK.glowAlpha * glowK;
         const grad = ctx!.createRadialGradient(lx, ly, 0, lx, ly, gr);
-        grad.addColorStop(0, `rgba(${r},${g},${b},${LOOK.glowAlpha})`);
-        grad.addColorStop(0.5, `rgba(${r},${g},${b},${LOOK.glowAlpha * 0.35})`);
+        grad.addColorStop(0, `rgba(${r},${g},${b},${gA})`);
+        grad.addColorStop(0.5, `rgba(${r},${g},${b},${gA * 0.35})`);
         grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
         ctx!.fillStyle = grad;
         ctx!.fillRect(0, 0, W, H);
@@ -215,13 +224,23 @@ const { count = 46, class: className = "" } = Astro.props;
             LOOK.baseAlpha +
             LOOK.lightAlpha * prox * prox +
             LOOK.shade * prox * (dirLit - 0.5);
-          const a = Math.max(0.04, Math.min(1, lit * twinkle));
+          // Light mode needs a higher alpha floor so particles register on white.
+          const a = Math.max(dark ? 0.04 : 0.12, Math.min(1, lit * twinkle));
 
-          // Hot core: tint toward white near the light, accent color farther out.
           const heat = prox * prox;
-          const cr = Math.round(r + (255 - r) * heat * 0.7);
-          const cg = Math.round(g + (255 - g) * heat * 0.7);
-          const cb = Math.round(b + (255 - b) * heat * 0.7);
+          let cr: number, cg: number, cb: number;
+          if (dark) {
+            // Hot core: tint toward white near the light, accent farther out.
+            cr = Math.round(r + (255 - r) * heat * 0.7);
+            cg = Math.round(g + (255 - g) * heat * 0.7);
+            cb = Math.round(b + (255 - b) * heat * 0.7);
+          } else {
+            // On white, brightening toward white makes particles vanish. Instead
+            // DARKEN toward a deeper accent near the core so they read as lit.
+            cr = Math.round(r * (1 - heat * 0.45));
+            cg = Math.round(g * (1 - heat * 0.45));
+            cb = Math.round(b * (1 - heat * 0.45));
+          }
 
           ctx!.globalAlpha = a;
           ctx!.fillStyle = `rgb(${cr},${cg},${cb})`;
