@@ -25,20 +25,8 @@ const { count = 46, class: className = "" } = Astro.props;
     /* Fade driven by the IntersectionObserver. */
     opacity: 1;
     transition: opacity 0.45s ease;
-    /* Soft bottom fade so the field dissolves into the filter bar with no abrupt
-       seam. Done as a CSS mask (not a per-frame canvas wipe) so it's identical at
-       every width — including the taller mobile filter bar. The last 36px of the
-       canvas ramp from opaque to transparent. */
-    -webkit-mask-image: linear-gradient(
-      to bottom,
-      #000 calc(100% - 36px),
-      transparent 100%
-    );
-    mask-image: linear-gradient(
-      to bottom,
-      #000 calc(100% - 36px),
-      transparent 100%
-    );
+    /* The mask (bottom fade, plus side fades when width-capped) is composed in JS
+       — see applyMask() — so it can intersect multiple gradients. */
   }
 </style>
 
@@ -68,13 +56,14 @@ const { count = 46, class: className = "" } = Astro.props;
       const baseCount = parseInt(canvas.dataset.count || "46", 10);
 
       // Look B (Balanced) tuning, from the approved visual demo.
+      // Two stacked pill glows centered on the eyebrow:
+      //  - inner: small halo, tight to the text — clearly establishes the source.
+      //  - outer: larger, softer halo — extends the light further into the field.
       const LOOK = {
-        // Soft halo radius AROUND the eyebrow pill (px), independent of canvas
-        // size. Kept small relative to the eyebrow width so the glow reads as a
-        // horizontal pill, not a big circle. The particle-lighting reach is
-        // separate (proximity uses the canvas diagonal).
-        glowR: 95,
-        glowAlpha: 0.18, // peak glow opacity at the core
+        innerR: 70, // inner pill halo radius (px) — tight to the text
+        innerAlpha: 0.2, // inner peak opacity
+        outerR: 190, // outer pill halo radius (px) — soft, extends further
+        outerAlpha: 0.1, // outer peak opacity
         lightAlpha: 0.75, // proximity brightening weight
         shade: 0.55, // directional highlight/shadow weight
         baseAlpha: 0.42, // ambient particle alpha away from light
@@ -151,6 +140,11 @@ const { count = 46, class: className = "" } = Astro.props;
       // filter bar (the bar frosts over anything behind it, so drawing under it
       // only creates a seam). A short bottom fade hides the meeting edge.
       const NAVBAR_BOTTOM = 72;
+      // Cap the field width on large desktops (matches the home hero's MAX_SIM_W)
+      // and center it, so particles don't sprawl edge-to-edge on huge monitors.
+      // Side fades dissolve the capped edges. Below this width the field is full
+      // bleed (mobile unchanged).
+      const MAX_W = 1440;
 
       function resize() {
         const rect = parent.getBoundingClientRect(); // .j-head box
@@ -162,15 +156,15 @@ const { count = 46, class: className = "" } = Astro.props;
         const top = rect.top - bleedUp;
         const bottom = barRect ? barRect.top : rect.bottom;
 
-        // Horizontal: bleed full viewport width (edge to edge), not just the
-        // content column, so the lighting fills the whole header band.
+        // Horizontal: bleed full viewport width, capped at MAX_W and centered.
         const vw = document.documentElement.clientWidth;
-        W = vw;
+        W = Math.min(vw, MAX_W);
+        const canvasLeftVp = (vw - W) / 2; // viewport X of the canvas left edge
         H = Math.max(1, bottom - top);
 
         // Canvas is absolutely positioned inside .j-head (rect.left from viewport
-        // edge), so shift left by rect.left to reach the viewport's left edge.
-        canvas.style.left = `${-rect.left}px`;
+        // edge); offset so its left edge lands at canvasLeftVp in the viewport.
+        canvas.style.left = `${canvasLeftVp - rect.left}px`;
         canvas.style.top = `${-bleedUp}px`;
         canvas.style.width = `${W}px`;
         canvas.style.height = `${H}px`;
@@ -178,9 +172,32 @@ const { count = 46, class: className = "" } = Astro.props;
         canvas.height = Math.max(1, Math.floor(H * DPR));
         ctx!.setTransform(DPR, 0, 0, DPR, 0, 0);
 
+        // Side fades only kick in when the field is capped (large desktop). On
+        // mobile/narrow (W === vw) there's no side fade — leave the edges as-is.
+        applyMask(W < vw);
+
         // Light is pinned to the eyebrow near the top of the band.
         recomputeTarget();
         if (light.x === 0) light.x = targetX;
+      }
+
+      // Compose the bottom fade (always) with optional left/right side fades
+      // (only when the field is width-capped), mirroring the hero's mask pattern.
+      function applyMask(sideFade: boolean) {
+        const bottom =
+          "linear-gradient(to bottom, #000 calc(100% - 36px), transparent 100%)";
+        const layers = [bottom];
+        if (sideFade) {
+          // Fade the capped left/right edges over ~8% of the width.
+          layers.push(
+            "linear-gradient(to right, transparent 0, #000 8%, #000 92%, transparent 100%)",
+          );
+        }
+        const style = canvas.style as any;
+        style.webkitMaskImage = layers.join(", ");
+        style.maskImage = layers.join(", ");
+        style.webkitMaskComposite = "source-in";
+        style.maskComposite = "intersect";
       }
 
       function particleCount() {
@@ -221,30 +238,29 @@ const { count = 46, class: className = "" } = Astro.props;
 
         ctx!.clearRect(0, 0, W, H);
 
-        // Capsule light: a horizontal pill matching the eyebrow's footprint, so
-        // the glow looks like it comes from the text. The capsule is the segment
-        // [lx-hx, lx+hx] at y=ly; the glow falls off radially from that segment
-        // with a SMALL halo radius (glowR) so the elongation reads as a pill.
+        // Two stacked pill glows centered on the eyebrow. Each is a small radial
+        // gradient stretched along X so it reads as a horizontal capsule whose
+        // flat middle spans the eyebrow width (2*hx). The OUTER (large, soft) is
+        // drawn first; the INNER (small, tighter) stacks on top to anchor the
+        // source to the text.
         const hx = light.hx;
-        const gr = LOOK.glowR; // small, fixed halo — NOT the canvas size
-        const gA = LOOK.glowAlpha * glowK;
-
-        // Render the pill by scaling X so a small radial gradient stretches into a
-        // capsule whose flat middle spans the eyebrow width (2*hx). With gr small
-        // relative to hx, sx is large and the glow is clearly pill-shaped.
-        const sx = (gr + hx) / gr;
-        ctx!.save();
-        ctx!.translate(lx, ly);
-        ctx!.scale(sx, 1);
-        const grad = ctx!.createRadialGradient(0, 0, 0, 0, 0, gr);
-        grad.addColorStop(0, `rgba(${r},${g},${b},${gA})`);
-        grad.addColorStop(0.45, `rgba(${r},${g},${b},${gA * 0.45})`);
-        grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
-        ctx!.fillStyle = grad;
-        // Fill a generous rect in the scaled space (covers the whole canvas).
-        const halfW = W / sx + hx;
-        ctx!.fillRect(-halfW, -H, halfW * 2, H * 2);
-        ctx!.restore();
+        const drawPill = (gr: number, alpha: number) => {
+          const gA = alpha * glowK;
+          const sx = (gr + hx) / gr; // bigger when gr is small → more pill-like
+          ctx!.save();
+          ctx!.translate(lx, ly);
+          ctx!.scale(sx, 1);
+          const grad = ctx!.createRadialGradient(0, 0, 0, 0, 0, gr);
+          grad.addColorStop(0, `rgba(${r},${g},${b},${gA})`);
+          grad.addColorStop(0.45, `rgba(${r},${g},${b},${gA * 0.45})`);
+          grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+          ctx!.fillStyle = grad;
+          const halfW = W / sx + hx;
+          ctx!.fillRect(-halfW, -H, halfW * 2, H * 2);
+          ctx!.restore();
+        };
+        drawPill(LOOK.outerR, LOOK.outerAlpha); // soft, extends further
+        drawPill(LOOK.innerR, LOOK.innerAlpha); // tight, anchors the source
 
         // Particles lit by distance to the capsule SEGMENT (not a point), so the
         // whole text line acts as the source.
