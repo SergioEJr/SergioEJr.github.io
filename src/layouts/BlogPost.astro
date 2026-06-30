@@ -8,7 +8,6 @@ import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 import TableOfContents from '../components/TableOfContents.astro';
 import { url } from '../utils/paths';
-import { pageFade } from '../utils/pageTransition';
 import { renderInline, stripInline } from '../utils/inlineText';
 
 type CategoryBadge = { label: string; color: string };
@@ -542,7 +541,17 @@ const titleText = stripInline(title);
 
 	<body>
 		<Header />
-		<main transition:animate={pageFade}>
+		{/* Unlike the other pages, this layout's <main> is intentionally NOT given
+		    `transition:animate={pageFade}`. That directive stamps a
+		    `view-transition-name` on <main>, which in WebKit forces a
+		    compositing/containing context on an ancestor of the sticky desktop TOC
+		    (.toc-inner) and makes it jitter during momentum scrolling in Safari.
+		    The animation was already a no-op (pageFade is zero-duration, and
+		    global `::view-transition-* { animation: none }` kills it anyway), so
+		    naming <main> bought nothing here while causing the Safari-only jitter.
+		    The sticky header keeps its own named view-transition group, so the
+		    navbar flash-prevention in Header.astro is unaffected. */}
+		<main>
 			<article>
 				{Astro.slots.has('hero') ? (
 					<slot name="hero" />
