@@ -430,6 +430,12 @@ a:hover {
 .pub-btn {
 	display: inline-flex;
 	align-items: center;
+	/* Strip native <button> rendering so the toggle buttons (Abstract / BibTeX)
+	   style and transition identically to the <a> buttons. With appearance: auto
+	   the UA backplate doesn't honor the color transition, so those two buttons
+	   changed theme at a different speed than the rest. */
+	appearance: none;
+	-webkit-appearance: none;
 	font: inherit;
 	font-size: 0.82rem;
 	line-height: 1;
