@@ -1,0 +1,94 @@
+---
+import FormattedDate from './FormattedDate.astro';
+import { renderInline } from '../utils/inlineText';
+import { url } from '../utils/paths';
+
+interface Props {
+	post: any;
+	number: number;
+	catColor: string;
+	catLabel: string;
+}
+const { post, number, catColor, catLabel } = Astro.props;
+
+function postLink(data: any, id: string): { href: string; external: boolean } {
+	if (data.externalUrl) return { href: data.externalUrl, external: true };
+	if (data.linkTo) return { href: url(data.linkTo), external: false };
+	return { href: url(`/blog/${id}/`), external: false };
+}
+const link = postLink(post.data, post.id);
+const isNote = post.data.category === 'notes';
+---
+<article
+	class="j-post"
+	data-category={post.data.category}
+	data-topic={post.data.topic ?? ''}
+	style={`--cat-color:${catColor}`}
+>
+	<div class="j-index">{String(number).padStart(2, '0')}</div>
+	<div class="j-main">
+		<div class="j-cat" style={`color:${catColor}`}>● {catLabel}</div>
+		{post.data.noLink ? (
+			<h2 class="j-post-title j-post-title--static" set:html={renderInline(post.data.title)} />
+		) : (
+			<h2 class="j-post-title">
+				<a
+					href={link.href}
+					{...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+					data-umami-event="journal-post"
+					data-umami-event-title={post.data.title}
+					data-umami-event-category={post.data.category}
+					data-umami-event-external={link.external ? 'true' : 'false'}
+				>
+					<span set:html={renderInline(post.data.title)} />
+					{link.external && (
+						<svg class="j-ext-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg>
+					)}
+				</a>
+			</h2>
+		)}
+		<p class="j-desc">{post.data.description}</p>
+		<div class="j-meta">
+			<FormattedDate date={post.data.pubDate} />
+			{!isNote && post.data.topic && <span class="j-topic-tag">{post.data.topic}</span>}
+			{post.data.tags && post.data.tags.length > 0 && (
+				<span class="j-tags">{post.data.tags.map((t: string) => `#${t}`).join('  ')}</span>
+			)}
+		</div>
+	</div>
+</article>
+
+<style>
+	.j-post {
+		display: grid; grid-template-columns: 3rem 1fr; gap: 1rem;
+		padding: 1.75rem 0; border-bottom: 1px solid var(--color-border);
+		transition: border-color 0.2s ease;
+	}
+	.j-index { font-variant-numeric: tabular-nums; color: var(--color-text-muted); opacity: 0.5; font-size: 0.9rem; padding-top: 0.3rem; }
+	.j-cat { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
+	.j-post-title {
+		font-family: var(--font-serif);
+		font-size: 1.6rem;
+		line-height: 1.2;
+		margin: 0 0 0.5rem;
+		border-bottom: 2px solid var(--color-border);
+		padding-bottom: 0.35rem;
+		display: inline-block;
+		transition: border-color 0.2s ease;
+	}
+	.j-post:hover .j-post-title { border-bottom-color: var(--cat-color); }
+	.j-post-title a { color: var(--color-text-main); text-decoration: none; transition: color 0.2s ease; }
+	/* Link-less update posts: title is plain text, no underline/hover affordance */
+	.j-post-title--static { border-bottom: none; padding-bottom: 0; cursor: default; }
+	.j-post:hover .j-post-title--static { border-bottom-color: transparent; }
+	.j-ext-icon { width: 0.7em; height: 0.7em; margin-left: 0.35rem; vertical-align: baseline; opacity: 0.55; transition: opacity 0.2s ease; }
+	.j-post:hover .j-ext-icon { opacity: 1; }
+	.j-desc { color: var(--color-text-muted); margin: 0 0 0.75rem; max-width: 680px; }
+	.j-meta { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; font-size: 0.82rem; color: var(--color-text-muted); font-style: italic; }
+	.j-topic-tag { font-style: normal; padding: 0.1rem 0.6rem; border-radius: 999px; background: var(--color-bg-offset); border: 1px solid var(--color-border); }
+	.j-tags { font-style: normal; letter-spacing: 0.02em; opacity: 0.8; }
+	@media (max-width: 600px) {
+		.j-post { grid-template-columns: 1fr; }
+		.j-index { display: none; }
+	}
+</style>
