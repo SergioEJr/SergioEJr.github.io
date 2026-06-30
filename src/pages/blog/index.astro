@@ -6,6 +6,7 @@ import { SITE_TITLE } from "../../consts";
 import { pageFade } from "../../utils/pageTransition";
 import { getPublishedPosts } from "../../utils/posts";
 import JournalPost from "../../components/JournalPost.astro";
+import JournalGlowField from "../../components/JournalGlowField.astro";
 
 type Cat = "all" | "news" | "math" | "physics" | "notes";
 
@@ -126,6 +127,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
     >
       <!-- Header (updated client-side per filter) -->
       <header class="j-head">
+        <JournalGlowField />
         <div class="j-eyebrow">
           <span id="j-eyebrow-label">All</span> · <span
             id="j-eyebrow-count"
@@ -446,18 +448,25 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
         color: var(--cat-color);
         font-weight: 700;
         margin-bottom: 0.75rem;
+        /* Above the glow-field canvas (z-index 0 inside .j-head). */
+        position: relative;
+        z-index: 1;
       }
       #j-title {
         font-family: var(--font-serif);
         font-size: 3rem;
         margin: 0 0 0.5rem;
         line-height: 1.1;
+        position: relative;
+        z-index: 1;
       }
       .j-subtitle {
         color: var(--color-text-muted);
         font-size: 1.15rem;
         max-width: 640px;
         margin: 0 0 1.25rem;
+        position: relative;
+        z-index: 1;
       }
       .j-filters {
         display: flex;
