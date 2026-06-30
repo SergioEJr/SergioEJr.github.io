@@ -81,7 +81,7 @@ const { count = 36, opacity = 0.5, class: className = "" } = Astro.props;
         ctx!.clearRect(0, 0, W, H);
         ctx!.fillStyle = dotColor;
         for (const p of parts) {
-          ctx!.globalAlpha = 0.35 + Math.random() * 0.15;
+          ctx!.globalAlpha = 0.65 + Math.random() * 0.15;
           ctx!.beginPath();
           ctx!.arc(p.x, p.y, p.r, 0, Math.PI * 2);
           ctx!.fill();
