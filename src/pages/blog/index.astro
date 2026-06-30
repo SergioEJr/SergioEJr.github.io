@@ -434,7 +434,9 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
         padding: 0.85rem 0;
         margin-bottom: 2.25rem;
         border-bottom: 1px solid var(--color-border);
-        transition: border-color 0.3s ease;
+        /* Match the navbar/body theme transition so the frosted bg eases in sync
+           (it was snapping instantly because only border-color transitioned). */
+        transition: border-color 0.3s ease, background-color 0.3s ease;
       }
       .j-eyebrow {
         display: inline-block;
