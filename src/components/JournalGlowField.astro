@@ -376,15 +376,26 @@ const { count = 46, class: className = "" } = Astro.props;
         }
       });
 
-      // Recompute the light target when the active filter changes by any means:
-      // a pill click, a URL-hash filter change (or Back), or a layout reflow.
-      document.querySelectorAll(".j-filter").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          // The filter script toggles .active synchronously on click; measure
-          // on the next frame so the new active element + its rect are settled.
-          requestAnimationFrame(recomputeTarget);
+      // Re-measure the light target whenever the EYEBROW actually changes, rather
+      // than guessing a delay after a click. The filter script swaps the eyebrow
+      // label on a 160ms timer (fadeApply) and the count odometer rolls for ~1.6s
+      // afterward — both shift the eyebrow's width/center. A MutationObserver on
+      // the eyebrow fires on every such change (subtree text + the count's
+      // data-count attribute), so the light tracks the eyebrow exactly, with no
+      // timing assumptions. This is why a click and a refresh now land identically.
+      const eyebrow = document.querySelector(".j-eyebrow");
+      if (eyebrow) {
+        const ebObserver = new MutationObserver(() => recomputeTarget());
+        ebObserver.observe(eyebrow, {
+          childList: true,
+          subtree: true,
+          characterData: true,
+          attributes: true,
+          attributeFilter: ["data-count"],
         });
-      });
+      }
+      // Hash changes (Back, manual edit) can swap the filter without a DOM-settle
+      // we observe above, so re-measure on the next frame too.
       window.addEventListener("hashchange", () =>
         requestAnimationFrame(recomputeTarget),
       );
