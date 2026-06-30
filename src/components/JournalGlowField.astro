@@ -59,8 +59,25 @@ const { count = 46, class: className = "" } = Astro.props;
         baseAlpha: 0.42, // ambient particle alpha away from light
       };
 
-      // Light source state. Task 3 animates light.x toward the active pill.
+      // Light source state. light.x eases toward targetX (the active pill).
       const light = { x: 0, y: 0 };
+
+      // The light's horizontal anchor is the center-X of the currently-active
+      // filter element, measured live. Works for desktop pills, the desktop
+      // plain-text Notebook filter, AND the mobile own-row Notebook pill —
+      // we use only center-X (ignore Y), so row/layout differences don't matter.
+      let targetX = 0;
+      function measureLightTargetX(): number {
+        const active = document.querySelector(".j-filter.active");
+        if (!active) return W / 2;
+        const ar = (active as HTMLElement).getBoundingClientRect();
+        const cr = canvas.getBoundingClientRect();
+        const x = ar.left + ar.width / 2 - cr.left;
+        return Math.max(0, Math.min(W, x));
+      }
+      function recomputeTarget() {
+        targetX = measureLightTargetX();
+      }
 
       // Resolve --cat-color (may be a hex like #3b82f6 or var(--color-accent))
       // to concrete RGB. Only re-run when the raw string changes.
@@ -102,7 +119,8 @@ const { count = 46, class: className = "" } = Astro.props;
         canvas.height = Math.max(1, Math.floor(H * DPR));
         ctx!.setTransform(DPR, 0, 0, DPR, 0, 0);
         light.y = H - 14;
-        if (light.x === 0) light.x = W / 2;
+        targetX = measureLightTargetX();
+        if (light.x === 0) light.x = targetX;
       }
 
       function particleCount() {
@@ -186,6 +204,7 @@ const { count = 46, class: className = "" } = Astro.props;
           if (p.y < 0) p.y += H;
           if (p.y > H) p.y -= H;
         }
+        light.x += (targetX - light.x) * 0.12;
         draw(time);
         raf = requestAnimationFrame(tick);
       }
@@ -194,6 +213,8 @@ const { count = 46, class: className = "" } = Astro.props;
       resize();
       seed();
       if (reduce) {
+        targetX = measureLightTargetX();
+        light.x = targetX;
         draw();
       } else {
         raf = requestAnimationFrame(tick);
@@ -201,8 +222,25 @@ const { count = 46, class: className = "" } = Astro.props;
       window.addEventListener("resize", () => {
         resize();
         seed();
-        if (reduce) draw();
+        recomputeTarget();
+        if (reduce) {
+          light.x = targetX;
+          draw();
+        }
       });
+
+      // Recompute the light target when the active filter changes by any means:
+      // a pill click, a URL-hash filter change (or Back), or a layout reflow.
+      document.querySelectorAll(".j-filter").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          // The filter script toggles .active synchronously on click; measure
+          // on the next frame so the new active element + its rect are settled.
+          requestAnimationFrame(recomputeTarget);
+        });
+      });
+      window.addEventListener("hashchange", () =>
+        requestAnimationFrame(recomputeTarget),
+      );
     }
   }
 
