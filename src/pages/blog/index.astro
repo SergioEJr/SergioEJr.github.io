@@ -559,22 +559,31 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
         .j-filters {
           justify-content: center;
         }
-        /* The vertical divider is a desktop idiom that orphans when the pill
-				   row wraps. On mobile, drop it and give Notebook its own full-width
-				   second tier instead. */
+        /* Repurpose the (desktop) divider as a zero-height full-width flex break
+           so Notebook wraps onto its own row without itself being visible. */
         .j-filter-divider {
-          display: none;
-        }
-        .j-filter--text,
-        .j-filter--text:hover,
-        .j-filter--text.active {
           flex-basis: 100%;
+          width: 100%;
+          height: 0;
+          margin: 0;
+          background: none;
+        }
+        /* On mobile, Notebook is a centered pill on its own row (not the desktop
+           plain-text treatment) so it clearly reads as clickable. Restore the
+           base pill look, sized to its own content (no full-width stretch). */
+        .j-filter--text {
           margin-top: 0.85rem;
-          padding: 0.85rem 0.25rem 0;
-          /* Keep the tier separator even when active/hovered — the desktop
-					   rules set border-color: transparent, which would erase it. */
-          border-top: 1px solid var(--color-border);
-          text-align: center;
+          padding: 0.35rem 1rem;
+          border: 1px solid var(--color-border);
+          border-radius: 999px;
+        }
+        .j-filter--text:hover {
+          border-color: var(--f-color);
+        }
+        .j-filter--text.active {
+          color: #fff;
+          background: var(--f-color);
+          border-color: var(--f-color);
         }
         /* On mobile the topics list scrolls horizontally as a row of pills
            instead of stacking vertically above the post list. */
