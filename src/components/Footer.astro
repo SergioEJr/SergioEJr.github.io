@@ -38,7 +38,12 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         {
           cvHref && (
             <li>
-              <a href={cvHref} target="_blank">
+              <a
+                href={cvHref}
+                target="_blank"
+                data-umami-event="cv-download"
+                data-umami-event-location="footer"
+              >
                 Download CV
               </a>
             </li>

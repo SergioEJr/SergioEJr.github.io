@@ -32,10 +32,10 @@ const metaDescription = abstract ?? title;
 	{(paper || poster) && (
 		<div class="research-links">
 			{paper && (
-				<a class="btn" href={paper} target="_blank" rel="noopener noreferrer">Paper ↗</a>
+				<a class="btn" href={paper} target="_blank" rel="noopener noreferrer" data-umami-event="paper-click" data-umami-event-title={title}>Paper ↗</a>
 			)}
 			{poster && (
-				<a class="btn btn-outline" href={url(poster)} target="_blank" rel="noopener noreferrer">Poster ↗</a>
+				<a class="btn btn-outline" href={url(poster)} target="_blank" rel="noopener noreferrer" data-umami-event="poster-click" data-umami-event-title={title}>Poster ↗</a>
 			)}
 		</div>
 	)}

@@ -119,6 +119,10 @@ function postLink(data: any, id: string): { href: string; external: boolean } {
 											<a
 												href={link.href}
 												{...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+												data-umami-event="journal-post"
+												data-umami-event-title={post.data.title}
+												data-umami-event-category={post.data.category}
+												data-umami-event-external={link.external ? 'true' : 'false'}
 											>
 												<span set:html={renderInline(post.data.title)} />
 												{link.external && (

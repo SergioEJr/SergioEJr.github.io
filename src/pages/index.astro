@@ -56,9 +56,8 @@ const selectedResearch = (
          ============================================================ */
       .hero-scroll {
         --header-h: 4.5rem;
-        /* Scroll distance for the crossfade. Kept short so the swap is snappy:
-           combined with scroll-snap (below) a small flick past the midpoint lets
-           the browser glide the rest of the way, so you can't park half-done. */
+        /* Scroll distance for the crossfade. Kept short so the swap is snappy —
+           a small flick carries you most of the way through the sim→card fade. */
         --hero-travel: 70svh;
         --hero-progress: 0;
         position: relative;
@@ -124,15 +123,11 @@ const selectedResearch = (
          100%. The flicker portion is stepped; the fade-out tail is linear. */
       /* The logo glow filters live on each color layer's <svg> element (not the
          inner paths) so Safari renders them — see Header.astro. */
-      :global(
-        html[data-home-intro] .site-header .brand-layer-primary svg
-      ) {
+      :global(html[data-home-intro] .site-header .brand-layer-primary svg) {
         animation: introLogoPrimaryGlow var(--intro-glow-dur, 1.1s) linear
           var(--intro-glow-at, 0.45s) both;
       }
-      :global(
-        html[data-home-intro] .site-header .brand-layer-secondary svg
-      ) {
+      :global(html[data-home-intro] .site-header .brand-layer-secondary svg) {
         animation: introLogoSecondaryGlow var(--intro-glow-dur, 1.1s) linear
           var(--intro-glow-at, 0.45s) both;
       }
@@ -469,29 +464,6 @@ const selectedResearch = (
           opacity: 1;
         }
       }
-      /* Snap points so the page settles on either the sim (top) or the card (end
-         of the pin) — never mid-crossfade. The sentinels are zero-impact markers.
-         The JS uses MANDATORY snap (scoped to <html> only while this page is
-         mounted) so there is no in-between resting state: the browser always
-         settles on one of these two points. A third snap point at the top of the
-         content below (.hero-after-snap) gives mandatory a valid downward target
-         so it never traps you in the hero. */
-      .hero-snap-top {
-        position: absolute;
-        top: 0;
-        height: 1px;
-        width: 1px;
-        scroll-snap-align: start;
-        pointer-events: none;
-      }
-      .hero-snap-end {
-        position: absolute;
-        bottom: 0;
-        height: 1px;
-        width: 1px;
-        scroll-snap-align: end;
-        pointer-events: none;
-      }
       .home-main {
         /* Remove the global top padding on the homepage so the pinned hero starts
            immediately below the header and scroll progress begins on first input. */
@@ -784,11 +756,6 @@ const selectedResearch = (
           mobile fall back to a simple stacked layout (see <style>). */
       }
       <section class="hero-scroll" data-hero-scroll>
-        {
-          /* Snap markers: settle on the sim (top) or the card (end of the pin). */
-        }
-        <div class="hero-snap-top" aria-hidden="true"></div>
-        <div class="hero-snap-end" aria-hidden="true"></div>
         <div class="hero-stage">
           <div class="hero-layer hero-layer-sim" data-hero-sim-layer>
             <HeroSim />
@@ -821,14 +788,13 @@ const selectedResearch = (
               </div>
               <div class="hero-copy">
                 <h1>Sergio Eraso</h1>
-                <p class="hero-role">PhD Student in Physics · MIT</p>
+                <p class="hero-role">PhD Candidate in Physics · MIT</p>
                 <p class="hero-bio">
                   I work on <strong
                     >nonequilibrium statistical physics and biophysics</strong
-                  >, building models, simulations, and tools to understand how
-                  simple local rules produce predictable large-scale behavior in
-                  complex systems — and increasingly applying that toolkit
-                  beyond academia.
+                  > — finding the simple local rules that add up to complex collective
+                  behavior, and building the models, simulations, and tools to actually
+                  run them.
                 </p>
                 <div class="hero-buttons">
                   <a href={url("/publications")} class="btn">View Research</a>
@@ -930,67 +896,99 @@ const selectedResearch = (
           return mqReduce.matches || mqMobile.matches;
         }
 
-        // Native scroll-snap makes the transition feel snappy on wheel AND
-        // trackpad without intercepting input (which caused lag/jitter): the
-        // browser settles on the nearest snap point. Scoped to <html> only while
-        // this page is mounted; off in the stacked fallbacks.
+        // SNAP MODEL — JS settle on scroll-idle (NOT CSS scroll-snap).
         //
-        // The snap is MANDATORY so there is NO in-between resting state — the
-        // browser always lands on the sim or the card, never mid-crossfade. But
-        // mandatory with only those two points would TRAP you at the card (it has
-        // no point below to release to). So snap is toggled by scroll position
-        // (setSnapForProgress): mandatory only while you're inside the transition
-        // band, and switched OFF once the card is committed so the content below
-        // scrolls completely freely. Hysteresis (ON_BELOW/OFF_ABOVE) stops it
-        // flickering at the boundary.
+        // The crossfade is a free scrub: --hero-progress follows scrollY, so the
+        // sim↔card swap scrubs smoothly in BOTH directions. To stop the page
+        // resting half-faded we add the settle in JAVASCRIPT instead of CSS
+        // scroll-snap. CSS snap was tried (mandatory, then proximity) and its
+        // per-frame pull always fought the scrub: with a snap point at the very top
+        // (sim) and one at the card it trapped you at the card scrolling up and at
+        // the top scrolling down, and on Chrome the top-edge re-snap compounded with
+        // the rubber-band into a runaway "scroll up forever" (the sticky header
+        // drifting into mid-viewport). Firefox showed the pull as an abrupt teleport
+        // past the fade. The JS settle below only fires AFTER scrolling stops, so it
+        // never fights an in-progress gesture — no trap, no runaway.
         //
-        // SNAP GLIDE SPEED ── the one tunable for how the snap settles.
-        //   "auto"   → the snap happens INSTANTLY (snappiest, no glide).
-        //   "smooth" → the browser glides to the snap point (softer, slower).
-        // Native scroll-snap has no duration knob — these two are the only
-        // options. We override the site-wide `scroll-behavior: smooth` only while
-        // the snap is active, then restore it so in-page anchor links elsewhere
-        // still glide. Flip this to taste:
-        const SNAP_GLIDE = "auto";
-        const OFF_ABOVE = 0.985; // committed to card → release snap (read content)
-        const ON_BELOW = 0.9; // scrolled back up into the band → re-arm snap
-        let snapArmed = false;
+        // We ALSO keep `overscroll-behavior-y: none` while the hero is in view: it
+        // contains the rubber-band at the document's top edge so a hard flick up
+        // can't overscroll past scrollY 0 (belt-and-suspenders for the runaway).
+        // Scoped to <html> only while you're at/near the hero; cleared once you've
+        // scrolled to the content below (and in cleanup) so other pages — and
+        // pull-to-refresh — behave normally.
+        const GUARD_OFF_BELOW = 0.985; // scrolled past the hero → drop the guard
+        let armed = false;
 
-        function enableSnapCss(on) {
-          if (on) {
-            docEl.style.scrollSnapType = "y mandatory";
-            docEl.style.scrollPaddingTop = "4.5rem"; // = --header-h
-            docEl.style.scrollBehavior = SNAP_GLIDE;
-          } else {
-            docEl.style.scrollSnapType = "";
-            docEl.style.scrollPaddingTop = "";
-            docEl.style.scrollBehavior = "";
-          }
+        function enableGuard(on) {
+          if (on === armed) return;
+          armed = on;
+          docEl.style.overscrollBehaviorY = on ? "none" : "";
         }
-        // Arm/disarm mandatory snap based on how far through the transition we
-        // are, so it governs only the sim↔card swap and never traps the content.
-        function setSnapForProgress(p) {
+        function setGuardForProgress(p) {
           if (isFallback()) {
-            if (snapArmed) {
-              snapArmed = false;
-              enableSnapCss(false);
-            }
+            enableGuard(false);
             return;
           }
-          if (snapArmed && p >= OFF_ABOVE) {
-            snapArmed = false;
-            enableSnapCss(false);
-          } else if (!snapArmed && p < ON_BELOW) {
-            snapArmed = true;
-            enableSnapCss(true);
-          }
+          enableGuard(p < GUARD_OFF_BELOW);
         }
-        function applySnap() {
-          // Reset to a known state, then let scroll position decide.
-          snapArmed = false;
-          enableSnapCss(false);
-          setSnapForProgress(progress());
+        function applyGuard() {
+          enableGuard(false);
+          setGuardForProgress(progress());
         }
+
+        // --- JS idle-settle ---------------------------------------------------
+        // After scrolling stops inside the transition band, glide to the sim or
+        // the card. The target is biased by the LAST scroll direction so a small
+        // flick commits the way you were heading (instead of a hard 0.5 midpoint):
+        //   scrolling DOWN → commit to the card, unless still right at the top
+        //                    (p < FLICK) where a tiny nudge settles back to the sim
+        //   scrolling UP   → commit to the sim, unless still right at the bottom
+        //                    (p > 1-FLICK) where a tiny nudge settles back to the card
+        // dir 0 (e.g. resize) falls back to the nearest endpoint by the midpoint.
+        const SETTLE_IDLE_MS = 110; // quiet time after last scroll before settling
+        const FLICK = 0.12; // dead-zone near an endpoint that resists the flick
+        let settleTimer = null;
+        let settling = false; // true while OUR programmatic glide is running
+        let lastY = window.scrollY;
+        let dir = 0; // +1 down, -1 up, 0 none
+
+        function settleTarget(p) {
+          if (dir > 0) return p < FLICK ? 0 : 1; // heading down → card
+          if (dir < 0) return p > 1 - FLICK ? 1 : 0; // heading up → sim
+          return p < 0.5 ? 0 : 1; // no direction → nearest
+        }
+        function doSettle() {
+          settleTimer = null;
+          if (isFallback() || settling) return;
+          const p = progress();
+          if (p <= 0.001 || p >= 0.999) return; // already on an endpoint
+          const m = metrics();
+          const targetY = settleTarget(p) === 0 ? m.start : m.start + m.travel;
+          if (Math.abs(targetY - window.scrollY) < 1) return;
+          settling = true;
+          window.scrollTo({ top: targetY, behavior: "smooth" });
+          // Clear the settling flag once we've effectively arrived (smooth scroll
+          // has no completion event). Poll briefly; bail out if the user grabs the
+          // scroll again (handled in onScroll, which cancels settling on real input).
+          const startedAt = performance.now();
+          const check = () => {
+            if (!settling) return;
+            if (
+              Math.abs(window.scrollY - targetY) < 2 ||
+              performance.now() - startedAt > 700
+            ) {
+              settling = false;
+              return;
+            }
+            requestAnimationFrame(check);
+          };
+          requestAnimationFrame(check);
+        }
+        function scheduleSettle() {
+          if (settleTimer != null) clearTimeout(settleTimer);
+          settleTimer = window.setTimeout(doSettle, SETTLE_IDLE_MS);
+        }
+
         function metrics() {
           const headerH =
             (stage && parseFloat(getComputedStyle(stage).top)) || 4.5 * 16;
@@ -1020,34 +1018,59 @@ const selectedResearch = (
           const p = progress();
           section.style.setProperty("--hero-progress", p.toFixed(4));
           section.setAttribute("data-hero-active", p > 0.5 ? "card" : "sim");
-          setSnapForProgress(p);
+          setGuardForProgress(p);
         }
         function onScroll() {
+          const y = window.scrollY;
+          // Only REAL user scrolling cancels an in-flight settle and re-arms the
+          // idle timer. Our own programmatic glide (settling) must not cancel
+          // itself or it would never reach the endpoint.
+          if (!settling) {
+            if (y !== lastY) dir = y > lastY ? 1 : -1;
+            if (!isFallback()) scheduleSettle();
+          }
+          lastY = y;
           if (raf == null) raf = requestAnimationFrame(update);
         }
 
+        // Real input intent (wheel/touch/keyboard) ALWAYS interrupts an in-flight
+        // settle so the user can grab the scroll back mid-glide — without this the
+        // `settling` guard in onScroll would swallow their input until arrival.
+        const cancelSettle = () => {
+          if (settleTimer != null) {
+            clearTimeout(settleTimer);
+            settleTimer = null;
+          }
+          settling = false;
+        };
         window.addEventListener("scroll", onScroll, { passive: true });
         window.addEventListener("resize", onScroll);
+        window.addEventListener("wheel", cancelSettle, { passive: true });
+        window.addEventListener("touchstart", cancelSettle, { passive: true });
+        window.addEventListener("keydown", cancelSettle);
         const onMqChange = () => {
-          applySnap();
+          applyGuard();
           update();
         };
         mqReduce.addEventListener("change", onMqChange);
         mqMobile.addEventListener("change", onMqChange);
-        applySnap();
+        applyGuard();
         update();
 
         section._heroScrollCleanup = () => {
           window.removeEventListener("scroll", onScroll);
           window.removeEventListener("resize", onScroll);
+          window.removeEventListener("wheel", cancelSettle);
+          window.removeEventListener("touchstart", cancelSettle);
+          window.removeEventListener("keydown", cancelSettle);
           mqReduce.removeEventListener("change", onMqChange);
           mqMobile.removeEventListener("change", onMqChange);
           if (raf != null) cancelAnimationFrame(raf);
-          // Drop the page-scoped snap + behavior override so other pages scroll
-          // normally (and keep the global `scroll-behavior: smooth`).
-          docEl.style.scrollSnapType = "";
-          docEl.style.scrollPaddingTop = "";
-          docEl.style.scrollBehavior = "";
+          if (settleTimer != null) clearTimeout(settleTimer);
+          settling = false;
+          // Drop the page-scoped overscroll guard so other pages overscroll /
+          // pull-to-refresh normally.
+          enableGuard(false);
           delete section._heroScrollCleanup;
         };
       }

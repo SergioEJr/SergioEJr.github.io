@@ -67,6 +67,8 @@ const brandLayerSecondary = layerFor("cls-2");
             class="github-link"
             aria-label="Download CV"
             title="Download CV"
+            data-umami-event="cv-download"
+            data-umami-event-location="navbar-icon"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -210,7 +212,12 @@ const brandLayerSecondary = layerFor("cls-2");
     <a href={url("/about")}>About</a>
     {
       cvHref && (
-        <a href={cvHref} target="_blank">
+        <a
+          href={cvHref}
+          target="_blank"
+          data-umami-event="cv-download"
+          data-umami-event-location="navbar-menu"
+        >
           Download CV
         </a>
       )
