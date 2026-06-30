@@ -13,7 +13,7 @@ export const BLOG_CATEGORY_LABELS: Record<string, string> = {
 	news: 'News',
 	math: 'Math',
 	physics: 'Physics',
-	notes: 'Notes',
+	notes: 'Notebook',
 };
 
 // Project categories. Technical reuses the Journal "Math" purple; Teaching reuses

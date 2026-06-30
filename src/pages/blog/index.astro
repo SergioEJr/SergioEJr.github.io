@@ -15,7 +15,7 @@ const CATS: Record<Cat, { label: string; color: string; title: string; subtitle:
 	news: { label: 'News', color: '#3b82f6', title: 'News & Updates', subtitle: 'Announcements, milestones, and what I’m up to.' },
 	math: { label: 'Math', color: '#8b5cf6', title: 'On Mathematics', subtitle: 'Small results, tricks, and ideas worth remembering.' },
 	physics: { label: 'Physics', color: '#10b981', title: 'On Physics', subtitle: 'Intuition and notes on physical systems.' },
-	notes: { label: 'Notes', color: '#f59e0b', title: 'Things I’m learning', subtitle: 'A growing notebook of guides and explainers, written plainly.' },
+	notes: { label: 'Notebook', color: '#f59e0b', title: 'Things I’m learning', subtitle: 'A growing notebook of guides and explainers, written plainly.' },
 	all: { label: 'All', color: 'var(--color-accent)', title: 'The Journal', subtitle: 'Tech, math, physics & notes — all in one place.' },
 };
 const FILTER_ORDER: Cat[] = ['news', 'math', 'physics', 'notes', 'all'];
@@ -34,8 +34,11 @@ byDate.forEach((p, i) => postNumber.set(p.id, i + 1));
 // numbering and the display order always agree, even on shared dates.
 const posts = [...byDate].reverse();
 
-const counts: Record<string, number> = { all: posts.length, news: 0, math: 0, physics: 0, notes: 0 };
-for (const p of posts) counts[p.data.category] = (counts[p.data.category] || 0) + 1;
+const counts: Record<string, number> = { all: 0, news: 0, math: 0, physics: 0, notes: 0 };
+for (const p of posts) {
+	counts[p.data.category] = (counts[p.data.category] || 0) + 1;
+	if (p.data.category !== 'notes') counts.all++;
+}
 
 // Topics for the Notes view
 const topicCounts = new Map<string, number>();
@@ -180,7 +183,7 @@ function postLink(data: any, id: string): { href: string; external: boolean } {
 					posts.forEach((el) => {
 						const cat = el.getAttribute('data-category');
 						const topic = el.getAttribute('data-topic');
-						let show = activeCat === 'all' || cat === activeCat;
+						let show = activeCat === 'all' ? cat !== 'notes' : cat === activeCat;
 						if (show && activeCat === 'notes' && activeTopic !== 'all') {
 							show = topic === activeTopic;
 						}
