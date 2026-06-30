@@ -60,8 +60,8 @@ const { count = 46, class: className = "" } = Astro.props;
       //  - inner: small halo, tight to the text — clearly establishes the source.
       //  - outer: larger, softer halo — extends the light further into the field.
       const LOOK = {
-        innerR: 70, // inner pill halo radius (px) — tight to the text
-        innerAlpha: 0.2, // inner peak opacity
+        innerR: 20, // inner pill halo radius (px) — tight to the text
+        innerAlpha: 0.8, // inner peak opacity
         outerR: 190, // outer pill halo radius (px) — soft, extends further
         outerAlpha: 0.1, // outer peak opacity
         lightAlpha: 0.75, // proximity brightening weight
@@ -79,7 +79,12 @@ const { count = 46, class: className = "" } = Astro.props;
       const light = { x: 0, y: 0, hx: 40, hy: 8 };
 
       // Measure the eyebrow's center + half-extents, in canvas-local coordinates.
-      function measureLight(): { x: number; y: number; hx: number; hy: number } {
+      function measureLight(): {
+        x: number;
+        y: number;
+        hx: number;
+        hy: number;
+      } {
         const eyebrow = document.querySelector(".j-eyebrow");
         const cr = canvas.getBoundingClientRect();
         if (!eyebrow) return { x: W / 2, y: H * 0.35, hx: 40, hy: 8 };
@@ -220,6 +225,25 @@ const { count = 46, class: className = "" } = Astro.props;
         }
       }
 
+      // Trace a rounded-rectangle (capsule when r == height/2) path.
+      function roundedRect(
+        c: CanvasRenderingContext2D,
+        x: number,
+        y: number,
+        w: number,
+        h: number,
+        rad: number,
+      ) {
+        const rr = Math.min(rad, w / 2, h / 2);
+        c.beginPath();
+        c.moveTo(x + rr, y);
+        c.arcTo(x + w, y, x + w, y + h, rr);
+        c.arcTo(x + w, y + h, x, y + h, rr);
+        c.arcTo(x, y + h, x, y, rr);
+        c.arcTo(x, y, x + w, y, rr);
+        c.closePath();
+      }
+
       function draw(time = 0) {
         resolveCatColor();
         const r = Math.round(lightRGB[0]);
@@ -238,25 +262,41 @@ const { count = 46, class: className = "" } = Astro.props;
 
         ctx!.clearRect(0, 0, W, H);
 
-        // Two stacked pill glows centered on the eyebrow. Each is a small radial
-        // gradient stretched along X so it reads as a horizontal capsule whose
-        // flat middle spans the eyebrow width (2*hx). The OUTER (large, soft) is
-        // drawn first; the INNER (small, tighter) stacks on top to anchor the
-        // source to the text.
+        // Two stacked pill glows centered on the eyebrow. A GENUINE capsule: the
+        // bright core is the horizontal SEGMENT [lx-hx, lx+hx] at y=ly, and the
+        // glow falls off by DISTANCE-TO-THE-SEGMENT (not distance-to-a-point), so
+        // the whole line is equally bright — not an ellipse peaking at the center.
+        // Built as: a middle band (vertical linear falloff, uniform along X) plus
+        // two radial caps at the endpoints. OUTER (soft, far) under INNER (tight).
         const hx = light.hx;
+        // A genuine capsule glow via shadowBlur: draw a thin rounded-rect CORE
+        // along the eyebrow segment and let the canvas shadow feather it outward.
+        // shadowBlur gives a true distance-to-shape falloff — uniform along the
+        // line, rounded at the caps — with NO hard edges (the previous rect-band
+        // approach left a vertical seam where the band ended).
         const drawPill = (gr: number, alpha: number) => {
           const gA = alpha * glowK;
-          const sx = (gr + hx) / gr; // bigger when gr is small → more pill-like
+          // Core half-height: a slim bar so the source reads as a line, not a box.
+          const coreH = Math.max(2, light.hy * 0.6);
           ctx!.save();
-          ctx!.translate(lx, ly);
-          ctx!.scale(sx, 1);
-          const grad = ctx!.createRadialGradient(0, 0, 0, 0, 0, gr);
-          grad.addColorStop(0, `rgba(${r},${g},${b},${gA})`);
-          grad.addColorStop(0.45, `rgba(${r},${g},${b},${gA * 0.45})`);
-          grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
-          ctx!.fillStyle = grad;
-          const halfW = W / sx + hx;
-          ctx!.fillRect(-halfW, -H, halfW * 2, H * 2);
+          // The shadow does the glow; offset the real shape far off-canvas and
+          // cast its shadow back onto the light position, so only the soft halo
+          // shows (standard canvas glow trick — avoids the hard core rectangle).
+          const OFF = 4000;
+          ctx!.shadowColor = `rgba(${r},${g},${b},${gA})`;
+          ctx!.shadowBlur = gr;
+          ctx!.shadowOffsetX = OFF;
+          ctx!.shadowOffsetY = 0;
+          ctx!.fillStyle = `rgba(${r},${g},${b},1)`;
+          roundedRect(
+            ctx!,
+            lx - hx - OFF,
+            ly - coreH,
+            hx * 2,
+            coreH * 2,
+            coreH,
+          );
+          ctx!.fill();
           ctx!.restore();
         };
         drawPill(LOOK.outerR, LOOK.outerAlpha); // soft, extends further
