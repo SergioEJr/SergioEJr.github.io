@@ -20,18 +20,23 @@ export function createOdometer(el: HTMLElement) {
 	let fontsReady = !(document.fonts && document.fonts.ready);
 	if (!fontsReady) document.fonts.ready.then(() => (fontsReady = true));
 
-	// 1em-tall window; the strip of numbers scrolls within it. Align the window
-	// to the surrounding text baseline: an overflow box's baseline is its bottom
-	// edge, so nudge it down by the font's descender (~0.16em) with a negative
-	// bottom margin so the digit sits on the text baseline like normal glyphs.
+	// The window is one line tall and clips the off-screen rows. To keep the
+	// visible digit on the surrounding text baseline, we DON'T use a fixed-em
+	// nudge (font descenders vary). Instead the window and each row share the
+	// same line-height, and the element stays vertical-align: baseline — an inline
+	// box's baseline is the baseline of its last line, which (with a single 1em
+	// line) lands exactly where surrounding text sits.
 	el.style.display = "inline-block";
 	el.style.position = "relative";
 	el.style.height = "1em";
 	el.style.overflow = "hidden";
 	el.style.verticalAlign = "baseline";
-	el.style.marginBottom = "-0.16em";
+	// An overflow box's baseline becomes its bottom edge, which leaves the digit
+	// sitting ~0.23em above the surrounding text baseline; pull it back down so it
+	// sits on the line. (Measured against the eyebrow text.)
+	el.style.bottom = "-0.23em";
 	el.style.fontVariantNumeric = "tabular-nums";
-	el.style.lineHeight = "1";
+	el.style.lineHeight = "1em";
 
 	function render(from: number, target: number) {
 		from = Math.max(0, Math.round(from));
