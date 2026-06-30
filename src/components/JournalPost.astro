@@ -20,12 +20,12 @@ const link = postLink(post.data, post.id);
 const isNote = post.data.category === 'notes';
 ---
 <article
-	class="j-post"
+	class:list={['j-post', { 'is-note': isNote }]}
 	data-category={post.data.category}
 	data-topic={post.data.topic ?? ''}
 	style={`--cat-color:${catColor}`}
 >
-	<div class="j-index">{String(number).padStart(2, '0')}</div>
+	{!isNote && <div class="j-index">{String(number).padStart(2, '0')}</div>}
 	<div class="j-main">
 		<div class="j-cat" style={`color:${catColor}`}>● {catLabel}</div>
 		{post.data.noLink ? (
@@ -63,6 +63,14 @@ const isNote = post.data.category === 'notes';
 		display: grid; grid-template-columns: 3rem 1fr; gap: 1rem;
 		padding: 1.75rem 0; border-bottom: 1px solid var(--color-border);
 		transition: border-color 0.2s ease;
+	}
+	/* Notebook entries aren't part of the blog's chronological sequence: no
+	   running index, and no per-entry separator (the topic header rule groups
+	   them instead). */
+	.j-post.is-note {
+		grid-template-columns: 1fr;
+		border-bottom: none;
+		padding: 1.25rem 0;
 	}
 	.j-index { font-variant-numeric: tabular-nums; color: var(--color-text-muted); opacity: 0.5; font-size: 0.9rem; padding-top: 0.3rem; }
 	.j-cat { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
