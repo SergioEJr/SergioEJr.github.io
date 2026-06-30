@@ -419,7 +419,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
         color: var(--color-text-muted);
         font-size: 1.15rem;
         max-width: 640px;
-        margin: 0 0 0.75rem;
+        margin: 0 0 1.25rem;
       }
       .j-filters {
         display: flex;
@@ -560,6 +560,12 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
         .j-filters-bar {
           border-bottom: none;
           margin-bottom: 1rem;
+        }
+        /* Tighten the gap between the two rows. The zero-height divider is its
+           own flex line, so the row-gap applies twice between the pills and the
+           Notebook pill; a small row-gap keeps them close. */
+        .j-filters {
+          row-gap: 0.3rem;
         }
         /* Repurpose the (desktop) divider as a zero-height full-width flex break
            so Notebook wraps onto its own row without itself being visible. */
