@@ -63,26 +63,32 @@ const { count = 46, class: className = "" } = Astro.props;
       };
 
       // Light source state. The light is pinned to the eyebrow ("<FILTER> · N
-      // PIECES") — a stable anchor near the top of the header. Its position
-      // barely moves between filters (only the label text changes), so the field
-      // reads as one steady light; the COLOR is what animates per filter.
-      const light = { x: 0, y: 0 };
+      // PIECES") — a stable anchor near the top of the header. It's PILL-shaped:
+      // a horizontal capsule matching the eyebrow's footprint, so the glow looks
+      // like it emanates from the text itself rather than from a point behind it.
+      // hx/hy are the capsule's half-width / half-height. Position barely moves
+      // between filters (only the label changes); the COLOR is what animates.
+      const light = { x: 0, y: 0, hx: 40, hy: 8 };
 
-      // Measure the eyebrow's center, in canvas-local coordinates.
-      function measureLight(): { x: number; y: number } {
+      // Measure the eyebrow's center + half-extents, in canvas-local coordinates.
+      function measureLight(): { x: number; y: number; hx: number; hy: number } {
         const eyebrow = document.querySelector(".j-eyebrow");
         const cr = canvas.getBoundingClientRect();
-        if (!eyebrow) return { x: W / 2, y: H * 0.35 };
+        if (!eyebrow) return { x: W / 2, y: H * 0.35, hx: 40, hy: 8 };
         const er = (eyebrow as HTMLElement).getBoundingClientRect();
         return {
           x: er.left + er.width / 2 - cr.left,
           y: er.top + er.height / 2 - cr.top,
+          hx: er.width / 2,
+          hy: er.height / 2,
         };
       }
       function recomputeTarget() {
         const m = measureLight();
         targetX = m.x;
         light.y = m.y;
+        light.hx = m.hx;
+        light.hy = m.hy;
       }
       let targetX = 0;
 
@@ -199,24 +205,44 @@ const { count = 46, class: className = "" } = Astro.props;
 
         ctx!.clearRect(0, 0, W, H);
 
-        // Dust glow: soft radial cloud centered on the light.
+        // Capsule light: a horizontal pill matching the eyebrow's footprint, so
+        // the glow looks like it comes from the text. The capsule is the segment
+        // [lx-hx, lx+hx] at y=ly; the glow falls off radially from that segment.
+        const hx = light.hx;
         const gr = Math.min(W, H) * LOOK.glow;
         const gA = LOOK.glowAlpha * glowK;
-        const grad = ctx!.createRadialGradient(lx, ly, 0, lx, ly, gr);
+
+        // Render the pill glow by scaling X so a radial gradient becomes an
+        // elongated capsule whose flat middle spans the eyebrow width. We map the
+        // horizontal axis by (gr + hx)/gr, draw a circular gradient of radius gr,
+        // and the scale stretches it into a capsule.
+        const sx = (gr + hx) / gr;
+        ctx!.save();
+        ctx!.translate(lx, ly);
+        ctx!.scale(sx, 1);
+        const grad = ctx!.createRadialGradient(0, 0, 0, 0, 0, gr);
         grad.addColorStop(0, `rgba(${r},${g},${b},${gA})`);
         grad.addColorStop(0.5, `rgba(${r},${g},${b},${gA * 0.35})`);
         grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
         ctx!.fillStyle = grad;
-        ctx!.fillRect(0, 0, W, H);
+        // Fill a generous rect in the scaled space (covers the whole canvas).
+        ctx!.fillRect(-W, -H, W * 2, H * 2);
+        ctx!.restore();
 
-        // Particles lit by distance + direction to the light.
+        // Particles lit by distance to the capsule SEGMENT (not a point), so the
+        // whole text line acts as the source.
         const maxd = Math.hypot(W, H);
         for (const p of parts) {
-          const dx = p.x - lx;
-          const dy = p.y - ly;
-          const dist = Math.hypot(dx, dy) || 1;
+          // Nearest point on the horizontal segment [lx-hx, lx+hx] at y=ly.
+          const nx = Math.max(lx - hx, Math.min(lx + hx, p.x));
+          const ny = ly;
+          // Vector from that nearest point to the particle → distance + direction.
+          const vx = p.x - nx;
+          const vy = p.y - ny;
+          const dist = Math.hypot(vx, vy) || 1;
           const prox = Math.max(0, 1 - dist / (maxd * 0.7)); // brighter near light
-          const facing = (-dx / dist) * 0.6 + (-dy / dist) * 0.4; // -1..1
+          // Directional shading: brighter on the side facing the light segment.
+          const facing = (-vx / dist) * 0.6 + (-vy / dist) * 0.4; // -1..1
           const dirLit = 0.5 + 0.5 * facing; // 0..1
           const twinkle = 0.85 + 0.15 * Math.sin(time * 1.5 + p.ph);
 
