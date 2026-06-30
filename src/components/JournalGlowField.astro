@@ -50,6 +50,39 @@ const { count = 46, class: className = "" } = Astro.props;
       const DPR = Math.min(window.devicePixelRatio || 1, 2);
       const baseCount = parseInt(canvas.dataset.count || "46", 10);
 
+      // Look B (Balanced) tuning, from the approved visual demo.
+      const LOOK = {
+        glow: 1.0, // glow radius as fraction of min(W,H)
+        glowAlpha: 0.16, // peak glow opacity at the core
+        lightAlpha: 0.75, // proximity brightening weight
+        shade: 0.55, // directional highlight/shadow weight
+        baseAlpha: 0.42, // ambient particle alpha away from light
+      };
+
+      // Light source state. Task 3 animates light.x toward the active pill.
+      const light = { x: 0, y: 0 };
+
+      // Resolve --cat-color (may be a hex like #3b82f6 or var(--color-accent))
+      // to concrete RGB. Only re-run when the raw string changes.
+      let lastColorStr = "";
+      let lightRGB: [number, number, number] = [96, 165, 250];
+      const probe = document.createElement("span");
+      probe.style.display = "none";
+      function resolveCatColor() {
+        const journal = document.getElementById("journal");
+        const raw = journal
+          ? getComputedStyle(journal).getPropertyValue("--cat-color").trim()
+          : "";
+        if (raw === lastColorStr) return;
+        lastColorStr = raw;
+        // Let the browser resolve var()/hex/named to rgb() via computed style.
+        if (!probe.isConnected) document.body.appendChild(probe);
+        probe.style.color = raw || "var(--color-accent)";
+        const rgb = getComputedStyle(probe).color; // "rgb(r, g, b)"
+        const m = rgb.match(/(\d+),\s*(\d+),\s*(\d+)/);
+        if (m) lightRGB = [+m[1], +m[2], +m[3]];
+      }
+
       let W = 0,
         H = 0;
       const parts: {
@@ -68,6 +101,8 @@ const { count = 46, class: className = "" } = Astro.props;
         canvas.width = Math.max(1, Math.floor(W * DPR));
         canvas.height = Math.max(1, Math.floor(H * DPR));
         ctx!.setTransform(DPR, 0, 0, DPR, 0, 0);
+        light.y = H - 14;
+        if (light.x === 0) light.x = W / 2;
       }
 
       function particleCount() {
@@ -90,15 +125,48 @@ const { count = 46, class: className = "" } = Astro.props;
         }
       }
 
-      function draw() {
+      function draw(time = 0) {
+        resolveCatColor();
+        const [r, g, b] = lightRGB;
+        const lx = light.x;
+        const ly = light.y;
+
         ctx!.clearRect(0, 0, W, H);
-        const accent =
-          getComputedStyle(document.documentElement)
-            .getPropertyValue("--color-accent")
-            .trim() || "#60a5fa";
-        ctx!.fillStyle = accent;
+
+        // Dust glow: soft radial cloud centered on the light.
+        const gr = Math.min(W, H) * LOOK.glow;
+        const grad = ctx!.createRadialGradient(lx, ly, 0, lx, ly, gr);
+        grad.addColorStop(0, `rgba(${r},${g},${b},${LOOK.glowAlpha})`);
+        grad.addColorStop(0.5, `rgba(${r},${g},${b},${LOOK.glowAlpha * 0.35})`);
+        grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+        ctx!.fillStyle = grad;
+        ctx!.fillRect(0, 0, W, H);
+
+        // Particles lit by distance + direction to the light.
+        const maxd = Math.hypot(W, H);
         for (const p of parts) {
-          ctx!.globalAlpha = 0.42;
+          const dx = p.x - lx;
+          const dy = p.y - ly;
+          const dist = Math.hypot(dx, dy) || 1;
+          const prox = Math.max(0, 1 - dist / (maxd * 0.7)); // brighter near light
+          const facing = (-dx / dist) * 0.6 + (-dy / dist) * 0.4; // -1..1
+          const dirLit = 0.5 + 0.5 * facing; // 0..1
+          const twinkle = 0.85 + 0.15 * Math.sin(time * 1.5 + p.ph);
+
+          const lit =
+            LOOK.baseAlpha +
+            LOOK.lightAlpha * prox * prox +
+            LOOK.shade * prox * (dirLit - 0.5);
+          const a = Math.max(0.04, Math.min(1, lit * twinkle));
+
+          // Hot core: tint toward white near the light, accent color farther out.
+          const heat = prox * prox;
+          const cr = Math.round(r + (255 - r) * heat * 0.7);
+          const cg = Math.round(g + (255 - g) * heat * 0.7);
+          const cb = Math.round(b + (255 - b) * heat * 0.7);
+
+          ctx!.globalAlpha = a;
+          ctx!.fillStyle = `rgb(${cr},${cg},${cb})`;
           ctx!.beginPath();
           ctx!.arc(p.x, p.y, p.r, 0, Math.PI * 2);
           ctx!.fill();
@@ -106,7 +174,10 @@ const { count = 46, class: className = "" } = Astro.props;
         ctx!.globalAlpha = 1;
       }
 
-      function tick() {
+      let t0 = 0;
+      function tick(now: number) {
+        if (!t0) t0 = now;
+        const time = (now - t0) / 1000;
         for (const p of parts) {
           p.x += p.vx;
           p.y += p.vy;
@@ -115,7 +186,7 @@ const { count = 46, class: className = "" } = Astro.props;
           if (p.y < 0) p.y += H;
           if (p.y > H) p.y -= H;
         }
-        draw();
+        draw(time);
         raf = requestAnimationFrame(tick);
       }
 
