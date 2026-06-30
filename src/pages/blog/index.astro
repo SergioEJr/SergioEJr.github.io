@@ -419,7 +419,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
         color: var(--color-text-muted);
         font-size: 1.15rem;
         max-width: 640px;
-        margin: 0 0 1.25rem;
+        margin: 0 0 0.75rem;
       }
       .j-filters {
         display: flex;
@@ -572,7 +572,6 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
            plain-text treatment) so it clearly reads as clickable. Restore the
            base pill look, sized to its own content (no full-width stretch). */
         .j-filter--text {
-          margin-top: 0.85rem;
           padding: 0.35rem 1rem;
           border: 1px solid var(--color-border);
           border-radius: 999px;
@@ -590,7 +589,9 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
         .j-body {
           gap: 1.25rem;
         }
-        .j-notes-side {
+        /* :not([hidden]) so this display:flex doesn't override the hidden
+           attribute and leak the topics row into non-Notebook views. */
+        .j-notes-side:not([hidden]) {
           display: flex;
           gap: 0.5rem;
           overflow-x: auto;
