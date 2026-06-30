@@ -41,10 +41,10 @@ const categoryBadges = categories.map((c) => ({
 	{(repo || link) && (
 		<p class="project-links">
 			{link && (
-				<a class="btn" href={link} target="_blank" rel="noopener noreferrer">Visit ↗</a>
+				<a class="btn" href={link} target="_blank" rel="noopener noreferrer" data-umami-event="project-link" data-umami-event-title={title} data-umami-event-kind="visit">Visit ↗</a>
 			)}
 			{repo && (
-				<a class="btn btn-outline" href={repo} target="_blank" rel="noopener noreferrer">Code ↗</a>
+				<a class="btn btn-outline" href={repo} target="_blank" rel="noopener noreferrer" data-umami-event="project-link" data-umami-event-title={title} data-umami-event-kind="code">Code ↗</a>
 			)}
 		</p>
 	)}
