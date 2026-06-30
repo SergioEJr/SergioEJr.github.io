@@ -35,7 +35,7 @@ const { count = 46, class: className = "" } = Astro.props;
   // the particle count so the field isn't sparse on tall mobile headers.
   const REF_AREA = 760 * 210;
   const MIN_N = 18;
-  const MAX_N = 80;
+  const MAX_N = 60;
 
   function initJournalGlowField() {
     const canvases = Array.from(
@@ -61,11 +61,11 @@ const { count = 46, class: className = "" } = Astro.props;
       //  - outer: larger, softer halo — extends the light further into the field.
       const LOOK = {
         innerR: 70, // inner pill halo radius (px) — tight to the text
-        innerAlpha: 0.1, // inner peak opacity
-        outerR: 190, // outer pill halo radius (px) — soft, extends further
+        innerAlpha: 0.05, // inner peak opacity
+        outerR: 260, // outer pill halo radius (px) — soft, extends further
         outerAlpha: 0.1, // outer peak opacity
-        lightAlpha: 0.75, // proximity brightening weight
-        shade: 0.55, // directional highlight/shadow weight
+        lightAlpha: 0.55, // proximity brightening weight
+        shade: 0.01, // directional highlight/shadow weight
         baseAlpha: 0.42, // ambient particle alpha away from light
         lightReach: 0.55, // particle proximity reach as fraction of canvas diagonal
       };
