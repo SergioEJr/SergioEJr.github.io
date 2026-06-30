@@ -2,12 +2,10 @@
 import BaseHead from '../../components/BaseHead.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
-import FormattedDate from '../../components/FormattedDate.astro';
 import { SITE_TITLE } from '../../consts';
-import { url } from '../../utils/paths';
 import { pageFade } from '../../utils/pageTransition';
-import { renderInline } from '../../utils/inlineText';
 import { getPublishedPosts } from '../../utils/posts';
+import JournalPost from '../../components/JournalPost.astro';
 
 type Cat = 'all' | 'news' | 'math' | 'physics' | 'notes';
 
@@ -49,16 +47,27 @@ for (const p of posts) {
 }
 const topics = [...topicCounts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
 
+// Blog posts (everything except notes) keep their reverse-chronological order.
+const blogPosts = posts.filter((p) => p.data.category !== 'notes');
+
+// Notebook posts grouped by topic. `posts` is newest-first, so the first time a
+// topic appears is its newest post — that order is also the group order
+// (newest-group-first). Posts within a group stay newest-first.
+const noteGroupMap = new Map<string, typeof posts>();
+for (const p of posts) {
+	if (p.data.category !== 'notes') continue;
+	const t = p.data.topic ?? 'Other';
+	if (!noteGroupMap.has(t)) noteGroupMap.set(t, []);
+	noteGroupMap.get(t)!.push(p);
+}
+const noteGroups = [...noteGroupMap.entries()].map(([topic, ps]) => ({
+	topic,
+	count: ps.length,
+	posts: ps,
+}));
+
 const catColor = (c: string) => (CATS as any)[c]?.color ?? 'var(--color-accent)';
 const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
-
-// Resolve where a Journal entry points. Pointer posts (externalUrl / linkTo) jump
-// straight to a full article; standalone posts get their own detail page.
-function postLink(data: any, id: string): { href: string; external: boolean } {
-	if (data.externalUrl) return { href: data.externalUrl, external: true };
-	if (data.linkTo) return { href: url(data.linkTo), external: false };
-	return { href: url(`/blog/${id}/`), external: false };
-}
 ---
 
 <!doctype html>
@@ -103,48 +112,19 @@ function postLink(data: any, id: string): { href: string; external: boolean } {
 				)}
 
 				<div class="j-list">
-					{posts.map((post, i) => (
-						<article
-							class="j-post"
-							data-category={post.data.category}
-							data-topic={post.data.topic ?? ''}
-							style={`--cat-color:${catColor(post.data.category)}`}
-						>
-							<div class="j-index">{String(postNumber.get(post.id) ?? i + 1).padStart(2, '0')}</div>
-							<div class="j-main">
-								<div class="j-cat" style={`color:${catColor(post.data.category)}`}>● {catLabel(post.data.category)}</div>
-								{post.data.noLink ? (
-										<h2 class="j-post-title j-post-title--static" set:html={renderInline(post.data.title)} />
-									) : (() => {
-									const link = postLink(post.data, post.id);
-									return (
-										<h2 class="j-post-title">
-											<a
-												href={link.href}
-												{...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-												data-umami-event="journal-post"
-												data-umami-event-title={post.data.title}
-												data-umami-event-category={post.data.category}
-												data-umami-event-external={link.external ? 'true' : 'false'}
-											>
-												<span set:html={renderInline(post.data.title)} />
-												{link.external && (
-													<svg class="j-ext-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg>
-												)}
-											</a>
-										</h2>
-									);
-								})()}
-								<p class="j-desc">{post.data.description}</p>
-								<div class="j-meta">
-									<FormattedDate date={post.data.pubDate} />
-									{post.data.topic && <span class="j-topic-tag">{post.data.topic}</span>}
-									{post.data.tags && post.data.tags.length > 0 && (
-										<span class="j-tags">{post.data.tags.map((t) => `#${t}`).join('  ')}</span>
-									)}
-								</div>
+					{blogPosts.map((post) => (
+						<JournalPost post={post} number={postNumber.get(post.id) ?? 0} catColor={catColor(post.data.category)} catLabel={catLabel(post.data.category)} />
+					))}
+					{noteGroups.map((g) => (
+						<Fragment>
+							<div class="j-group-header" data-group-topic={g.topic}>
+								<span class="j-group-name">{g.topic}</span>
+								<span class="j-group-count">{g.count}</span>
 							</div>
-						</article>
+							{g.posts.map((post) => (
+								<JournalPost post={post} number={postNumber.get(post.id) ?? 0} catColor={catColor(post.data.category)} catLabel={catLabel(post.data.category)} />
+							))}
+						</Fragment>
 					))}
 				</div>
 			</div>
@@ -163,6 +143,7 @@ function postLink(data: any, id: string): { href: string; external: boolean } {
 				const eyeCount = document.getElementById('j-eyebrow-count');
 				const side = document.getElementById('j-notes-side');
 				const posts = Array.from(document.querySelectorAll('.j-post'));
+				const groupHeaders = Array.from(document.querySelectorAll('.j-group-header'));
 				const filters = Array.from(document.querySelectorAll('.j-filter'));
 				const topicBtns = Array.from(document.querySelectorAll('.j-topic'));
 				const list = document.querySelector('.j-list');
@@ -190,6 +171,13 @@ function postLink(data: any, id: string): { href: string; external: boolean } {
 						el.style.display = show ? '' : 'none';
 						if (show) visible++;
 					});
+
+					groupHeaders.forEach((h) => {
+						const t = h.getAttribute('data-group-topic');
+						const show = activeCat === 'notes' && (activeTopic === 'all' || t === activeTopic);
+						h.style.display = show ? '' : 'none';
+					});
+
 					eyeCount.textContent = String(visible);
 				}
 
@@ -297,38 +285,29 @@ function postLink(data: any, id: string): { href: string; external: boolean } {
 			.j-topic.active { background: var(--color-accent-light); color: var(--color-text-main); font-weight: 600; }
 
 			.j-list { display: flex; flex-direction: column; transition: opacity 0.16s ease; }
-			.j-post {
-				display: grid; grid-template-columns: 3rem 1fr; gap: 1rem;
-				padding: 1.75rem 0; border-bottom: 1px solid var(--color-border);
-				transition: border-color 0.2s ease;
+			.j-group-header {
+				display: flex;
+				justify-content: space-between;
+				align-items: baseline;
+				padding: 1.5rem 0 0.5rem;
+				border-bottom: 1px solid var(--color-border);
+				margin-bottom: 0.5rem;
 			}
-			.j-index { font-variant-numeric: tabular-nums; color: var(--color-text-muted); opacity: 0.5; font-size: 0.9rem; padding-top: 0.3rem; }
-			.j-cat { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
-			.j-post-title {
-				font-family: var(--font-serif);
-				font-size: 1.6rem;
-				line-height: 1.2;
-				margin: 0 0 0.5rem;
-				border-bottom: 2px solid var(--color-border);
-				padding-bottom: 0.35rem;
-				display: inline-block;
-				transition: border-color 0.2s ease;
+			.j-group-name {
+				font-size: 0.8rem;
+				font-weight: 700;
+				text-transform: uppercase;
+				letter-spacing: 0.1em;
+				color: var(--color-text-muted);
 			}
-			.j-post:hover .j-post-title { border-bottom-color: var(--cat-color); }
-			.j-post-title a { color: var(--color-text-main); text-decoration: none; transition: color 0.2s ease; }
-			/* Link-less update posts: title is plain text, no underline/hover affordance */
-			.j-post-title--static { border-bottom: none; padding-bottom: 0; cursor: default; }
-			.j-post:hover .j-post-title--static { border-bottom-color: transparent; }
-			.j-ext-icon { width: 0.7em; height: 0.7em; margin-left: 0.35rem; vertical-align: baseline; opacity: 0.55; transition: opacity 0.2s ease; }
-			.j-post:hover .j-ext-icon { opacity: 1; }
-			.j-desc { color: var(--color-text-muted); margin: 0 0 0.75rem; max-width: 680px; }
-			.j-meta { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; font-size: 0.82rem; color: var(--color-text-muted); font-style: italic; }
-			.j-topic-tag { font-style: normal; padding: 0.1rem 0.6rem; border-radius: 999px; background: var(--color-bg-offset); border: 1px solid var(--color-border); }
-			.j-tags { font-style: normal; letter-spacing: 0.02em; opacity: 0.8; }
+			.j-group-count {
+				font-variant-numeric: tabular-nums;
+				font-size: 0.8rem;
+				color: var(--color-text-muted);
+				opacity: 0.6;
+			}
 			@media (max-width: 600px) {
 				#j-title { font-size: 2.2rem; }
-				.j-post { grid-template-columns: 1fr; }
-				.j-index { display: none; }
 			}
 		</style>
 	</body>
