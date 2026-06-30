@@ -123,6 +123,17 @@ body {
 	transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Branded text selection. --color-accent-light + --color-text-main both flip
+   with [data-theme="dark"], so selected text stays readable in either theme. */
+::selection {
+	background: var(--color-accent-light);
+	color: var(--color-text-main);
+}
+::-moz-selection {
+	background: var(--color-accent-light);
+	color: var(--color-text-main);
+}
+
 main {
 	width: 100%;
 	max-width: var(--max-width);
