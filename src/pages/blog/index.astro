@@ -16,7 +16,7 @@ const CATS: Record<Cat, { label: string; color: string; title: string; subtitle:
 	notes: { label: 'Notebook', color: '#f59e0b', title: 'Things I’m learning', subtitle: 'A growing notebook of guides and explainers, written plainly.' },
 	all: { label: 'All', color: 'var(--color-accent)', title: 'The Journal', subtitle: 'Tech, math, physics & notes — all in one place.' },
 };
-const FILTER_ORDER: Cat[] = ['news', 'math', 'physics', 'notes', 'all'];
+const FILTER_ORDER: Cat[] = ['news', 'math', 'physics', 'all', 'notes'];
 
 // Oldest → newest, with a stable id tiebreak so posts that share a pubDate keep
 // a consistent order. This is the canonical chronological order.
@@ -87,7 +87,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 
 			<div class="j-filters-bar">
 				<div class="j-filters">
-					{FILTER_ORDER.map((c) => (
+					{FILTER_ORDER.filter((c) => c !== 'notes').map((c) => (
 						<button
 							class:list={['j-filter', { active: c === 'all' }]}
 							data-filter={c}
@@ -96,6 +96,14 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 							{CATS[c].label}
 						</button>
 					))}
+					<span class="j-filter-divider" aria-hidden="true"></span>
+					<button
+						class="j-filter j-filter--text"
+						data-filter="notes"
+						style={`--f-color:${CATS.notes.color}`}
+					>
+						{CATS.notes.label}
+					</button>
 				</div>
 			</div>
 
@@ -265,6 +273,31 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 			}
 			.j-filter:hover { color: var(--f-color); border-color: var(--f-color); }
 			.j-filter.active { color: #fff; background: var(--f-color); border-color: var(--f-color); }
+
+			.j-filter-divider {
+				width: 1px;
+				align-self: stretch;
+				background: var(--color-border);
+				margin: 0.1rem 0.4rem;
+			}
+			/* Notebook filter: plain text, not a pill */
+			.j-filter--text {
+				border: none;
+				background: transparent;
+				padding: 0.35rem 0.5rem;
+				border-radius: 0;
+			}
+			.j-filter--text:hover {
+				color: var(--f-color);
+				background: transparent;
+				border-color: transparent;
+			}
+			.j-filter--text.active {
+				color: var(--f-color);
+				background: transparent;
+				border-color: transparent;
+				font-weight: 800;
+			}
 
 			.j-body { display: grid; grid-template-columns: 1fr; gap: 2.5rem; }
 			.j-notes-side { align-self: start; }
