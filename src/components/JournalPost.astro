@@ -79,11 +79,11 @@ const isNote = post.data.category === 'notes';
 		font-size: 1.6rem;
 		line-height: 1.2;
 		margin: 0 0 0.5rem;
-		/* Transparent at rest (the 2px width + padding are kept so hover doesn't
-		   shift layout); the underline only appears, in the category color, on
-		   hover. */
+		/* Transparent at rest; the underline only appears, in the category color,
+		   on hover. padding-bottom is kept small so the hover underline clears the
+		   descenders without leaving a dead gap under the title at rest. */
 		border-bottom: 2px solid transparent;
-		padding-bottom: 0.35rem;
+		padding-bottom: 0.15rem;
 		display: inline-block;
 		transition: border-color 0.2s ease;
 	}
