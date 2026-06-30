@@ -25,6 +25,20 @@ const { count = 46, class: className = "" } = Astro.props;
     /* Fade driven by the IntersectionObserver. */
     opacity: 1;
     transition: opacity 0.45s ease;
+    /* Soft bottom fade so the field dissolves into the filter bar with no abrupt
+       seam. Done as a CSS mask (not a per-frame canvas wipe) so it's identical at
+       every width — including the taller mobile filter bar. The last 36px of the
+       canvas ramp from opaque to transparent. */
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      #000 calc(100% - 36px),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      #000 calc(100% - 36px),
+      transparent 100%
+    );
   }
 </style>
 
@@ -55,11 +69,16 @@ const { count = 46, class: className = "" } = Astro.props;
 
       // Look B (Balanced) tuning, from the approved visual demo.
       const LOOK = {
-        glow: 1.0, // glow radius as fraction of min(W,H)
-        glowAlpha: 0.16, // peak glow opacity at the core
+        // Soft halo radius AROUND the eyebrow pill (px), independent of canvas
+        // size. Kept small relative to the eyebrow width so the glow reads as a
+        // horizontal pill, not a big circle. The particle-lighting reach is
+        // separate (proximity uses the canvas diagonal).
+        glowR: 95,
+        glowAlpha: 0.18, // peak glow opacity at the core
         lightAlpha: 0.75, // proximity brightening weight
         shade: 0.55, // directional highlight/shadow weight
         baseAlpha: 0.42, // ambient particle alpha away from light
+        lightReach: 0.55, // particle proximity reach as fraction of canvas diagonal
       };
 
       // Light source state. The light is pinned to the eyebrow ("<FILTER> · N
@@ -132,9 +151,6 @@ const { count = 46, class: className = "" } = Astro.props;
       // filter bar (the bar frosts over anything behind it, so drawing under it
       // only creates a seam). A short bottom fade hides the meeting edge.
       const NAVBAR_BOTTOM = 72;
-      // Height of the soft fade-out at the bottom edge (px) so the field doesn't
-      // end in an abrupt seam against the filter bar.
-      const BOTTOM_FADE = 28;
 
       function resize() {
         const rect = parent.getBoundingClientRect(); // .j-head box
@@ -207,26 +223,27 @@ const { count = 46, class: className = "" } = Astro.props;
 
         // Capsule light: a horizontal pill matching the eyebrow's footprint, so
         // the glow looks like it comes from the text. The capsule is the segment
-        // [lx-hx, lx+hx] at y=ly; the glow falls off radially from that segment.
+        // [lx-hx, lx+hx] at y=ly; the glow falls off radially from that segment
+        // with a SMALL halo radius (glowR) so the elongation reads as a pill.
         const hx = light.hx;
-        const gr = Math.min(W, H) * LOOK.glow;
+        const gr = LOOK.glowR; // small, fixed halo — NOT the canvas size
         const gA = LOOK.glowAlpha * glowK;
 
-        // Render the pill glow by scaling X so a radial gradient becomes an
-        // elongated capsule whose flat middle spans the eyebrow width. We map the
-        // horizontal axis by (gr + hx)/gr, draw a circular gradient of radius gr,
-        // and the scale stretches it into a capsule.
+        // Render the pill by scaling X so a small radial gradient stretches into a
+        // capsule whose flat middle spans the eyebrow width (2*hx). With gr small
+        // relative to hx, sx is large and the glow is clearly pill-shaped.
         const sx = (gr + hx) / gr;
         ctx!.save();
         ctx!.translate(lx, ly);
         ctx!.scale(sx, 1);
         const grad = ctx!.createRadialGradient(0, 0, 0, 0, 0, gr);
         grad.addColorStop(0, `rgba(${r},${g},${b},${gA})`);
-        grad.addColorStop(0.5, `rgba(${r},${g},${b},${gA * 0.35})`);
+        grad.addColorStop(0.45, `rgba(${r},${g},${b},${gA * 0.45})`);
         grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
         ctx!.fillStyle = grad;
         // Fill a generous rect in the scaled space (covers the whole canvas).
-        ctx!.fillRect(-W, -H, W * 2, H * 2);
+        const halfW = W / sx + hx;
+        ctx!.fillRect(-halfW, -H, halfW * 2, H * 2);
         ctx!.restore();
 
         // Particles lit by distance to the capsule SEGMENT (not a point), so the
@@ -240,7 +257,7 @@ const { count = 46, class: className = "" } = Astro.props;
           const vx = p.x - nx;
           const vy = p.y - ny;
           const dist = Math.hypot(vx, vy) || 1;
-          const prox = Math.max(0, 1 - dist / (maxd * 0.7)); // brighter near light
+          const prox = Math.max(0, 1 - dist / (maxd * LOOK.lightReach)); // brighter near light
           // Directional shading: brighter on the side facing the light segment.
           const facing = (-vx / dist) * 0.6 + (-vy / dist) * 0.4; // -1..1
           const dirLit = 0.5 + 0.5 * facing; // 0..1
@@ -275,18 +292,9 @@ const { count = 46, class: className = "" } = Astro.props;
           ctx!.fill();
         }
         ctx!.globalAlpha = 1;
-
-        // Soft bottom fade: erase a short vertical gradient at the band's bottom
-        // edge so the field dissolves into the filter bar instead of ending in an
-        // abrupt seam. destination-out uses the gradient's alpha as an eraser.
-        const fadeTop = Math.max(0, H - BOTTOM_FADE);
-        const fade = ctx!.createLinearGradient(0, fadeTop, 0, H);
-        fade.addColorStop(0, "rgba(0,0,0,0)");
-        fade.addColorStop(1, "rgba(0,0,0,1)");
-        ctx!.globalCompositeOperation = "destination-out";
-        ctx!.fillStyle = fade;
-        ctx!.fillRect(0, fadeTop, W, BOTTOM_FADE);
-        ctx!.globalCompositeOperation = "source-over";
+        // Bottom fade is handled by a CSS mask on the canvas element (see <style>),
+        // which is layout-independent and consistent across all widths — unlike a
+        // per-frame canvas wipe, which drifted on the taller mobile filter bar.
       }
 
       let t0 = 0;
