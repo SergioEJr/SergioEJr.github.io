@@ -453,7 +453,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
         width: 1px;
         align-self: stretch;
         background: var(--color-border);
-        margin: 0.1rem 0.4rem;
+        margin: 0rem 0.2rem 0rem 0.7rem;
       }
       /* Notebook filter: plain text, not a pill */
       .j-filter--text {
@@ -559,7 +559,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
         /* No bottom rule on mobile, and a tighter gap below the bar. */
         .j-filters-bar {
           border-bottom: none;
-          margin-bottom: 1rem;
+          margin-bottom: 0rem;
         }
         /* Tighten the gap between the two rows. The zero-height divider is its
            own flex line, so the row-gap applies twice between the pills and the
@@ -605,7 +605,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
           overflow-x: auto;
           /* Bleed to the screen edges (main's 1rem gutter) so pills can scroll
              off-edge, then pad back in — a clearer "more to scroll" affordance. */
-          margin: 0 -1rem;
+          margin: 1rem -1rem 0rem -1rem;
           padding: 0 1rem 0.25rem;
           scrollbar-width: none;
         }
