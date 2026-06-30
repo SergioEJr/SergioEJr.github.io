@@ -397,10 +397,14 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 				   row wraps. On mobile, drop it and give Notebook its own full-width
 				   second tier instead. */
 				.j-filter-divider { display: none; }
-				.j-filter--text {
+				.j-filter--text,
+				.j-filter--text:hover,
+				.j-filter--text.active {
 					flex-basis: 100%;
 					margin-top: 0.85rem;
 					padding: 0.85rem 0.25rem 0;
+					/* Keep the tier separator even when active/hovered — the desktop
+					   rules set border-color: transparent, which would erase it. */
 					border-top: 1px solid var(--color-border);
 					text-align: center;
 				}
