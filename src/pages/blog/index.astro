@@ -324,6 +324,17 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
           list.style.opacity = "0";
           setTimeout(() => {
             apply();
+            // iOS WebKit (Safari — and Chrome/Firefox on iOS, which are also
+            // WebKit) can leave a now-hidden post's title painted as a ghost
+            // over the new content when children's `display` is toggled while
+            // the list is mid opacity-transition. Tear down and rebuild the
+            // list's own box so its paint is recreated from scratch. Opacity is
+            // 0 here, so the toggle isn't visible; the reflow reads commit each
+            // step and let the fade-in animate from 0.
+            list.style.display = "none";
+            void list.offsetHeight;
+            list.style.display = "";
+            void list.offsetHeight;
             list.style.opacity = "";
           }, 160);
         }
