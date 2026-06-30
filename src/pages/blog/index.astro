@@ -392,6 +392,18 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 			}
 			@media (max-width: 600px) {
 				#j-title { font-size: 2.2rem; }
+				.j-filters { justify-content: center; }
+				/* The vertical divider is a desktop idiom that orphans when the pill
+				   row wraps. On mobile, drop it and give Notebook its own full-width
+				   second tier instead. */
+				.j-filter-divider { display: none; }
+				.j-filter--text {
+					flex-basis: 100%;
+					margin-top: 0.85rem;
+					padding: 0.85rem 0.25rem 0;
+					border-top: 1px solid var(--color-border);
+					text-align: center;
+				}
 			}
 		</style>
 	</body>
