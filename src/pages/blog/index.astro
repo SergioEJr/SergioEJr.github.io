@@ -1,27 +1,57 @@
 ---
-import BaseHead from '../../components/BaseHead.astro';
-import Header from '../../components/Header.astro';
-import Footer from '../../components/Footer.astro';
-import { SITE_TITLE } from '../../consts';
-import { pageFade } from '../../utils/pageTransition';
-import { getPublishedPosts } from '../../utils/posts';
-import JournalPost from '../../components/JournalPost.astro';
+import BaseHead from "../../components/BaseHead.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import { SITE_TITLE } from "../../consts";
+import { pageFade } from "../../utils/pageTransition";
+import { getPublishedPosts } from "../../utils/posts";
+import JournalPost from "../../components/JournalPost.astro";
 
-type Cat = 'all' | 'news' | 'math' | 'physics' | 'notes';
+type Cat = "all" | "news" | "math" | "physics" | "notes";
 
-const CATS: Record<Cat, { label: string; color: string; title: string; subtitle: string }> = {
-	news: { label: 'News', color: '#3b82f6', title: 'News & Updates', subtitle: 'Announcements, milestones, and what I’m up to.' },
-	math: { label: 'Math', color: '#8b5cf6', title: 'On Mathematics', subtitle: 'Small results, tricks, and ideas worth remembering.' },
-	physics: { label: 'Physics', color: '#10b981', title: 'On Physics', subtitle: 'Intuition and notes on physical systems.' },
-	notes: { label: 'Notebook', color: '#f59e0b', title: 'Things I’m learning', subtitle: 'A growing notebook of guides and explainers, written plainly.' },
-	all: { label: 'All', color: 'var(--color-accent)', title: 'The Journal', subtitle: 'Tech, math, physics & notes — all in one place.' },
+const CATS: Record<
+  Cat,
+  { label: string; color: string; title: string; subtitle: string }
+> = {
+  news: {
+    label: "News",
+    color: "#3b82f6",
+    title: "News & Updates",
+    subtitle: "Announcements, milestones, and what I’m up to.",
+  },
+  math: {
+    label: "Math",
+    color: "#8b5cf6",
+    title: "On Mathematics",
+    subtitle: "Small results, tricks, and ideas worth remembering.",
+  },
+  physics: {
+    label: "Physics",
+    color: "#10b981",
+    title: "On Physics",
+    subtitle: "Intuition and notes on physical systems.",
+  },
+  notes: {
+    label: "Notebook",
+    color: "#f59e0b",
+    title: "Things I’m learning",
+    subtitle: "A growing notebook of guides and explainers, written plainly.",
+  },
+  all: {
+    label: "All",
+    color: "var(--color-accent)",
+    title: "The Journal",
+    subtitle: "Tech, math, physics & notes — all in one place.",
+  },
 };
-const FILTER_ORDER: Cat[] = ['news', 'math', 'physics', 'all', 'notes'];
+const FILTER_ORDER: Cat[] = ["news", "math", "physics", "all", "notes"];
 
 // Oldest → newest, with a stable id tiebreak so posts that share a pubDate keep
 // a consistent order. This is the canonical chronological order.
 const byDate = (await getPublishedPosts()).sort(
-	(a, b) => (a.data.pubDate.valueOf() - b.data.pubDate.valueOf()) || a.id.localeCompare(b.id),
+  (a, b) =>
+    a.data.pubDate.valueOf() - b.data.pubDate.valueOf() ||
+    a.id.localeCompare(b.id),
 );
 
 // Chronological post number: the oldest post is #1, counting up.
@@ -32,383 +62,556 @@ byDate.forEach((p, i) => postNumber.set(p.id, i + 1));
 // numbering and the display order always agree, even on shared dates.
 const posts = [...byDate].reverse();
 
-const counts: Record<string, number> = { all: 0, news: 0, math: 0, physics: 0, notes: 0 };
+const counts: Record<string, number> = {
+  all: 0,
+  news: 0,
+  math: 0,
+  physics: 0,
+  notes: 0,
+};
 for (const p of posts) {
-	counts[p.data.category] = (counts[p.data.category] || 0) + 1;
-	if (p.data.category !== 'notes') counts.all++;
+  counts[p.data.category] = (counts[p.data.category] || 0) + 1;
+  if (p.data.category !== "notes") counts.all++;
 }
 
 // Topics for the Notes view
 const topicCounts = new Map<string, number>();
 for (const p of posts) {
-	if (p.data.category === 'notes' && p.data.topic) {
-		topicCounts.set(p.data.topic, (topicCounts.get(p.data.topic) || 0) + 1);
-	}
+  if (p.data.category === "notes" && p.data.topic) {
+    topicCounts.set(p.data.topic, (topicCounts.get(p.data.topic) || 0) + 1);
+  }
 }
-const topics = [...topicCounts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+const topics = [...topicCounts.entries()].sort((a, b) =>
+  a[0].localeCompare(b[0]),
+);
 
 // Blog posts (everything except notes) keep their reverse-chronological order.
-const blogPosts = posts.filter((p) => p.data.category !== 'notes');
+const blogPosts = posts.filter((p) => p.data.category !== "notes");
 
 // Notebook posts grouped by topic. `posts` is newest-first, so the first time a
 // topic appears is its newest post — that order is also the group order
 // (newest-group-first). Posts within a group stay newest-first.
 const noteGroupMap = new Map<string, typeof posts>();
 for (const p of posts) {
-	if (p.data.category !== 'notes') continue;
-	const t = p.data.topic ?? 'Other';
-	if (!noteGroupMap.has(t)) noteGroupMap.set(t, []);
-	noteGroupMap.get(t)!.push(p);
+  if (p.data.category !== "notes") continue;
+  const t = p.data.topic ?? "Other";
+  if (!noteGroupMap.has(t)) noteGroupMap.set(t, []);
+  noteGroupMap.get(t)!.push(p);
 }
 const noteGroups = [...noteGroupMap.entries()].map(([topic, ps]) => ({
-	topic,
-	count: ps.length,
-	posts: ps,
+  topic,
+  count: ps.length,
+  posts: ps,
 }));
 
-const catColor = (c: string) => (CATS as any)[c]?.color ?? 'var(--color-accent)';
+const catColor = (c: string) =>
+  (CATS as any)[c]?.color ?? "var(--color-accent)";
 const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 ---
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<BaseHead title={`Journal | ${SITE_TITLE}`} description="Writing on tech, math, physics, and notes." />
-	</head>
-	<body>
-		<Header />
-		<main id="journal" style="--cat-color: var(--color-accent);" transition:animate={pageFade}>
-			<!-- Header (updated client-side per filter) -->
-			<header class="j-head">
-				<div class="j-eyebrow"><span id="j-eyebrow-label">All</span> · <span id="j-eyebrow-count">{counts.all}</span> pieces</div>
-				<h1 id="j-title">{CATS.all.title}</h1>
-				<p id="j-subtitle" class="j-subtitle">{CATS.all.subtitle}</p>
-			</header>
+  <head>
+    <BaseHead
+      title={`Journal | ${SITE_TITLE}`}
+      description="Writing on tech, math, physics, and notes."
+    />
+  </head>
+  <body>
+    <Header />
+    <main
+      id="journal"
+      style="--cat-color: var(--color-accent);"
+      transition:animate={pageFade}
+    >
+      <!-- Header (updated client-side per filter) -->
+      <header class="j-head">
+        <div class="j-eyebrow">
+          <span id="j-eyebrow-label">All</span> · <span id="j-eyebrow-count"
+            >{counts.all}</span
+          > pieces
+        </div>
+        <h1 id="j-title">{CATS.all.title}</h1>
+        <p id="j-subtitle" class="j-subtitle">{CATS.all.subtitle}</p>
+      </header>
 
-			<div class="j-filters-bar">
-				<div class="j-filters">
-					{FILTER_ORDER.filter((c) => c !== 'notes').map((c) => (
-						<button
-							class:list={['j-filter', { active: c === 'all' }]}
-							data-filter={c}
-							style={`--f-color:${CATS[c].color}`}
-						>
-							{CATS[c].label}
-						</button>
-					))}
-					<span class="j-filter-divider" aria-hidden="true"></span>
-					<button
-						class="j-filter j-filter--text"
-						data-filter="notes"
-						style={`--f-color:${CATS.notes.color}`}
-					>
-						{CATS.notes.label}
-					</button>
-				</div>
-			</div>
+      <div class="j-filters-bar">
+        <div class="j-filters">
+          {
+            FILTER_ORDER.filter((c) => c !== "notes").map((c) => (
+              <button
+                class:list={["j-filter", { active: c === "all" }]}
+                data-filter={c}
+                style={`--f-color:${CATS[c].color}`}
+              >
+                {CATS[c].label}
+              </button>
+            ))
+          }
+          <span class="j-filter-divider" aria-hidden="true"></span>
+          <button
+            class="j-filter j-filter--text"
+            data-filter="notes"
+            style={`--f-color:${CATS.notes.color}`}
+          >
+            {CATS.notes.label}
+          </button>
+        </div>
+      </div>
 
-			<div class="j-body">
-				<!-- Notes topics sidebar (shown only in Notes view) -->
-				{topics.length > 0 && (
-					<aside id="j-notes-side" class="j-notes-side" hidden>
-						<div class="j-side-label">Topics</div>
-						<button class="j-topic active" data-topic="all">All <span>{counts.notes}</span></button>
-						{topics.map(([t, n]) => (
-							<button class="j-topic" data-topic={t}>{t} <span>{n}</span></button>
-						))}
-					</aside>
-				)}
+      <div class="j-body">
+        <!-- Notes topics sidebar (shown only in Notes view) -->
+        {
+          topics.length > 0 && (
+            <aside id="j-notes-side" class="j-notes-side" hidden>
+              <div class="j-side-label">Topics</div>
+              <button class="j-topic active" data-topic="all">
+                All <span>{counts.notes}</span>
+              </button>
+              {topics.map(([t, n]) => (
+                <button class="j-topic" data-topic={t}>
+                  {t} <span>{n}</span>
+                </button>
+              ))}
+            </aside>
+          )
+        }
 
-				<div class="j-list">
-					{blogPosts.map((post) => (
-						<JournalPost post={post} number={postNumber.get(post.id) ?? 0} catColor={catColor(post.data.category)} catLabel={catLabel(post.data.category)} />
-					))}
-					{noteGroups.map((g) => (
-						<Fragment>
-							<div class="j-group-header" data-group-topic={g.topic}>
-								<span class="j-group-name">{g.topic}</span>
-								<span class="j-group-count">{g.count}</span>
-							</div>
-							{g.posts.map((post) => (
-								<JournalPost post={post} number={postNumber.get(post.id) ?? 0} catColor={catColor(post.data.category)} catLabel={catLabel(post.data.category)} />
-							))}
-						</Fragment>
-					))}
-				</div>
-			</div>
-		</main>
-		<Footer />
+        <div class="j-list">
+          {
+            blogPosts.map((post) => (
+              <JournalPost
+                post={post}
+                number={postNumber.get(post.id) ?? 0}
+                catColor={catColor(post.data.category)}
+                catLabel={catLabel(post.data.category)}
+              />
+            ))
+          }
+          {
+            noteGroups.map((g) => (
+              <Fragment>
+                <div class="j-group-header" data-group-topic={g.topic}>
+                  <span class="j-group-name">{g.topic}</span>
+                  <span class="j-group-count">{g.count}</span>
+                </div>
+                {g.posts.map((post) => (
+                  <JournalPost
+                    post={post}
+                    number={postNumber.get(post.id) ?? 0}
+                    catColor={catColor(post.data.category)}
+                    catLabel={catLabel(post.data.category)}
+                  />
+                ))}
+              </Fragment>
+            ))
+          }
+        </div>
+      </div>
+    </main>
+    <Footer />
 
-		<script is:inline define:vars={{ cats: CATS }}>
-			function initJournalFilters() {
-				const root = document.getElementById('journal');
-				if (!root || root.dataset.filtersInitialized === 'true') return;
-				root.dataset.filtersInitialized = 'true';
+    <script is:inline define:vars={{ cats: CATS }}>
+      function initJournalFilters() {
+        const root = document.getElementById("journal");
+        if (!root || root.dataset.filtersInitialized === "true") return;
+        root.dataset.filtersInitialized = "true";
 
-				const titleEl = document.getElementById('j-title');
-				const subEl = document.getElementById('j-subtitle');
-				const eyeLabel = document.getElementById('j-eyebrow-label');
-				const eyeCount = document.getElementById('j-eyebrow-count');
-				const side = document.getElementById('j-notes-side');
-				const posts = Array.from(document.querySelectorAll('.j-post'));
-				const groupHeaders = Array.from(document.querySelectorAll('.j-group-header'));
-				const filters = Array.from(document.querySelectorAll('.j-filter'));
-				const topicBtns = Array.from(document.querySelectorAll('.j-topic'));
-				const list = document.querySelector('.j-list');
+        const titleEl = document.getElementById("j-title");
+        const subEl = document.getElementById("j-subtitle");
+        const eyeLabel = document.getElementById("j-eyebrow-label");
+        const eyeCount = document.getElementById("j-eyebrow-count");
+        const side = document.getElementById("j-notes-side");
+        const posts = Array.from(document.querySelectorAll(".j-post"));
+        const groupHeaders = Array.from(
+          document.querySelectorAll(".j-group-header"),
+        );
+        const filters = Array.from(document.querySelectorAll(".j-filter"));
+        const topicBtns = Array.from(document.querySelectorAll(".j-topic"));
+        const list = document.querySelector(".j-list");
 
-				const validCats = filters.map((b) => b.getAttribute('data-filter'));
-				const validTopics = topicBtns.map((b) => b.getAttribute('data-topic'));
+        const validCats = filters.map((b) => b.getAttribute("data-filter"));
+        const validTopics = topicBtns.map((b) => b.getAttribute("data-topic"));
 
-				let activeCat = 'all';
-				let activeTopic = 'all';
+        let activeCat = "all";
+        let activeTopic = "all";
 
-				// The active filter lives in the URL hash so it survives navigation
-				// (Back from a post returns to the chosen filter) and is shareable.
-				//   #notes        → Notebook, all topics
-				//   #notes:Git    → Notebook, Git topic
-				//   (no hash)     → All (default)
-				function readHash() {
-					const raw = decodeURIComponent((location.hash || '').replace(/^#/, ''));
-					const [cat, topic] = raw.split(':');
-					activeCat = validCats.includes(cat) ? cat : 'all';
-					activeTopic =
-						activeCat === 'notes' && topic && validTopics.includes(topic) ? topic : 'all';
-					// Reflect the parsed state on the controls.
-					filters.forEach((b) => b.classList.toggle('active', b.getAttribute('data-filter') === activeCat));
-					topicBtns.forEach((b) => b.classList.toggle('active', b.getAttribute('data-topic') === activeTopic));
-				}
+        // The active filter lives in the URL hash so it survives navigation
+        // (Back from a post returns to the chosen filter) and is shareable.
+        //   #notes        → Notebook, all topics
+        //   #notes:Git    → Notebook, Git topic
+        //   (no hash)     → All (default)
+        function readHash() {
+          const raw = decodeURIComponent(
+            (location.hash || "").replace(/^#/, ""),
+          );
+          const [cat, topic] = raw.split(":");
+          activeCat = validCats.includes(cat) ? cat : "all";
+          activeTopic =
+            activeCat === "notes" && topic && validTopics.includes(topic)
+              ? topic
+              : "all";
+          // Reflect the parsed state on the controls.
+          filters.forEach((b) =>
+            b.classList.toggle(
+              "active",
+              b.getAttribute("data-filter") === activeCat,
+            ),
+          );
+          topicBtns.forEach((b) =>
+            b.classList.toggle(
+              "active",
+              b.getAttribute("data-topic") === activeTopic,
+            ),
+          );
+        }
 
-				// replaceState (not pushState): clicking through filters rewrites the
-				// current entry instead of stacking Back steps, so one Back from a post
-				// returns to the active filter rather than undoing filter clicks.
-				function writeHash() {
-					let hash = '';
-					if (activeCat !== 'all') {
-						hash = '#' + activeCat;
-						if (activeCat === 'notes' && activeTopic !== 'all') hash += ':' + encodeURIComponent(activeTopic);
-					}
-					history.replaceState(null, '', hash || location.pathname + location.search);
-				}
+        // replaceState (not pushState): clicking through filters rewrites the
+        // current entry instead of stacking Back steps, so one Back from a post
+        // returns to the active filter rather than undoing filter clicks.
+        function writeHash() {
+          let hash = "";
+          if (activeCat !== "all") {
+            hash = "#" + activeCat;
+            if (activeCat === "notes" && activeTopic !== "all")
+              hash += ":" + encodeURIComponent(activeTopic);
+          }
+          history.replaceState(
+            null,
+            "",
+            hash || location.pathname + location.search,
+          );
+        }
 
-				function apply() {
-					const meta = cats[activeCat];
-					root.style.setProperty('--cat-color', meta.color);
-					titleEl.textContent = meta.title;
-					subEl.textContent = meta.subtitle;
-					eyeLabel.textContent = meta.label;
+        function apply() {
+          const meta = cats[activeCat];
+          root.style.setProperty("--cat-color", meta.color);
+          titleEl.textContent = meta.title;
+          subEl.textContent = meta.subtitle;
+          eyeLabel.textContent = meta.label;
 
-					if (side) side.hidden = activeCat !== 'notes';
+          if (side) side.hidden = activeCat !== "notes";
 
-					let visible = 0;
-					posts.forEach((el) => {
-						const cat = el.getAttribute('data-category');
-						const topic = el.getAttribute('data-topic');
-						let show = activeCat === 'all' ? cat !== 'notes' : cat === activeCat;
-						if (show && activeCat === 'notes' && activeTopic !== 'all') {
-							show = topic === activeTopic;
-						}
-						el.style.display = show ? '' : 'none';
-						if (show) visible++;
-					});
+          let visible = 0;
+          posts.forEach((el) => {
+            const cat = el.getAttribute("data-category");
+            const topic = el.getAttribute("data-topic");
+            let show =
+              activeCat === "all" ? cat !== "notes" : cat === activeCat;
+            if (show && activeCat === "notes" && activeTopic !== "all") {
+              show = topic === activeTopic;
+            }
+            el.style.display = show ? "" : "none";
+            if (show) visible++;
+          });
 
-					groupHeaders.forEach((h) => {
-						const t = h.getAttribute('data-group-topic');
-						const show = activeCat === 'notes' && (activeTopic === 'all' || t === activeTopic);
-						h.style.display = show ? '' : 'none';
-					});
+          groupHeaders.forEach((h) => {
+            const t = h.getAttribute("data-group-topic");
+            const show =
+              activeCat === "notes" &&
+              (activeTopic === "all" || t === activeTopic);
+            h.style.display = show ? "" : "none";
+          });
 
-					eyeCount.textContent = String(visible);
-				}
+          eyeCount.textContent = String(visible);
+        }
 
-				function fadeApply() {
-					if (!list) {
-						apply();
-						return;
-					}
-					list.style.opacity = '0';
-					setTimeout(() => {
-						apply();
-						list.style.opacity = '';
-					}, 160);
-				}
+        function fadeApply() {
+          if (!list) {
+            apply();
+            return;
+          }
+          list.style.opacity = "0";
+          setTimeout(() => {
+            apply();
+            list.style.opacity = "";
+          }, 160);
+        }
 
-				filters.forEach((btn) => {
-					btn.addEventListener('click', () => {
-						filters.forEach((b) => b.classList.remove('active'));
-						btn.classList.add('active');
-						activeCat = btn.getAttribute('data-filter');
-						activeTopic = 'all';
-						topicBtns.forEach((b) =>
-							b.classList.toggle('active', b.getAttribute('data-topic') === 'all')
-						);
-						writeHash();
-						fadeApply();
-					});
-				});
+        filters.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            filters.forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+            activeCat = btn.getAttribute("data-filter");
+            activeTopic = "all";
+            topicBtns.forEach((b) =>
+              b.classList.toggle(
+                "active",
+                b.getAttribute("data-topic") === "all",
+              ),
+            );
+            writeHash();
+            fadeApply();
+          });
+        });
 
-				topicBtns.forEach((btn) => {
-					btn.addEventListener('click', () => {
-						topicBtns.forEach((b) => b.classList.remove('active'));
-						btn.classList.add('active');
-						activeTopic = btn.getAttribute('data-topic');
-						writeHash();
-						fadeApply();
-					});
-				});
+        topicBtns.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            topicBtns.forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+            activeTopic = btn.getAttribute("data-topic");
+            writeHash();
+            fadeApply();
+          });
+        });
 
-				// Re-apply when the hash changes without a re-init (manual edit, or a
-				// Back step that only moves the hash within this same page). The
-				// listener is on window (which outlives the #journal element across
-				// client-side navigations), so register it once and have it re-resolve
-				// the live controls each time.
-				if (!window.__journalHashBound) {
-					window.__journalHashBound = true;
-					window.addEventListener('hashchange', () => {
-						const r = document.getElementById('journal');
-						if (r && r.__applyHash) r.__applyHash();
-					});
-				}
-				root.__applyHash = () => {
-					readHash();
-					apply();
-				};
+        // Re-apply when the hash changes without a re-init (manual edit, or a
+        // Back step that only moves the hash within this same page). The
+        // listener is on window (which outlives the #journal element across
+        // client-side navigations), so register it once and have it re-resolve
+        // the live controls each time.
+        if (!window.__journalHashBound) {
+          window.__journalHashBound = true;
+          window.addEventListener("hashchange", () => {
+            const r = document.getElementById("journal");
+            if (r && r.__applyHash) r.__applyHash();
+          });
+        }
+        root.__applyHash = () => {
+          readHash();
+          apply();
+        };
 
-				readHash();
-				apply();
-			}
+        readHash();
+        apply();
+      }
 
-			initJournalFilters();
-			document.addEventListener('astro:page-load', initJournalFilters);
-		</script>
+      initJournalFilters();
+      document.addEventListener("astro:page-load", initJournalFilters);
+    </script>
 
-		<style>
-			#journal {
-				max-width: var(--max-width);
-				background: inherit;
-			}
-			.j-head { padding: 1rem 0 1.25rem; position: relative; z-index: 1; }
-			.j-filters-bar {
-				position: sticky;
-				top: 4.5rem; /* height of the navbar */
-				z-index: 30; /* above the page content/title, below navbar (100) and mobile menu (200) */
-				background: inherit;
-				padding: 0.85rem 0;
-				margin-bottom: 2.25rem;
-				border-bottom: 1px solid var(--color-border);
-				transition: border-color 0.3s ease;
-			}
-			.j-eyebrow {
-				display: inline-block;
-				font-size: 0.8rem;
-				text-transform: uppercase;
-				letter-spacing: 0.08em;
-				color: var(--cat-color);
-				font-weight: 700;
-				margin-bottom: 0.75rem;
-			}
-			#j-title { font-family: var(--font-serif); font-size: 3rem; margin: 0 0 0.5rem; line-height: 1.1; }
-			.j-subtitle { color: var(--color-text-muted); font-size: 1.15rem; max-width: 640px; margin: 0 0 1.75rem; }
-			.j-filters { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-			.j-filter {
-				background: transparent;
-				border: 1px solid var(--color-border);
-				color: var(--color-text-muted);
-				padding: 0.35rem 1rem;
-				border-radius: 999px;
-				font-size: 0.8rem;
-				font-weight: 700;
-				text-transform: uppercase;
-				letter-spacing: 0.05em;
-				cursor: pointer;
-				transition: all 0.2s ease;
-			}
-			.j-filter:hover { color: var(--f-color); border-color: var(--f-color); }
-			.j-filter.active { color: #fff; background: var(--f-color); border-color: var(--f-color); }
+    <style>
+      #journal {
+        max-width: var(--max-width);
+        background: inherit;
+      }
+      .j-head {
+        padding: 1rem 0 0rem;
+        position: relative;
+        z-index: 1;
+      }
+      .j-filters-bar {
+        position: sticky;
+        top: 4.5rem; /* height of the navbar */
+        z-index: 30; /* above the page content/title, below navbar (100) and mobile menu (200) */
+        background: inherit;
+        padding: 0.85rem 0;
+        margin-bottom: 2.25rem;
+        border-bottom: 1px solid var(--color-border);
+        transition: border-color 0.3s ease;
+      }
+      .j-eyebrow {
+        display: inline-block;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--cat-color);
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+      }
+      #j-title {
+        font-family: var(--font-serif);
+        font-size: 3rem;
+        margin: 0 0 0.5rem;
+        line-height: 1.1;
+      }
+      .j-subtitle {
+        color: var(--color-text-muted);
+        font-size: 1.15rem;
+        max-width: 640px;
+        margin: 0 0 1.25rem;
+      }
+      .j-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+      .j-filter {
+        background: transparent;
+        border: 1px solid var(--color-border);
+        color: var(--color-text-muted);
+        padding: 0.35rem 1rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .j-filter:hover {
+        color: var(--f-color);
+        border-color: var(--f-color);
+      }
+      .j-filter.active {
+        color: #fff;
+        background: var(--f-color);
+        border-color: var(--f-color);
+      }
 
-			.j-filter-divider {
-				width: 1px;
-				align-self: stretch;
-				background: var(--color-border);
-				margin: 0.1rem 0.4rem;
-			}
-			/* Notebook filter: plain text, not a pill */
-			.j-filter--text {
-				border: none;
-				background: transparent;
-				padding: 0.35rem 0.5rem;
-				border-radius: 0;
-			}
-			.j-filter--text:hover {
-				color: var(--f-color);
-				background: transparent;
-				border-color: transparent;
-			}
-			.j-filter--text.active {
-				color: var(--f-color);
-				background: transparent;
-				border-color: transparent;
-				font-weight: 800;
-			}
+      .j-filter-divider {
+        width: 1px;
+        align-self: stretch;
+        background: var(--color-border);
+        margin: 0.1rem 0.4rem;
+      }
+      /* Notebook filter: plain text, not a pill */
+      .j-filter--text {
+        border: none;
+        background: transparent;
+        padding: 0.35rem 0.5rem;
+        border-radius: 0;
+      }
+      .j-filter--text:hover {
+        color: var(--f-color);
+        background: transparent;
+        border-color: transparent;
+      }
+      .j-filter--text.active {
+        color: var(--f-color);
+        background: transparent;
+        border-color: transparent;
+        font-weight: 800;
+      }
 
-			.j-body { display: grid; grid-template-columns: 1fr; gap: 2.5rem; }
-			.j-notes-side { align-self: start; }
-			@media (min-width: 880px) {
-				.j-body:has(#j-notes-side:not([hidden])) { grid-template-columns: 200px 1fr; }
-				/* Only stick when it's actually a side column; on stacked layouts it scrolls normally */
-				.j-notes-side { position: sticky; top: 8.5rem; }
-			}
-			.j-side-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-muted); margin-bottom: 0.75rem; }
-			.j-topic {
-				display: flex; justify-content: space-between; width: 100%;
-				background: transparent; border: none; cursor: pointer;
-				color: var(--color-text-muted); padding: 0.5rem 0.75rem; border-radius: 8px;
-				font-size: 0.95rem; text-align: left;
-			}
-			.j-topic span { color: var(--color-text-muted); opacity: 0.7; }
-			.j-topic:hover { background: var(--color-bg-offset); color: var(--color-text-main); }
-			.j-topic.active { background: var(--color-accent-light); color: var(--color-text-main); font-weight: 600; }
+      .j-body {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+      }
+      .j-notes-side {
+        align-self: start;
+      }
+      @media (min-width: 880px) {
+        .j-body:has(#j-notes-side:not([hidden])) {
+          grid-template-columns: 200px 1fr;
+        }
+        /* Only stick when it's actually a side column; on stacked layouts it scrolls normally */
+        .j-notes-side {
+          position: sticky;
+          top: 8.5rem;
+        }
+      }
+      .j-side-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--color-text-muted);
+        margin-bottom: 0.75rem;
+      }
+      .j-topic {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: var(--color-text-muted);
+        padding: 0.5rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        text-align: left;
+      }
+      .j-topic span {
+        color: var(--color-text-muted);
+        opacity: 0.7;
+      }
+      .j-topic:hover {
+        background: var(--color-bg-offset);
+        color: var(--color-text-main);
+      }
+      .j-topic.active {
+        background: var(--color-accent-light);
+        color: var(--color-text-main);
+        font-weight: 600;
+      }
 
-			.j-list { display: flex; flex-direction: column; transition: opacity 0.16s ease; }
-			.j-group-header {
-				display: flex;
-				justify-content: space-between;
-				align-items: baseline;
-				padding: 1.5rem 0 0.5rem;
-				border-bottom: 1px solid var(--color-border);
-				margin-bottom: 0.5rem;
-			}
-			.j-group-name {
-				font-size: 0.8rem;
-				font-weight: 700;
-				text-transform: uppercase;
-				letter-spacing: 0.1em;
-				color: var(--color-text-muted);
-			}
-			.j-group-count {
-				font-variant-numeric: tabular-nums;
-				font-size: 0.8rem;
-				color: var(--color-text-muted);
-				opacity: 0.6;
-			}
-			@media (max-width: 600px) {
-				#j-title { font-size: 2.2rem; }
-				.j-filters { justify-content: center; }
-				/* The vertical divider is a desktop idiom that orphans when the pill
+      .j-list {
+        display: flex;
+        flex-direction: column;
+        transition: opacity 0.16s ease;
+      }
+      .j-group-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 1.5rem 0 0.5rem;
+        border-bottom: 1px solid var(--color-border);
+        margin-bottom: 0.5rem;
+      }
+      .j-group-name {
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--color-text-muted);
+      }
+      .j-group-count {
+        font-variant-numeric: tabular-nums;
+        font-size: 0.8rem;
+        color: var(--color-text-muted);
+        opacity: 0.6;
+      }
+      @media (max-width: 600px) {
+        #j-title {
+          font-size: 2.2rem;
+        }
+        .j-filters {
+          justify-content: center;
+        }
+        /* The vertical divider is a desktop idiom that orphans when the pill
 				   row wraps. On mobile, drop it and give Notebook its own full-width
 				   second tier instead. */
-				.j-filter-divider { display: none; }
-				.j-filter--text,
-				.j-filter--text:hover,
-				.j-filter--text.active {
-					flex-basis: 100%;
-					margin-top: 0.85rem;
-					padding: 0.85rem 0.25rem 0;
-					/* Keep the tier separator even when active/hovered — the desktop
+        .j-filter-divider {
+          display: none;
+        }
+        .j-filter--text,
+        .j-filter--text:hover,
+        .j-filter--text.active {
+          flex-basis: 100%;
+          margin-top: 0.85rem;
+          padding: 0.85rem 0.25rem 0;
+          /* Keep the tier separator even when active/hovered — the desktop
 					   rules set border-color: transparent, which would erase it. */
-					border-top: 1px solid var(--color-border);
-					text-align: center;
-				}
-			}
-		</style>
-	</body>
+          border-top: 1px solid var(--color-border);
+          text-align: center;
+        }
+        /* On mobile the topics list scrolls horizontally as a row of pills
+           instead of stacking vertically above the post list. */
+        .j-body {
+          gap: 1.25rem;
+        }
+        .j-notes-side {
+          display: flex;
+          gap: 0.5rem;
+          overflow-x: auto;
+          /* Bleed to the screen edges (main's 1rem gutter) so pills can scroll
+             off-edge, then pad back in — a clearer "more to scroll" affordance. */
+          margin: 0 -1rem;
+          padding: 0 1rem 0.25rem;
+          scrollbar-width: none;
+        }
+        .j-notes-side::-webkit-scrollbar {
+          display: none;
+        }
+        .j-side-label {
+          display: none;
+        }
+        .j-topic {
+          width: auto;
+          flex: 0 0 auto;
+          white-space: nowrap;
+          justify-content: flex-start;
+          gap: 0.4rem;
+          /* Rounded rectangles (not pills) so topics read as a different control
+             type from the pill-shaped category filters above. No border — the
+             active fill / hover background carry the affordance. */
+          border-radius: 8px;
+          background: var(--color-bg-offset);
+          padding: 0.4rem 0.85rem;
+          font-size: 0.85rem;
+        }
+      }
+    </style>
+  </body>
 </html>
