@@ -156,8 +156,39 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 				const topicBtns = Array.from(document.querySelectorAll('.j-topic'));
 				const list = document.querySelector('.j-list');
 
+				const validCats = filters.map((b) => b.getAttribute('data-filter'));
+				const validTopics = topicBtns.map((b) => b.getAttribute('data-topic'));
+
 				let activeCat = 'all';
 				let activeTopic = 'all';
+
+				// The active filter lives in the URL hash so it survives navigation
+				// (Back from a post returns to the chosen filter) and is shareable.
+				//   #notes        → Notebook, all topics
+				//   #notes:Git    → Notebook, Git topic
+				//   (no hash)     → All (default)
+				function readHash() {
+					const raw = decodeURIComponent((location.hash || '').replace(/^#/, ''));
+					const [cat, topic] = raw.split(':');
+					activeCat = validCats.includes(cat) ? cat : 'all';
+					activeTopic =
+						activeCat === 'notes' && topic && validTopics.includes(topic) ? topic : 'all';
+					// Reflect the parsed state on the controls.
+					filters.forEach((b) => b.classList.toggle('active', b.getAttribute('data-filter') === activeCat));
+					topicBtns.forEach((b) => b.classList.toggle('active', b.getAttribute('data-topic') === activeTopic));
+				}
+
+				// replaceState (not pushState): clicking through filters rewrites the
+				// current entry instead of stacking Back steps, so one Back from a post
+				// returns to the active filter rather than undoing filter clicks.
+				function writeHash() {
+					let hash = '';
+					if (activeCat !== 'all') {
+						hash = '#' + activeCat;
+						if (activeCat === 'notes' && activeTopic !== 'all') hash += ':' + encodeURIComponent(activeTopic);
+					}
+					history.replaceState(null, '', hash || location.pathname + location.search);
+				}
 
 				function apply() {
 					const meta = cats[activeCat];
@@ -210,6 +241,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 						topicBtns.forEach((b) =>
 							b.classList.toggle('active', b.getAttribute('data-topic') === 'all')
 						);
+						writeHash();
 						fadeApply();
 					});
 				});
@@ -219,10 +251,29 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 						topicBtns.forEach((b) => b.classList.remove('active'));
 						btn.classList.add('active');
 						activeTopic = btn.getAttribute('data-topic');
+						writeHash();
 						fadeApply();
 					});
 				});
 
+				// Re-apply when the hash changes without a re-init (manual edit, or a
+				// Back step that only moves the hash within this same page). The
+				// listener is on window (which outlives the #journal element across
+				// client-side navigations), so register it once and have it re-resolve
+				// the live controls each time.
+				if (!window.__journalHashBound) {
+					window.__journalHashBound = true;
+					window.addEventListener('hashchange', () => {
+						const r = document.getElementById('journal');
+						if (r && r.__applyHash) r.__applyHash();
+					});
+				}
+				root.__applyHash = () => {
+					readHash();
+					apply();
+				};
+
+				readHash();
 				apply();
 			}
 
