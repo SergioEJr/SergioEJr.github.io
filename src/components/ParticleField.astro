@@ -1,0 +1,131 @@
+---
+interface Props {
+  count?: number;
+  opacity?: number;
+  class?: string;
+}
+const { count = 36, opacity = 0.5, class: className = "" } = Astro.props;
+---
+
+<canvas
+  class:list={["particle-field", className]}
+  data-count={count}
+  style={`opacity:${opacity}`}
+  aria-hidden="true"></canvas>
+
+<style>
+  .particle-field {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+</style>
+
+<script>
+  function initParticleFields() {
+    const canvases = Array.from(
+      document.querySelectorAll<HTMLCanvasElement>(".particle-field"),
+    );
+    const reduce = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    for (const canvas of canvases) {
+      if ((canvas as any).__pfBound) continue;
+      (canvas as any).__pfBound = true;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) continue;
+      const parent = canvas.parentElement!;
+      const DPR = Math.min(window.devicePixelRatio || 1, 2);
+      const N = parseInt(canvas.dataset.count || "36", 10);
+      const dotColor =
+        getComputedStyle(document.documentElement)
+          .getPropertyValue("--color-accent")
+          .trim() || "#60a5fa";
+
+      let W = 0,
+        H = 0;
+      const parts: {
+        x: number;
+        y: number;
+        vx: number;
+        vy: number;
+        r: number;
+      }[] = [];
+
+      function resize() {
+        const rect = parent.getBoundingClientRect();
+        W = rect.width;
+        H = rect.height;
+        canvas.width = Math.max(1, Math.floor(W * DPR));
+        canvas.height = Math.max(1, Math.floor(H * DPR));
+        ctx!.setTransform(DPR, 0, 0, DPR, 0, 0);
+      }
+      function seed() {
+        parts.length = 0;
+        for (let i = 0; i < N; i++) {
+          parts.push({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            vx: (Math.random() - 0.5) * 0.15,
+            vy: (Math.random() - 0.5) * 0.15,
+            r: 0.8 + Math.random() * 1.4,
+          });
+        }
+      }
+      function draw() {
+        ctx!.clearRect(0, 0, W, H);
+        ctx!.fillStyle = dotColor;
+        for (const p of parts) {
+          ctx!.globalAlpha = 0.35 + Math.random() * 0.15;
+          ctx!.beginPath();
+          ctx!.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx!.fill();
+        }
+        ctx!.globalAlpha = 1;
+      }
+      function tick() {
+        for (const p of parts) {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0) p.x += W;
+          if (p.x > W) p.x -= W;
+          if (p.y < 0) p.y += H;
+          if (p.y > H) p.y -= H;
+        }
+        draw();
+        raf = requestAnimationFrame(tick);
+      }
+
+      let raf = 0;
+      resize();
+      seed();
+      if (reduce) {
+        draw(); // static field, no motion
+      } else {
+        const io = new IntersectionObserver((entries) => {
+          for (const e of entries) {
+            if (e.isIntersecting) {
+              if (!raf) raf = requestAnimationFrame(tick);
+            } else {
+              cancelAnimationFrame(raf);
+              raf = 0;
+            }
+          }
+        });
+        io.observe(canvas);
+      }
+      window.addEventListener("resize", () => {
+        resize();
+        seed();
+        if (reduce) draw();
+      });
+    }
+  }
+  initParticleFields();
+  document.addEventListener("astro:page-load", initParticleFields);
+</script>

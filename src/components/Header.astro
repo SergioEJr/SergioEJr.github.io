@@ -317,25 +317,54 @@ const brandLayerSecondary = layerFor("cls-2");
       underline.classList.add("is-visible");
     };
 
-    // Snap the underline under the active link without animating. On a
-    // navigation the persisted element still holds the previous page's
-    // position, and sliding it across to the clicked page reads as a glitch
-    // (the bar "flies in" from the old link). The user clicked a specific
-    // link, so the bar should simply already be there. The slide animation is
-    // reserved for hover, where it feels intentional.
-    moveTo(active, false);
-    // Commit the snapped position with the transition disabled (a forced
-    // reflow flushes it), then re-enable transitions so hover still animates.
-    // Without the reflow the position change and the class removal collapse
-    // into one style recalc and the move animates anyway.
-    void underline.offsetWidth;
-    underline.classList.remove("no-anim");
+    // Position the underline under the active link on (re)init. Animate the move
+    // only when the underline already carried a position AND it's now landing on
+    // a DIFFERENT link than it last rested on — i.e. a real navigation moved the
+    // active page (e.g. clicking "View Research" outside the navbar). When the
+    // bar is already under the active link (the common navbar-click case, where
+    // hover glided it there before the click), there's nothing to animate, so we
+    // leave it put and never bounce it. On a true first load it has no prior
+    // position, so we snap.
+    const prevX = underline.style.getPropertyValue("--underline-x");
+    const hadPosition =
+      underline.classList.contains("is-visible") &&
+      underline.style.getPropertyValue("--underline-width") !== "";
+    // Compute where active sits now, to decide animate vs. already-there.
+    const navRect0 = nav.getBoundingClientRect();
+    const activeX = active
+      ? `${active.getBoundingClientRect().left - navRect0.left}px`
+      : "";
+    const moved = hadPosition && activeX !== "" && activeX !== prevX;
 
-    // Follow hover, snap back to active on leave.
+    moveTo(active, moved);
+    if (!moved) {
+      // Snapped (first load, or already in place): flush with transitions off,
+      // then re-enable so hover still animates.
+      void underline.offsetWidth;
+      underline.classList.remove("no-anim");
+    }
+
+    // Follow hover, snap back to active on leave. Skip the leave-snap while a
+    // navigation is in flight (pointer leaves the bar as the page swaps), so the
+    // bar doesn't bounce to the old active mid-navigation.
+    let navigating = false;
     links.forEach((a) => {
       a.addEventListener("mouseenter", () => moveTo(a, true), { signal });
+      a.addEventListener(
+        "click",
+        () => {
+          navigating = true;
+        },
+        { signal },
+      );
     });
-    nav.addEventListener("mouseleave", () => moveTo(active, true), { signal });
+    nav.addEventListener(
+      "mouseleave",
+      () => {
+        if (!navigating) moveTo(active, true);
+      },
+      { signal },
+    );
 
     // Reposition on resize (widths change → line would drift).
     window.addEventListener(

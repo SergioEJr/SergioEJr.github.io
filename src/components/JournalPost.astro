@@ -79,19 +79,35 @@ const isNote = post.data.category === 'notes';
 		font-size: 1.6rem;
 		line-height: 1.2;
 		margin: 0 0 0.5rem;
-		/* Transparent at rest; the underline only appears, in the category color,
-		   on hover. padding-bottom is kept small so the hover underline clears the
-		   descenders without leaving a dead gap under the title at rest. */
-		border-bottom: 2px solid transparent;
+		/* No resting underline. (Suppress the global h2 border-bottom; the only
+		   underline is the ::after bar that draws on from the left on hover, in the
+		   category color.) padding-bottom keeps the bar clear of the descenders
+		   without a dead gap at rest. */
+		border-bottom: none;
 		padding-bottom: 0.15rem;
 		display: inline-block;
-		transition: border-color 0.2s ease;
+		position: relative;
 	}
-	.j-post:hover .j-post-title { border-bottom-color: var(--cat-color); }
+	.j-post-title::after {
+		content: "";
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		height: 2px;
+		background: var(--cat-color);
+		transform: scaleX(0);
+		transform-origin: left;
+		transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+	}
+	.j-post:hover .j-post-title::after { transform: scaleX(1); }
 	.j-post-title a { color: var(--color-text-main); text-decoration: none; transition: color 0.2s ease; }
 	/* Link-less update posts: title is plain text, no underline/hover affordance */
-	.j-post-title--static { border-bottom: none; padding-bottom: 0; cursor: default; }
-	.j-post:hover .j-post-title--static { border-bottom-color: transparent; }
+	.j-post-title--static { padding-bottom: 0; cursor: default; }
+	.j-post-title--static::after { display: none; }
+	@media (prefers-reduced-motion: reduce) {
+		.j-post-title::after { transition: none; }
+	}
 	.j-ext-icon { width: 0.7em; height: 0.7em; margin-left: 0.35rem; vertical-align: baseline; opacity: 0.55; transition: opacity 0.2s ease; }
 	.j-post:hover .j-ext-icon { opacity: 1; }
 	.j-desc { color: var(--color-text-muted); margin: 0 0 0.75rem; max-width: 680px; }
