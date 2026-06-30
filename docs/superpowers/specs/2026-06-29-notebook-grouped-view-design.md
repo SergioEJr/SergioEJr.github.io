@@ -106,6 +106,15 @@ redundant under the header). Since notebook posts are the only ones with a
   Implementation: keep the array, insert a separator element in the template
   between the `all` pill and the `notes` pill (or render `notes` in its own
   trailing group). The separator is presentational only.
+- **Notebook is not styled as a pill.** It renders as plain text in the same
+  typographic style as the filter pills (uppercase, same `font-size`,
+  `letter-spacing`, `font-weight`) but with **no border, background, or
+  rounded-pill chrome**. Give it a distinct class (e.g. `.j-filter--text`) that
+  strips `border`/`background`/`border-radius`/`padding`-pill styling.
+  - **Hover/active** use color and/or weight instead of the filled-pill
+    background the blog filters use: hover → the notebook accent color
+    (`#f59e0b`); active → that color with bolder weight (and optionally an
+    underline). It must read as "selected" without a filled background.
 
 ### 5. Client `apply()` extension
 
