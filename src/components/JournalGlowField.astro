@@ -14,12 +14,15 @@ const { count = 46, class: className = "" } = Astro.props;
 <style>
   .journal-glow-field {
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    /* The drawing band bleeds UP toward the navbar and DOWN past .j-head to the
+       bottom of the filter bar. left/top are set here; width/height are measured
+       and set in JS (resize) so the canvas reaches the filter bar's bottom edge.
+       The sticky filter bar (z-index 30) paints over the bleed. */
+    left: 0;
+    top: 0;
     pointer-events: none;
     z-index: 0;
-    /* Fade driven by the IntersectionObserver in a later task. */
+    /* Fade driven by the IntersectionObserver. */
     opacity: 1;
     transition: opacity 0.45s ease;
   }
@@ -114,14 +117,40 @@ const { count = 46, class: className = "" } = Astro.props;
         ph: number;
       }[] = [];
 
+      // Distance to bleed UP from .j-head's top toward the navbar bottom (4.5rem
+      // ≈ 72px). The band fills from just under the navbar down to the filter
+      // bar's bottom border.
+      const NAVBAR_BOTTOM = 72;
+
       function resize() {
-        const rect = parent.getBoundingClientRect();
+        const rect = parent.getBoundingClientRect(); // .j-head box
+        const bar = document.querySelector(".j-filters-bar");
+        const barRect = bar ? bar.getBoundingClientRect() : null;
+
+        // Bleed up toward the navbar (clamped so we never go above it), and down
+        // to the filter bar's bottom edge. Measured relative to .j-head's top.
+        const bleedUp = Math.max(0, rect.top - NAVBAR_BOTTOM);
+        const bottom = barRect ? barRect.bottom : rect.bottom;
+
         W = rect.width;
-        H = rect.height;
+        H = bottom - (rect.top - bleedUp);
+
+        // Position the canvas to start at the bleed-up point (negative top,
+        // relative to .j-head) and span the full band height.
+        canvas.style.top = `${-bleedUp}px`;
+        canvas.style.width = `${W}px`;
+        canvas.style.height = `${H}px`;
         canvas.width = Math.max(1, Math.floor(W * DPR));
         canvas.height = Math.max(1, Math.floor(H * DPR));
         ctx!.setTransform(DPR, 0, 0, DPR, 0, 0);
-        light.y = H - 14;
+
+        // Light sits low, at the filter bar: its Y is the bar's vertical center
+        // within the canvas band (so the glow rises up from the pills).
+        if (barRect) {
+          light.y = barRect.top + barRect.height / 2 - (rect.top - bleedUp);
+        } else {
+          light.y = H - 14;
+        }
         targetX = measureLightTargetX();
         if (light.x === 0) light.x = targetX;
       }
@@ -209,12 +238,15 @@ const { count = 46, class: className = "" } = Astro.props;
           if (p.y < 0) p.y += H;
           if (p.y > H) p.y -= H;
         }
+        // Position glides slowly (the light visibly travels to the new pill).
         light.x += (targetX - light.x) * 0.12;
-        // Ease the displayed color toward the active filter's color at the same
-        // rate as the position, so a filter switch glides color + light together.
-        lightRGB[0] += (targetRGB[0] - lightRGB[0]) * 0.12;
-        lightRGB[1] += (targetRGB[1] - lightRGB[1]) * 0.12;
-        lightRGB[2] += (targetRGB[2] - lightRGB[2]) * 0.12;
+        // Color transitions on its OWN, faster ease — decoupled from position so
+        // the hue changes smoothly and promptly instead of looking "paused" while
+        // the light is still mid-glide.
+        const cEase = 0.28;
+        lightRGB[0] += (targetRGB[0] - lightRGB[0]) * cEase;
+        lightRGB[1] += (targetRGB[1] - lightRGB[1]) * cEase;
+        lightRGB[2] += (targetRGB[2] - lightRGB[2]) * cEase;
         draw(time);
         raf = requestAnimationFrame(tick);
       }
