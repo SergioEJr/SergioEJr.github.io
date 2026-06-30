@@ -454,6 +454,11 @@ a:hover {
 .pub-btn:hover {
 	border-color: var(--color-accent);
 	background: var(--color-accent-light);
+	/* The <a> buttons (Overview/Paper/Poster) otherwise inherit the global
+	   a:hover underline + opacity fade, which the <button> toggles don't — making
+	   the two sets look and theme-transition differently. Normalize them. */
+	text-decoration: none;
+	opacity: 1;
 }
 .pub-toggle[aria-expanded='true'] {
 	border-color: var(--color-accent);
