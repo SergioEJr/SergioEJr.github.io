@@ -80,9 +80,12 @@ const { count = 46, class: className = "" } = Astro.props;
       }
 
       // Resolve --cat-color (may be a hex like #3b82f6 or var(--color-accent))
-      // to concrete RGB. Only re-run when the raw string changes.
+      // to concrete RGB. `targetRGB` is the active filter's color; the displayed
+      // `lightRGB` eases toward it in tick() so color and position arrive together
+      // (without this, the color snaps instantly while the light is still gliding).
       let lastColorStr = "";
       let lightRGB: [number, number, number] = [96, 165, 250];
+      let targetRGB: [number, number, number] = [96, 165, 250];
       const probe = document.createElement("span");
       probe.style.display = "none";
       function resolveCatColor() {
@@ -97,7 +100,7 @@ const { count = 46, class: className = "" } = Astro.props;
         probe.style.color = raw || "var(--color-accent)";
         const rgb = getComputedStyle(probe).color; // "rgb(r, g, b)"
         const m = rgb.match(/(\d+),\s*(\d+),\s*(\d+)/);
-        if (m) lightRGB = [+m[1], +m[2], +m[3]];
+        if (m) targetRGB = [+m[1], +m[2], +m[3]];
       }
 
       let W = 0,
@@ -145,7 +148,9 @@ const { count = 46, class: className = "" } = Astro.props;
 
       function draw(time = 0) {
         resolveCatColor();
-        const [r, g, b] = lightRGB;
+        const r = Math.round(lightRGB[0]);
+        const g = Math.round(lightRGB[1]);
+        const b = Math.round(lightRGB[2]);
         const lx = light.x;
         const ly = light.y;
 
@@ -205,6 +210,11 @@ const { count = 46, class: className = "" } = Astro.props;
           if (p.y > H) p.y -= H;
         }
         light.x += (targetX - light.x) * 0.12;
+        // Ease the displayed color toward the active filter's color at the same
+        // rate as the position, so a filter switch glides color + light together.
+        lightRGB[0] += (targetRGB[0] - lightRGB[0]) * 0.12;
+        lightRGB[1] += (targetRGB[1] - lightRGB[1]) * 0.12;
+        lightRGB[2] += (targetRGB[2] - lightRGB[2]) * 0.12;
         draw(time);
         raf = requestAnimationFrame(tick);
       }
@@ -212,12 +222,30 @@ const { count = 46, class: className = "" } = Astro.props;
       let raf = 0;
       resize();
       seed();
+      // Seed the displayed color from the active filter so the first paint is the
+      // right color (no blue→accent glide on load) and the reduced-motion frame
+      // is correct.
+      resolveCatColor();
+      lightRGB = [targetRGB[0], targetRGB[1], targetRGB[2]];
       if (reduce) {
         targetX = measureLightTargetX();
         light.x = targetX;
         draw();
       } else {
-        raf = requestAnimationFrame(tick);
+        const io = new IntersectionObserver((entries) => {
+          for (const e of entries) {
+            if (e.isIntersecting) {
+              canvas.style.opacity = "1";
+              recomputeTarget(); // re-measure in case layout shifted while away
+              if (!raf) raf = requestAnimationFrame(tick);
+            } else {
+              canvas.style.opacity = "0";
+              cancelAnimationFrame(raf);
+              raf = 0;
+            }
+          }
+        });
+        io.observe(parent); // parent is .j-head
       }
       window.addEventListener("resize", () => {
         resize();
