@@ -62,25 +62,29 @@ const { count = 46, class: className = "" } = Astro.props;
         baseAlpha: 0.42, // ambient particle alpha away from light
       };
 
-      // Light source state. light.x eases toward targetX (the active pill).
+      // Light source state. The light is pinned to the eyebrow ("<FILTER> · N
+      // PIECES") — a stable anchor near the top of the header. Its position
+      // barely moves between filters (only the label text changes), so the field
+      // reads as one steady light; the COLOR is what animates per filter.
       const light = { x: 0, y: 0 };
 
-      // The light's horizontal anchor is the center-X of the currently-active
-      // filter element, measured live. Works for desktop pills, the desktop
-      // plain-text Notebook filter, AND the mobile own-row Notebook pill —
-      // we use only center-X (ignore Y), so row/layout differences don't matter.
-      let targetX = 0;
-      function measureLightTargetX(): number {
-        const active = document.querySelector(".j-filter.active");
-        if (!active) return W / 2;
-        const ar = (active as HTMLElement).getBoundingClientRect();
+      // Measure the eyebrow's center, in canvas-local coordinates.
+      function measureLight(): { x: number; y: number } {
+        const eyebrow = document.querySelector(".j-eyebrow");
         const cr = canvas.getBoundingClientRect();
-        const x = ar.left + ar.width / 2 - cr.left;
-        return Math.max(0, Math.min(W, x));
+        if (!eyebrow) return { x: W / 2, y: H * 0.35 };
+        const er = (eyebrow as HTMLElement).getBoundingClientRect();
+        return {
+          x: er.left + er.width / 2 - cr.left,
+          y: er.top + er.height / 2 - cr.top,
+        };
       }
       function recomputeTarget() {
-        targetX = measureLightTargetX();
+        const m = measureLight();
+        targetX = m.x;
+        light.y = m.y;
       }
+      let targetX = 0;
 
       // Resolve --cat-color (may be a hex like #3b82f6 or var(--color-accent))
       // to concrete RGB. `targetRGB` is the active filter's color; the displayed
@@ -118,25 +122,33 @@ const { count = 46, class: className = "" } = Astro.props;
       }[] = [];
 
       // Distance to bleed UP from .j-head's top toward the navbar bottom (4.5rem
-      // ≈ 72px). The band fills from just under the navbar down to the filter
-      // bar's bottom border.
+      // ≈ 72px). The band fills from just under the navbar down to the TOP of the
+      // filter bar (the bar frosts over anything behind it, so drawing under it
+      // only creates a seam). A short bottom fade hides the meeting edge.
       const NAVBAR_BOTTOM = 72;
+      // Height of the soft fade-out at the bottom edge (px) so the field doesn't
+      // end in an abrupt seam against the filter bar.
+      const BOTTOM_FADE = 28;
 
       function resize() {
         const rect = parent.getBoundingClientRect(); // .j-head box
         const bar = document.querySelector(".j-filters-bar");
         const barRect = bar ? bar.getBoundingClientRect() : null;
 
-        // Bleed up toward the navbar (clamped so we never go above it), and down
-        // to the filter bar's bottom edge. Measured relative to .j-head's top.
+        // Vertical band: from just under the navbar down to the filter bar's TOP.
         const bleedUp = Math.max(0, rect.top - NAVBAR_BOTTOM);
-        const bottom = barRect ? barRect.bottom : rect.bottom;
+        const top = rect.top - bleedUp;
+        const bottom = barRect ? barRect.top : rect.bottom;
 
-        W = rect.width;
-        H = bottom - (rect.top - bleedUp);
+        // Horizontal: bleed full viewport width (edge to edge), not just the
+        // content column, so the lighting fills the whole header band.
+        const vw = document.documentElement.clientWidth;
+        W = vw;
+        H = Math.max(1, bottom - top);
 
-        // Position the canvas to start at the bleed-up point (negative top,
-        // relative to .j-head) and span the full band height.
+        // Canvas is absolutely positioned inside .j-head (rect.left from viewport
+        // edge), so shift left by rect.left to reach the viewport's left edge.
+        canvas.style.left = `${-rect.left}px`;
         canvas.style.top = `${-bleedUp}px`;
         canvas.style.width = `${W}px`;
         canvas.style.height = `${H}px`;
@@ -144,14 +156,8 @@ const { count = 46, class: className = "" } = Astro.props;
         canvas.height = Math.max(1, Math.floor(H * DPR));
         ctx!.setTransform(DPR, 0, 0, DPR, 0, 0);
 
-        // Light sits low, at the filter bar: its Y is the bar's vertical center
-        // within the canvas band (so the glow rises up from the pills).
-        if (barRect) {
-          light.y = barRect.top + barRect.height / 2 - (rect.top - bleedUp);
-        } else {
-          light.y = H - 14;
-        }
-        targetX = measureLightTargetX();
+        // Light is pinned to the eyebrow near the top of the band.
+        recomputeTarget();
         if (light.x === 0) light.x = targetX;
       }
 
@@ -224,6 +230,18 @@ const { count = 46, class: className = "" } = Astro.props;
           ctx!.fill();
         }
         ctx!.globalAlpha = 1;
+
+        // Soft bottom fade: erase a short vertical gradient at the band's bottom
+        // edge so the field dissolves into the filter bar instead of ending in an
+        // abrupt seam. destination-out uses the gradient's alpha as an eraser.
+        const fadeTop = Math.max(0, H - BOTTOM_FADE);
+        const fade = ctx!.createLinearGradient(0, fadeTop, 0, H);
+        fade.addColorStop(0, "rgba(0,0,0,0)");
+        fade.addColorStop(1, "rgba(0,0,0,1)");
+        ctx!.globalCompositeOperation = "destination-out";
+        ctx!.fillStyle = fade;
+        ctx!.fillRect(0, fadeTop, W, BOTTOM_FADE);
+        ctx!.globalCompositeOperation = "source-over";
       }
 
       let t0 = 0;
@@ -260,7 +278,7 @@ const { count = 46, class: className = "" } = Astro.props;
       resolveCatColor();
       lightRGB = [targetRGB[0], targetRGB[1], targetRGB[2]];
       if (reduce) {
-        targetX = measureLightTargetX();
+        recomputeTarget();
         light.x = targetX;
         draw();
       } else {
