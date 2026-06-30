@@ -125,23 +125,23 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
       style="--cat-color: var(--color-accent);"
       transition:animate={pageFade}
     >
-      <!-- Header zone: the glow field spans the title AND the filter bar so the
-           lit dust reaches down to the pills (the light source). -->
-      <div class="j-header-zone">
+      <!-- Header (updated client-side per filter). The glow field is mounted
+           here but draws a band that bleeds DOWN past .j-head to the bottom of
+           the filter bar — it must stay a sibling of (not wrap) .j-filters-bar
+           so the bar's position:sticky keeps #journal as its containing block. -->
+      <header class="j-head">
         <JournalGlowField />
-        <!-- Header (updated client-side per filter) -->
-        <header class="j-head">
-          <div class="j-eyebrow">
-            <span id="j-eyebrow-label">All</span> · <span
-              id="j-eyebrow-count"
-              data-count={counts.all}>{counts.all}</span
-            > pieces
-          </div>
-          <h1 id="j-title">{CATS.all.title}</h1>
-          <p id="j-subtitle" class="j-subtitle">{CATS.all.subtitle}</p>
-        </header>
+        <div class="j-eyebrow">
+          <span id="j-eyebrow-label">All</span> · <span
+            id="j-eyebrow-count"
+            data-count={counts.all}>{counts.all}</span
+          > pieces
+        </div>
+        <h1 id="j-title">{CATS.all.title}</h1>
+        <p id="j-subtitle" class="j-subtitle">{CATS.all.subtitle}</p>
+      </header>
 
-        <div class="j-filters-bar">
+      <div class="j-filters-bar">
         <div class="j-filters">
           {
             FILTER_ORDER.filter((c) => c !== "notes").map((c) => (
@@ -163,7 +163,6 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
             {CATS.notes.label}
           </button>
         </div>
-      </div>
       </div>
 
       <div class="j-body">
@@ -423,11 +422,6 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
       #journal {
         max-width: var(--max-width);
         background: inherit;
-      }
-      /* Wraps the header text + filter bar so the glow-field canvas (inset:0)
-         spans down to the pills. The sticky filter bar still frosts over it. */
-      .j-header-zone {
-        position: relative;
       }
       .j-head {
         padding: 1rem 0 0rem;
