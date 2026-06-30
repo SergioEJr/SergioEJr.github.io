@@ -123,6 +123,27 @@ body {
 	transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Branded text selection. --color-accent-light + --color-text-main both flip
+   with [data-theme="dark"], so selected text stays readable in either theme. */
+::selection {
+	background: var(--color-accent-light);
+	color: var(--color-text-main);
+}
+::-moz-selection {
+	background: var(--color-accent-light);
+	color: var(--color-text-main);
+}
+
+/* Consistent, branded keyboard-focus ring. :focus-visible keeps it keyboard-only
+   (no ring on mouse clicks), and --color-accent flips per theme so it's visible
+   in light and dark. Components that intentionally manage their own focus (e.g.
+   the Pagefind search input) override this locally. */
+:focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 2px;
+	border-radius: 2px;
+}
+
 main {
 	width: 100%;
 	max-width: var(--max-width);
@@ -409,6 +430,12 @@ a:hover {
 .pub-btn {
 	display: inline-flex;
 	align-items: center;
+	/* Strip native <button> rendering so the toggle buttons (Abstract / BibTeX)
+	   style and transition identically to the <a> buttons. With appearance: auto
+	   the UA backplate doesn't honor the color transition, so those two buttons
+	   changed theme at a different speed than the rest. */
+	appearance: none;
+	-webkit-appearance: none;
 	font: inherit;
 	font-size: 0.82rem;
 	line-height: 1;
@@ -427,6 +454,11 @@ a:hover {
 .pub-btn:hover {
 	border-color: var(--color-accent);
 	background: var(--color-accent-light);
+	/* The <a> buttons (Overview/Paper/Poster) otherwise inherit the global
+	   a:hover underline + opacity fade, which the <button> toggles don't — making
+	   the two sets look and theme-transition differently. Normalize them. */
+	text-decoration: none;
+	opacity: 1;
 }
 .pub-toggle[aria-expanded='true'] {
 	border-color: var(--color-accent);
