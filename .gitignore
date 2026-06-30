@@ -25,3 +25,4 @@ pnpm-debug.log*
 
 # Local MCP server config (chrome-devtools etc.) — keep out of VCS
 .mcp.json
+.superpowers/
