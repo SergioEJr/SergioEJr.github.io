@@ -57,15 +57,33 @@ additions:
 - Canvas is `position: absolute; inset: 0; pointer-events: none; z-index: 0`
   inside `.projects-hero`, which becomes `position: relative`. The title,
   subtitle, and (existing) filter bar render above via `z-index: 1`.
-- **Sizing:** measure the parent (`.projects-hero`) rect; set canvas CSS width to
-  the **full viewport width** and offset left to bleed edge-to-edge (mirror the
-  glow field's full-bleed technique: `canvas.style.left = -parentRect.left`,
-  width = `document.documentElement.clientWidth`). Height = the hero's height.
-  Use DPR scaling (`Math.min(devicePixelRatio, 2)`).
+- **Sizing:** measure the parent (`.projects-hero`, the centered max-width
+  column) rect; set canvas CSS width to the **full viewport width** and offset
+  left to bleed edge-to-edge (mirror the glow field's full-bleed technique:
+  `canvasLeftVp = 0`; `canvas.style.left = -parentRect.left`, width =
+  `document.documentElement.clientWidth`). Height = the hero's height. Use DPR
+  scaling (`Math.min(devicePixelRatio, 2)`). Because the canvas is shifted so its
+  left edge sits at viewport x=0, **canvas-local coords equal viewport coords**,
+  so the header center-X used by the symmetric grid is simply
+  `centerX = parentRect.left + parentRect.width / 2`.
 - **Grid:** vertical lines drawn with a top→bottom linear-gradient stroke that
   fades to transparent toward the bottom; horizontal lines drawn per-row with an
   alpha scaled by a `vfade(y)` factor (1 at top → 0 near bottom). Every 5th line
   (both axes) uses the brighter "major" alpha.
+- **Centered on the header (required):** the grid is **symmetric about the
+  header's horizontal center**, so the pattern reads as anchored to the centered
+  "Projects" title rather than arbitrarily phased. The header content is centered
+  in a max-width column; its center-X in canvas-local coords is
+  `centerX = parentRect.left + parentRect.width / 2` (canvas-local == viewport
+  coords, since the canvas left edge is shifted to viewport x=0 — see Sizing).
+  Generate vertical
+  lines **outward from `centerX`** in both directions (`x = centerX ± k*GRID`)
+  rather than from `x = 0`, so lines are mirror-symmetric left/right and a line
+  lands exactly on the header center. The major/minor (every-5th) classification
+  counts `k` from center, so the pattern is symmetric. Horizontal lines are
+  unaffected (they already span full width); their major/minor phase can start
+  from the top as before. Recompute `centerX` on resize (and it is implicitly
+  correct after theme redraw since geometry is unchanged).
 - **Fades (decided, not either/or):** The **downward fade is done in-canvas**
   (vertical lines use a top→bottom gradient stroke; horizontal lines use the
   `vfade(y)` alpha) — this is already how the approved demo rendered it. The
