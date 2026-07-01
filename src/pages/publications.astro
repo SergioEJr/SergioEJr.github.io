@@ -1,165 +1,256 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import { SITE_TITLE } from '../consts';
-import { getCollection } from 'astro:content';
-import AuthorLink from '../components/AuthorLink.astro';
-import { url } from '../utils/paths';
-import { pageFade } from '../utils/pageTransition';
-import { renderInline } from '../utils/inlineText';
+import BaseHead from "../components/BaseHead.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import { SITE_TITLE } from "../consts";
+import { getCollection } from "astro:content";
+import AuthorLink from "../components/AuthorLink.astro";
+import { url } from "../utils/paths";
+import { pageFade } from "../utils/pageTransition";
+import { renderInline } from "../utils/inlineText";
 
 // Newest first (reverse chronological), with a stable id tiebreak for entries
 // that share a date.
-const research = (await getCollection('research')).sort(
-	(a, b) => (b.data.date.valueOf() - a.data.date.valueOf()) || a.id.localeCompare(b.id),
+const research = (await getCollection("research")).sort(
+  (a, b) =>
+    b.data.date.valueOf() - a.data.date.valueOf() || a.id.localeCompare(b.id),
 );
 ---
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<BaseHead title={`Research | ${SITE_TITLE}`} description="Research in nonequilibrium statistical physics and biophysics." />
-	</head>
-	<body>
-		<Header />
-		<main transition:animate={pageFade}>
-			<h1 class="research-title">Research</h1>
-			<p class="research-intro">I work in nonequilibrium statistical mechanics. Equilibrium is an idealized limit, a system at rest with no net flows; the living and driven world, from a cell to a growing population, is not at rest, and understanding that world requires physics built for it. Biology is usually the motivating example. Each project below has a short overview; click a title to read it.</p>
+  <head>
+    <BaseHead
+      title={`Research | ${SITE_TITLE}`}
+      description="Research in nonequilibrium statistical physics and biophysics."
+    />
+  </head>
+  <body>
+    <Header />
+    <main transition:animate={pageFade}>
+      <h1 class="research-title">Research</h1>
+      <p class="research-intro">
+        I work in nonequilibrium statistical mechanics. Equilibrium is an
+        idealized limit, a system at rest with no net flows, such as a sitting
+        glass of water or a room full of steam. Most systems we encounter in our
+        day-to-day are out of equilibrium. Living systems, from a cell to a
+        growing population, are not at rest, and understanding their collective
+        behavior requires novel physics. Each project below has a short
+        overview, click a title to read it.
+      </p>
 
-			<div class="publication-list">
-				{research.map((entry) => (
-					<article class="publication-item">
-						<a class="pub-title" href={url(`/publications/${entry.id}/`)} style="display: block;">
-							{entry.data.title}
-						</a>
+      <div class="publication-list">
+        {
+          research.map((entry) => (
+            <article class="publication-item">
+              <a
+                class="pub-title"
+                href={url(`/publications/${entry.id}/`)}
+                style="display: block;"
+              >
+                {entry.data.title}
+              </a>
 
-						{entry.data.authors.length > 0 && (
-							<div class="pub-authors">
-								{entry.data.authors.map((a, i) => (
-									<>
-										<AuthorLink nameOrSlug={a} />{i < entry.data.authors.length - 1 ? ', ' : ''}
-									</>
-								))}
-							</div>
-						)}
+              {entry.data.authors.length > 0 && (
+                <div class="pub-authors">
+                  {entry.data.authors.map((a, i) => (
+                    <>
+                      <AuthorLink nameOrSlug={a} />
+                      {i < entry.data.authors.length - 1 ? ", " : ""}
+                    </>
+                  ))}
+                </div>
+              )}
 
-						<div class="pub-venue" style="margin-top: 0.35rem;">
-							{entry.data.venue || 'In preparation'}
-							<span> ({entry.data.date.getUTCFullYear()})</span>
-						</div>
+              <div class="pub-venue" style="margin-top: 0.35rem;">
+                {entry.data.venue || "In preparation"}
+                <span> ({entry.data.date.getUTCFullYear()})</span>
+              </div>
 
-						<div class="pub-links">
-							<a href={url(`/publications/${entry.id}/`)} class="pub-btn">Overview</a>
+              <div class="pub-links">
+                <a href={url(`/publications/${entry.id}/`)} class="pub-btn">
+                  Overview
+                </a>
 
-							{entry.data.abstract && (
-								<button type="button" class="pub-btn pub-toggle" aria-expanded="false" data-target={`abstract-${entry.id}`}>Abstract</button>
-							)}
+                {entry.data.abstract && (
+                  <button
+                    type="button"
+                    class="pub-btn pub-toggle"
+                    aria-expanded="false"
+                    data-target={`abstract-${entry.id}`}
+                  >
+                    Abstract
+                  </button>
+                )}
 
-							{entry.data.paper && (
-								<a href={entry.data.paper} target="_blank" rel="noopener noreferrer" class="pub-btn">Paper ↗</a>
-							)}
+                {entry.data.paper && (
+                  <a
+                    href={entry.data.paper}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="pub-btn"
+                  >
+                    Paper ↗
+                  </a>
+                )}
 
-							{entry.data.poster && (
-								<a href={url(entry.data.poster)} target="_blank" rel="noopener noreferrer" class="pub-btn">Poster ↗</a>
-							)}
+                {entry.data.poster && (
+                  <a
+                    href={url(entry.data.poster)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="pub-btn"
+                  >
+                    Poster ↗
+                  </a>
+                )}
 
-							{entry.data.code && (
-								<a href={entry.data.code} target="_blank" rel="noopener noreferrer" class="pub-btn">Code ↗</a>
-							)}
+                {entry.data.code && (
+                  <a
+                    href={entry.data.code}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="pub-btn"
+                  >
+                    Code ↗
+                  </a>
+                )}
 
-							{entry.data.bibtex && (
-								<button type="button" class="pub-btn pub-toggle" aria-expanded="false" data-target={`bibtex-${entry.id}`}>BibTeX</button>
-							)}
-						</div>
+                {entry.data.bibtex && (
+                  <button
+                    type="button"
+                    class="pub-btn pub-toggle"
+                    aria-expanded="false"
+                    data-target={`bibtex-${entry.id}`}
+                  >
+                    BibTeX
+                  </button>
+                )}
+              </div>
 
-						{/* Inline panels expand in-column below the buttons, pushing content
+              {/* Inline panels expand in-column below the buttons, pushing content
 						    down. Full-width, delineated box. */}
-						{entry.data.abstract && (
-							<div class="pub-panel" id={`abstract-${entry.id}`} hidden>
-								<p set:html={renderInline(entry.data.abstract, { math: true })} />
-							</div>
-						)}
-						{entry.data.bibtex && (
-							<div class="pub-panel pub-panel--bibtex" id={`bibtex-${entry.id}`} hidden>
-								<button class="copy-bibtex-btn" data-bibtex={entry.data.bibtex} aria-label="Copy BibTeX">
-									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-									<span class="copy-text">Copy</span>
-								</button>
-								<pre>{entry.data.bibtex}</pre>
-							</div>
-						)}
-					</article>
-				))}
+              {entry.data.abstract && (
+                <div class="pub-panel" id={`abstract-${entry.id}`} hidden>
+                  <p
+                    set:html={renderInline(entry.data.abstract, { math: true })}
+                  />
+                </div>
+              )}
+              {entry.data.bibtex && (
+                <div
+                  class="pub-panel pub-panel--bibtex"
+                  id={`bibtex-${entry.id}`}
+                  hidden
+                >
+                  <button
+                    class="copy-bibtex-btn"
+                    data-bibtex={entry.data.bibtex}
+                    aria-label="Copy BibTeX"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                    <span class="copy-text">Copy</span>
+                  </button>
+                  <pre>{entry.data.bibtex}</pre>
+                </div>
+              )}
+            </article>
+          ))
+        }
 
-				{research.length === 0 && <p>No research entries yet. Add Markdown files in <code>src/content/research/</code>.</p>}
-			</div>
-		</main>
-		<Footer />
+        {
+          research.length === 0 && (
+            <p>
+              No research entries yet. Add Markdown files in{" "}
+              <code>src/content/research/</code>.
+            </p>
+          )
+        }
+      </div>
+    </main>
+    <Footer />
 
-		<style>
-			/* Short accent rule under the page title — a small section marker that
+    <style>
+      /* Short accent rule under the page title — a small section marker that
 			   ties the header to the site's accent language, without a heavy
 			   ambient element (keeps the academic list restrained). */
-			.research-title {
-				margin-bottom: 0.9rem;
-			}
-			.research-title::after {
-				content: "";
-				display: block;
-				width: 3rem;
-				height: 3px;
-				margin-top: 0.7rem;
-				border-radius: 3px;
-				background: var(--color-accent);
-			}
-		</style>
+      .research-title {
+        margin-bottom: 0.9rem;
+      }
+      .research-title::after {
+        content: "";
+        display: block;
+        width: 3rem;
+        height: 3px;
+        margin-top: 0.7rem;
+        border-radius: 3px;
+        background: var(--color-accent);
+      }
+    </style>
 
-		<script>
-			function initPublications() {
-				const toggles = Array.from(document.querySelectorAll('.pub-toggle'));
+    <script>
+      function initPublications() {
+        const toggles = Array.from(document.querySelectorAll(".pub-toggle"));
 
-				toggles.forEach((btn) => {
-					// Guard against double-binding (runs on load AND astro:page-load).
-					if ((btn as HTMLElement).dataset.bound === 'true') return;
-					(btn as HTMLElement).dataset.bound = 'true';
-					btn.addEventListener('click', () => {
-						const id = btn.getAttribute('data-target');
-						const panel = id && document.getElementById(id);
-						if (!panel) return;
-						const isOpen = !panel.hidden;
+        toggles.forEach((btn) => {
+          // Guard against double-binding (runs on load AND astro:page-load).
+          if ((btn as HTMLElement).dataset.bound === "true") return;
+          (btn as HTMLElement).dataset.bound = "true";
+          btn.addEventListener("click", () => {
+            const id = btn.getAttribute("data-target");
+            const panel = id && document.getElementById(id);
+            if (!panel) return;
+            const isOpen = !panel.hidden;
 
-						// Within this article, close any other open panel/toggle first.
-						const article = btn.closest('article');
-						article?.querySelectorAll('.pub-panel').forEach((p) => { (p as HTMLElement).hidden = true; });
-						article?.querySelectorAll('.pub-toggle').forEach((t) => t.setAttribute('aria-expanded', 'false'));
+            // Within this article, close any other open panel/toggle first.
+            const article = btn.closest("article");
+            article?.querySelectorAll(".pub-panel").forEach((p) => {
+              (p as HTMLElement).hidden = true;
+            });
+            article
+              ?.querySelectorAll(".pub-toggle")
+              .forEach((t) => t.setAttribute("aria-expanded", "false"));
 
-						// Toggle this one (clicking the open button closes it).
-						panel.hidden = isOpen;
-						btn.setAttribute('aria-expanded', String(!isOpen));
-					});
-				});
+            // Toggle this one (clicking the open button closes it).
+            panel.hidden = isOpen;
+            btn.setAttribute("aria-expanded", String(!isOpen));
+          });
+        });
 
-				document.querySelectorAll('.copy-bibtex-btn').forEach((btn) => {
-					if ((btn as HTMLElement).dataset.bound === 'true') return;
-					(btn as HTMLElement).dataset.bound = 'true';
-					btn.addEventListener('click', async () => {
-						const bibtex = btn.getAttribute('data-bibtex');
-						const textSpan = btn.querySelector('.copy-text');
-						if (!bibtex || !textSpan) return;
-						try {
-							await navigator.clipboard.writeText(bibtex);
-							textSpan.textContent = 'Copied!';
-							setTimeout(() => { textSpan.textContent = 'Copy'; }, 2000);
-						} catch (err) {
-							console.error('Failed to copy', err);
-						}
-					});
-				});
-			}
+        document.querySelectorAll(".copy-bibtex-btn").forEach((btn) => {
+          if ((btn as HTMLElement).dataset.bound === "true") return;
+          (btn as HTMLElement).dataset.bound = "true";
+          btn.addEventListener("click", async () => {
+            const bibtex = btn.getAttribute("data-bibtex");
+            const textSpan = btn.querySelector(".copy-text");
+            if (!bibtex || !textSpan) return;
+            try {
+              await navigator.clipboard.writeText(bibtex);
+              textSpan.textContent = "Copied!";
+              setTimeout(() => {
+                textSpan.textContent = "Copy";
+              }, 2000);
+            } catch (err) {
+              console.error("Failed to copy", err);
+            }
+          });
+        });
+      }
 
-			initPublications();
-			document.addEventListener('astro:page-load', initPublications);
-		</script>
-	</body>
+      initPublications();
+      document.addEventListener("astro:page-load", initPublications);
+    </script>
+  </body>
 </html>
