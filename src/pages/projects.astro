@@ -6,6 +6,7 @@ import { SITE_TITLE } from "../consts";
 import { getCollection } from "astro:content";
 import { url } from "../utils/paths";
 import { pageFade } from "../utils/pageTransition";
+import BlueprintGrid from "../components/BlueprintGrid.astro";
 
 // Default: reverse chronological (newest first). `order` is an optional manual
 // override — projects with one are pinned to the front in ascending order.
@@ -49,6 +50,12 @@ for (const p of projects)
         text-align: center;
         margin-bottom: 0.5rem;
         padding: 2rem 0;
+        position: relative;
+      }
+      .projects-hero h1,
+      .projects-hero p {
+        position: relative;
+        z-index: 1;
       }
       .projects-hero h1 {
         font-family: var(--font-serif);
@@ -71,6 +78,8 @@ for (const p of projects)
         justify-content: center;
         gap: 0.6rem;
         margin-bottom: 3rem;
+        position: relative;
+        z-index: 1;
       }
       .proj-filter {
         background: transparent;
@@ -455,6 +464,7 @@ for (const p of projects)
     <Header />
     <main class="projects-section" transition:animate={pageFade}>
       <div class="projects-hero">
+        <BlueprintGrid />
         <h1>Projects</h1>
         <p>
           Tools, teaching, and experiments I've built — most started as a
