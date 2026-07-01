@@ -24,8 +24,8 @@ const research = (await getCollection('research')).sort(
 	<body>
 		<Header />
 		<main transition:animate={pageFade}>
-			<h1>Research</h1>
-			<p>I study how living systems generate predictable large-scale order. Each project below has a short overview — click a title to read it.</p>
+			<h1 class="research-title">Research</h1>
+			<p class="research-intro">I work in nonequilibrium statistical mechanics, the physics of systems that never settle into equilibrium, usually with a biological system as the motivating example. Each project below has a short overview; click a title to read it.</p>
 
 			<div class="publication-list">
 				{research.map((entry) => (
@@ -96,6 +96,24 @@ const research = (await getCollection('research')).sort(
 			</div>
 		</main>
 		<Footer />
+
+		<style>
+			/* Short accent rule under the page title — a small section marker that
+			   ties the header to the site's accent language, without a heavy
+			   ambient element (keeps the academic list restrained). */
+			.research-title {
+				margin-bottom: 0.9rem;
+			}
+			.research-title::after {
+				content: "";
+				display: block;
+				width: 3rem;
+				height: 3px;
+				margin-top: 0.7rem;
+				border-radius: 3px;
+				background: var(--color-accent);
+			}
+		</style>
 
 		<script>
 			function initPublications() {
