@@ -34,6 +34,7 @@ const { class: className = "" } = Astro.props;
 
 <script>
   const GRID = 26; // cell size (px)
+  const NAVBAR_BOTTOM = 72; // navbar height (4.5rem) — grid bleeds up to here
 
   function initBlueprintGrid() {
     const canvases = Array.from(
@@ -66,13 +67,17 @@ const { class: className = "" } = Astro.props;
         // edge sits at viewport x=0 → canvas-local coords == viewport coords.
         const vw = document.documentElement.clientWidth;
         W = vw;
-        H = rect.height;
+        // Bleed the top UP to the navbar bottom (4.5rem ≈ 72px) so the grid meets
+        // the navbar instead of starting abruptly mid-page at the hero's top.
+        const bleedUp = Math.max(0, rect.top - NAVBAR_BOTTOM);
+        H = rect.height + bleedUp;
         // Header center-X in canvas-local (== viewport) coords: the grid is
         // generated symmetrically outward from here so it's anchored to the
         // centered "Projects" title.
         centerX = rect.left + rect.width / 2;
 
         canvas.style.left = `${-rect.left}px`;
+        canvas.style.top = `${-bleedUp}px`;
         canvas.style.width = `${W}px`;
         canvas.style.height = `${H}px`;
         canvas.width = Math.max(1, Math.floor(W * DPR));
