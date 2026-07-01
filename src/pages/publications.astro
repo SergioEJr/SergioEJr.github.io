@@ -25,7 +25,7 @@ const research = (await getCollection('research')).sort(
 		<Header />
 		<main transition:animate={pageFade}>
 			<h1 class="research-title">Research</h1>
-			<p class="research-intro">I work in nonequilibrium statistical mechanics. Equilibrium is the tidy special case physics usually assumes; almost everything that is alive or actively doing something sits outside it, and that is the regime I study. Usually there's a biological system as the motivating example. Each project below has a short overview; click a title to read it.</p>
+			<p class="research-intro">I work in nonequilibrium statistical mechanics. Equilibrium is an idealized limit, a system at rest with no net flows; the living and driven world, from a cell to a growing population, is not at rest, and understanding that world requires physics built for it. Biology is usually the motivating example. Each project below has a short overview; click a title to read it.</p>
 
 			<div class="publication-list">
 				{research.map((entry) => (
