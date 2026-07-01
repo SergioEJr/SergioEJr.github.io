@@ -1,0 +1,168 @@
+---
+interface Props {
+  class?: string;
+}
+const { class: className = "" } = Astro.props;
+---
+
+<canvas class:list={["blueprint-grid", className]} aria-hidden="true"></canvas>
+
+<style>
+  .blueprint-grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    /* Side-edge fade so the full-bleed grid dissolves at the viewport edges.
+       (The downward fade is baked into the canvas pixels — see draw().) */
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 8%,
+      #000 92%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 8%,
+      #000 92%,
+      transparent 100%
+    );
+  }
+</style>
+
+<script>
+  const GRID = 26; // cell size (px)
+  const NAVBAR_BOTTOM = 72; // navbar height (4.5rem) — grid bleeds up to here
+
+  function initBlueprintGrid() {
+    const canvases = Array.from(
+      document.querySelectorAll<HTMLCanvasElement>(".blueprint-grid"),
+    );
+    for (const canvas of canvases) {
+      if ((canvas as any).__bpBound) continue;
+      (canvas as any).__bpBound = true;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) continue;
+      const parent = canvas.parentElement!;
+      const DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+      let W = 0,
+        H = 0,
+        centerX = 0;
+
+      function accent(): string {
+        return (
+          getComputedStyle(document.documentElement)
+            .getPropertyValue("--color-accent")
+            .trim() || "#3b82f6"
+        );
+      }
+
+      function resize() {
+        const rect = parent.getBoundingClientRect();
+        // Full-bleed: canvas spans the whole viewport width, shifted so its left
+        // edge sits at viewport x=0 → canvas-local coords == viewport coords.
+        const vw = document.documentElement.clientWidth;
+        W = vw;
+        // Bleed the top UP to the navbar bottom (4.5rem ≈ 72px) so the grid meets
+        // the navbar instead of starting abruptly mid-page at the hero's top.
+        const bleedUp = Math.max(0, rect.top - NAVBAR_BOTTOM);
+        H = rect.height + bleedUp;
+        // Header center-X in canvas-local (== viewport) coords: the grid is
+        // generated symmetrically outward from here so it's anchored to the
+        // centered "Projects" title.
+        centerX = rect.left + rect.width / 2;
+
+        canvas.style.left = `${-rect.left}px`;
+        canvas.style.top = `${-bleedUp}px`;
+        canvas.style.width = `${W}px`;
+        canvas.style.height = `${H}px`;
+        canvas.width = Math.max(1, Math.floor(W * DPR));
+        canvas.height = Math.max(1, Math.floor(H * DPR));
+        ctx!.setTransform(DPR, 0, 0, DPR, 0, 0);
+      }
+
+      // Downward fade: 1 at the top → 0 near the bottom (so the grid never
+      // touches the cards below the header).
+      function vfade(y: number): number {
+        return Math.max(0, 1 - y / (H * 0.9));
+      }
+
+      // Turn a CSS accent color + alpha into an rgba() string. Resolves any CSS
+      // color form via a probe element so var()/hex/named all work.
+      const probe = document.createElement("span");
+      probe.style.display = "none";
+      function hexA(color: string, a: number): string {
+        if (!probe.isConnected) document.body.appendChild(probe);
+        probe.style.color = color;
+        const rgb = getComputedStyle(probe).color; // "rgb(r, g, b)"
+        const m = rgb.match(/(\d+),\s*(\d+),\s*(\d+)/);
+        const [r, g, b] = m ? [m[1], m[2], m[3]] : ["59", "130", "246"];
+        return `rgba(${r},${g},${b},${a})`;
+      }
+
+      function draw() {
+        ctx!.clearRect(0, 0, W, H);
+        const color = accent();
+        ctx!.lineWidth = 1;
+
+        // Vertical lines: generated OUTWARD from centerX in both directions so
+        // the pattern is mirror-symmetric and a line lands on the header center.
+        // major = every 5th line counted from center. Each line uses a
+        // top→bottom gradient stroke that fades toward the bottom.
+        const maxK = Math.ceil(W / GRID) + 2;
+        for (let k = -maxK; k <= maxK; k++) {
+          const x = centerX + k * GRID;
+          if (x < -1 || x > W + 1) continue;
+          const major = k % 5 === 0;
+          const a = major ? 0.22 : 0.1;
+          const grad = ctx!.createLinearGradient(0, 0, 0, H);
+          grad.addColorStop(0, hexA(color, a));
+          grad.addColorStop(0.9, hexA(color, 0));
+          grad.addColorStop(1, hexA(color, 0));
+          ctx!.strokeStyle = grad;
+          ctx!.beginPath();
+          ctx!.moveTo(x, 0);
+          ctx!.lineTo(x, H);
+          ctx!.stroke();
+        }
+
+        // Horizontal lines: span full width; alpha scaled per-row by vfade(y).
+        // major = every 5th row from the top.
+        ctx!.strokeStyle = color;
+        let row = 0;
+        for (let y = 0; y <= H; y += GRID, row++) {
+          const major = row % 5 === 0;
+          const a = (major ? 0.22 : 0.1) * vfade(y);
+          if (a <= 0.001) continue;
+          ctx!.globalAlpha = a;
+          ctx!.beginPath();
+          ctx!.moveTo(0, y);
+          ctx!.lineTo(W, y);
+          ctx!.stroke();
+        }
+        ctx!.globalAlpha = 1;
+      }
+
+      function render() {
+        resize();
+        draw();
+      }
+
+      render();
+      window.addEventListener("resize", render);
+      // Redraw on theme change so the line color follows light/dark.
+      const themeObs = new MutationObserver(() => draw());
+      themeObs.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-theme"],
+      });
+    }
+  }
+
+  initBlueprintGrid();
+  document.addEventListener("astro:page-load", initBlueprintGrid);
+</script>
