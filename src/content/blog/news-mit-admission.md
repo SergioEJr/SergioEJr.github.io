@@ -10,4 +10,9 @@ tags:
   - update
   - awards
 heroImage: /src/assets/blog/mit-letter.png
+draft: false # set to true to unpublish
 ---
+
+After years of work, I'm thrilled to share that I've been admitted to MIT's
+Physics PhD program as a Dean of Science Fellow. I'll be heading to Cambridge to
+study nonequilibrium statistical physics and biophysics. Onward!

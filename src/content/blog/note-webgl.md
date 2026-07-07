@@ -10,6 +10,7 @@ tags:
   - webgl
   - webdev
   - simulation
+draft: false # set to true to unpublish
 ---
 
 WebGL allows your browser to use your GPU. It's the backbone behind the interactive simulation on my homepage!

@@ -9,6 +9,7 @@ category: news
 linkTo: /publications/expanding-populations/         # another page on this site
 tags:
   - research
+draft: true # unpublished — example/template; set false to publish
 ---
 
 This body is intentionally ignored — pointer posts don't get their own page.

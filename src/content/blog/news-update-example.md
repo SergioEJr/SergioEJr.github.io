@@ -8,7 +8,7 @@ category: news
 noLink: true
 tags:
   - update
+draft: false # set to true to unpublish
 ---
 
-This body is intentionally ignored — link-less update posts don't get their own
-page. Delete this file (or repurpose it) when you add your real updates.
+This body is intentionally ignored — link-less update posts don't get their own page.

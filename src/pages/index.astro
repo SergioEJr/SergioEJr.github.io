@@ -4,16 +4,15 @@ import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import HeroSim from "../components/HeroSim.astro";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
-import { getCollection } from "astro:content";
 import { url } from "../utils/paths";
 import { pageFade } from "../utils/pageTransition";
-import { getPublishedPosts } from "../utils/posts";
+import { getPublishedPosts, getPublishedResearch } from "../utils/posts";
 
 const posts = (await getPublishedPosts())
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
   .slice(0, 3);
 
-const allResearch = (await getCollection("research")).sort(
+const allResearch = (await getPublishedResearch()).sort(
   (a, b) =>
     b.data.date.valueOf() - a.data.date.valueOf() || a.id.localeCompare(b.id),
 );
