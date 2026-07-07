@@ -8,6 +8,7 @@ authors:
 toc: false # table of contents flag
 tags:
   - intro
+draft: true # unpublished — theme demo/intro post; set false to publish
 ---
 
 Welcome, and thanks for stopping by!

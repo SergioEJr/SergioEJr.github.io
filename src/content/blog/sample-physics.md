@@ -7,8 +7,9 @@ authors:
   - sergio-eraso
 tags:
   - stochastic-processes
+draft: false # set to true to unpublish
 ---
 
 After $N$ unit steps of a symmetric random walk, the mean displacement is zero
 but the variance grows linearly: $\langle x^2 \rangle = N$. So the typical
-distance scales as $\sqrt{N}$ — the hallmark of diffusion. (Placeholder post.)
+distance scales as $\sqrt{N}$ — the hallmark of diffusion.

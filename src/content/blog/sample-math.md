@@ -7,6 +7,7 @@ authors:
   - sergio-eraso
 tags:
   - calculus
+draft: false # set to true to unpublish
 ---
 
 A quick favorite. To evaluate $I = \int_{-\infty}^{\infty} e^{-x^2}\,dx$, square it and switch to polar coordinates:
@@ -15,4 +16,4 @@ $$
 I^2 = \int_{-\infty}^{\infty}\!\!\int_{-\infty}^{\infty} e^{-(x^2+y^2)}\,dx\,dy = \int_0^{2\pi}\!\!\int_0^{\infty} e^{-r^2} r\,dr\,d\theta = \pi.
 $$
 
-So $I = \sqrt{\pi}$. (Placeholder post — replace with your own.)
+So $I = \sqrt{\pi}$.
