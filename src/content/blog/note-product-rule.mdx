@@ -29,20 +29,22 @@ side by its own differential, $df$ and $dg$:
 The new area exceeds the old by two thin strips plus a small corner. The strips
 have areas $g \,df $ and $f\,dg$, whereas the corner $df\,dg$ is a
 second order contribution and drops out in the limit. What
-survives is exactly
+survives is exactly the product rule:
 
 $$
-d(fg) = f \, dg + g \,df
+d(fg) = f \, dg + g \,df.
 $$
 
-the product rule.
-
-The same picture works one dimension up. Take $x^3$ as the volume of a cube of
-side $x$, and grow the side by $dx$. The three faces you can see each grow
+As an example, we will now visually prove the power rule
+$$
+dx^n = n x^{n-1} \, dx
+$$
+for the case $n = 3$. Take $x^3$ as the volume of a cube with
+sides $x$, and grow each side by $dx$. Three faces of the cube each grow
 outward into a slab of volume $x^2\,dx$, so the volume gains $3x^2\,dx$, the
-derivative $3x^2$. What's left over is thinner still: three long edges of order
+derivative of $x^3$. There are some remaining pieces: three long edges of order
 $x\,dx^2$ and a single corner cube $dx^3$. Those are higher order and vanish in
-the limit, exactly like the corner did for the rectangle.
+the limit.
 
 <Figure
   svg={cubeX3}
