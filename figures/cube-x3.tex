@@ -44,6 +44,35 @@
     \draw[hair, muted, dashed] \Q{0}{0}{0} -- \Q{\Xg}{0}{0} -- \Q{\Xg}{\Xg}{0} -- \Q{0}{\Xg}{0} -- cycle;
     \draw[hair, muted, dashed] \Q{0}{\Xg}{0} -- \Q{\Xg}{\Xg}{0} -- \Q{\Xg}{\Xg}{\Xg} -- \Q{0}{\Xg}{\Xg} -- cycle;
     \draw[hair, muted, dashed] \Q{\Xg}{0}{0} -- \Q{\Xg}{\Xg}{0} -- \Q{\Xg}{\Xg}{\Xg} -- \Q{\Xg}{0}{\Xg} -- cycle;
+
+    % --- Three leading x^2 dx slabs, each pulled \pull off the ghost along its
+    % outward normal so the "explosion" reads. Colors match the reference sketch.
+    \def\pull{6}
+
+    % TOP slab (figred): the x-face extruded up by dx (+b). Pulled up by \pull.
+    \begin{scope}[shift={(0,\pull)}]
+      \draw[edge, figred] \Q{0}{\X}{0} -- \Q{\X}{\X}{0} -- \Q{\X}{\X+\dx}{0} -- \Q{0}{\X+\dx}{0} -- cycle;                   % front
+      \draw[edge, figred] \Q{0}{\X+\dx}{0} -- \Q{\X}{\X+\dx}{0} -- \Q{\X}{\X+\dx}{\X} -- \Q{0}{\X+\dx}{\X} -- cycle;        % top
+      \draw[edge, figred] \Q{\X}{\X}{0} -- \Q{\X}{\X+\dx}{0} -- \Q{\X}{\X+\dx}{\X} -- \Q{\X}{\X}{\X} -- cycle;              % right
+      \node[text=figred] at \Q{\X/2}{\X+\dx/2}{0} {$x^2\,dx$};
+    \end{scope}
+
+    % RIGHT slab (figblue): the x-face extruded right by dx (+a). Pulled right by \pull.
+    \begin{scope}[shift={(\pull,0)}]
+      \draw[edge, figblue] \Q{\X}{0}{0} -- \Q{\X+\dx}{0}{0} -- \Q{\X+\dx}{\X}{0} -- \Q{\X}{\X}{0} -- cycle;                 % front
+      \draw[edge, figblue] \Q{\X}{\X}{0} -- \Q{\X+\dx}{\X}{0} -- \Q{\X+\dx}{\X}{\X} -- \Q{\X}{\X}{\X} -- cycle;             % top
+      \draw[edge, figblue] \Q{\X+\dx}{0}{0} -- \Q{\X+\dx}{\X}{0} -- \Q{\X+\dx}{\X}{\X} -- \Q{\X+\dx}{0}{\X} -- cycle;       % right
+      \node[text=figblue, rotate=-90] at \Q{\X+\dx}{\X/2}{\X/2} {$x^2\,dx$};
+    \end{scope}
+
+    % FRONT slab (figorange): the x-face extruded toward viewer by dx (-c depth).
+    % Pulled toward viewer (-c) by \pull.
+    \begin{scope}[shift={({-\pull*\cx},{-\pull*\cy})}]
+      \draw[edge, figorange] \Q{0}{0}{0} -- \Q{\X}{0}{0} -- \Q{\X}{\X}{0} -- \Q{0}{\X}{0} -- cycle;                        % front face
+      \draw[edge, figorange] \Q{0}{\X}{-\dx} -- \Q{\X}{\X}{-\dx} -- \Q{\X}{\X}{0} -- \Q{0}{\X}{0} -- cycle;                % top
+      \draw[edge, figorange] \Q{\X}{0}{-\dx} -- \Q{\X}{\X}{-\dx} -- \Q{\X}{\X}{0} -- \Q{\X}{0}{0} -- cycle;                % right
+      \node[text=figorange] at \Q{\X/2}{\X/2}{0} {$x^2\,dx$};
+    \end{scope}
   \end{scope}
 \end{tikzpicture}
 \end{document}
