@@ -32,5 +32,18 @@
     \draw[edge, ink] \Q{\X}{0}{0} -- \Q{\X}{\X}{0} -- \Q{\X}{\X}{\X} -- \Q{\X}{0}{\X} -- cycle;
     \node[text=ink] at \Q{\X/2}{\X/2}{0} {$x^3$};
   \end{scope}
+
+  % --- Arrow between the two cubes.
+  \def\Rx{95}  % page-mm x-shift to the right-hand exploded view
+  \draw[edge, ink, ->] (66, {\X/2}) -- (\Rx-6, {\X/2});
+
+  % --- Right: exploded grown cube. Ghost of (x+dx)^3 as faint dashed edges.
+  \begin{scope}[shift={(\Rx,0)}]
+    \def\Xg{50} % \X + \dx
+    % ghost: three visible faces of the grown cube as faint dashed edges
+    \draw[hair, muted, dashed] \Q{0}{0}{0} -- \Q{\Xg}{0}{0} -- \Q{\Xg}{\Xg}{0} -- \Q{0}{\Xg}{0} -- cycle;
+    \draw[hair, muted, dashed] \Q{0}{\Xg}{0} -- \Q{\Xg}{\Xg}{0} -- \Q{\Xg}{\Xg}{\Xg} -- \Q{0}{\Xg}{\Xg} -- cycle;
+    \draw[hair, muted, dashed] \Q{\Xg}{0}{0} -- \Q{\Xg}{\Xg}{0} -- \Q{\Xg}{\Xg}{\Xg} -- \Q{\Xg}{0}{\Xg} -- cycle;
+  \end{scope}
 \end{tikzpicture}
 \end{document}
