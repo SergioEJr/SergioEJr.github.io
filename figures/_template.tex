@@ -1,0 +1,23 @@
+% Copy this file to figures/<name>.tex to start a new figure, then run
+%   ./fig.sh <name>            (or `npm run watch:figures` for live rebuilds)
+% Outputs: src/assets/blog/<name>.svg (themed, for the site) + build/<name>.pdf.
+%
+% The \documentclass block below MUST stay verbatim — it picks the pgf driver per
+% engine (dvisvgm for the DVI→SVG web build, pdftex for the print PDF). Hardcoding
+% either driver breaks the other output. Everything else shared (colors, font
+% size matching body text, edge/hair styles) lives in _preamble.tex.
+\ifnum\pdfoutput>0
+  \documentclass[tikz,border=3pt]{standalone}         % pdflatex → PDF proof
+\else
+  \documentclass[tikz,border=3pt,dvisvgm]{standalone} % latex   → web SVG
+\fi
+\input{_preamble}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+  % Use only the four palette colors (ink/accent/muted/figred) so the figure
+  % flips with the theme. Dimension in mm; \normalsize text ≈ site body text.
+  \draw[edge, ink] (0,0) rectangle (40,25);
+  \node[text=accent] at (20,12.5) {$f(p)$};
+\end{tikzpicture}
+\end{document}

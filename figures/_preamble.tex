@@ -1,0 +1,39 @@
+% Shared setup for all site figures — \input by every figures/*.tex.
+% Change the palette, font size, or driver logic HERE and every figure inherits
+% it on next rebuild. See src/assets/blog/README.md for the full workflow.
+%
+% NOTE: this file is \input AFTER \documentclass (it needs amsmath/tikz loaded),
+% but the \documentclass line itself carries the driver switch and must stay in
+% each figure — see _template.tex. Keep figure .tex files starting from that
+% template so the driver logic is never forgotten.
+
+\usepackage{amsmath}
+
+% --- Palette: sentinel hexes = the LIGHT-theme values from DESIGN.md. ----------
+% The PDF proof / Overleaf output therefore look like the light rendering, and
+% fig.sh rewrites each hex to its themed CSS variable in the web SVG:
+%   ink    #000000 -> var(--color-text-main, currentColor)   (also all black strokes)
+%   accent #003366 -> var(--color-accent, #003366)
+%   muted  #555555 -> var(--color-text-muted, #555555)
+%   figred #b91c1c -> var(--fig-red, #b91c1c)
+\definecolor{ink}{HTML}{000000}
+\definecolor{accent}{HTML}{003366}
+\definecolor{muted}{HTML}{555555}
+\definecolor{figred}{HTML}{B91C1C}
+
+% --- Figure body font size = site body text. ---------------------------------
+% The site renders body text at 18px ≈ 13.5pt. dvisvgm emits the SVG at its
+% intrinsic point size and <Figure> shows it ~1:1, so to make figure labels match
+% surrounding prose we set the figure's \normalsize to 13.5/16pt. Individual
+% labels can still deviate with font=\small / font=\large as needed. Computer
+% Modern matches the KaTeX body math, so $dg_p(v)$ reads identically in both.
+\newcommand{\figfontsize}{\fontsize{13.5}{16}\selectfont}
+
+% Apply it as the default font for every tikzpicture, plus sane global defaults.
+% Dimension figures in mm (x=1mm,y=1mm) so geometry and this pt-based text stay
+% independent — scale the drawing by editing coordinates, not the type size.
+\tikzset{
+  every picture/.style = {font=\figfontsize, line join=round},
+  edge/.style          = {line width=1pt},
+  hair/.style          = {line width=1pt},
+}
