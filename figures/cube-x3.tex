@@ -19,6 +19,42 @@
   % Point macro: \Q{a}{b}{c} expands to a page coordinate in mm.
   \newcommand{\Q}[3]{({(#1)*\ax + (#2)*\bx + (#3)*\cx}, {(#1)*\ay + (#2)*\by + (#3)*\cy})}
 
+  % Box macro: \boxABC{a0}{b0}{c0}{la}{lb}{lc}{face-style}{edge-style} draws the
+  % three visible faces (top, front, right) of an axis-aligned box with near-
+  % bottom-left corner (a0,b0,c0) and extents (la,lb,lc). Faces are filled with
+  % {face-style} (for occlusion) and stroked with {edge-style}. Drawing filled
+  % faces back-to-front (painter's order) makes nearer boxes occlude farther ones.
+  \newcommand{\boxABC}[8]{%
+    \def\aA{#1}\def\bB{#2}\def\cC{#3}%
+    \def\la{#4}\def\lb{#5}\def\lc{#6}%
+    % front face (c = c0), then top (b = b0+lb), then right (a = a0+la)
+    \filldraw[#7, #8] \Q{\aA}{\bB}{\cC} -- \Q{\aA+\la}{\bB}{\cC} -- \Q{\aA+\la}{\bB+\lb}{\cC} -- \Q{\aA}{\bB+\lb}{\cC} -- cycle;
+    \filldraw[#7, #8] \Q{\aA}{\bB+\lb}{\cC} -- \Q{\aA+\la}{\bB+\lb}{\cC} -- \Q{\aA+\la}{\bB+\lb}{\cC+\lc} -- \Q{\aA}{\bB+\lb}{\cC+\lc} -- cycle;
+    \filldraw[#7, #8] \Q{\aA+\la}{\bB}{\cC} -- \Q{\aA+\la}{\bB+\lb}{\cC} -- \Q{\aA+\la}{\bB+\lb}{\cC+\lc} -- \Q{\aA+\la}{\bB}{\cC+\lc} -- cycle;
+  }
+
+  % Wireframe box: \wireABC{a0}{b0}{c0}{la}{lb}{lc}{style} draws ALL 12 edges of
+  % the box (so it's see-through) with {style}. For the subleading pieces.
+  \newcommand{\wireABC}[7]{%
+    \def\aA{#1}\def\bB{#2}\def\cC{#3}%
+    \def\la{#4}\def\lb{#5}\def\lc{#6}%
+    % the four edges along a
+    \draw[#7] \Q{\aA}{\bB}{\cC}         -- \Q{\aA+\la}{\bB}{\cC};
+    \draw[#7] \Q{\aA}{\bB+\lb}{\cC}     -- \Q{\aA+\la}{\bB+\lb}{\cC};
+    \draw[#7] \Q{\aA}{\bB}{\cC+\lc}     -- \Q{\aA+\la}{\bB}{\cC+\lc};
+    \draw[#7] \Q{\aA}{\bB+\lb}{\cC+\lc} -- \Q{\aA+\la}{\bB+\lb}{\cC+\lc};
+    % the four edges along b
+    \draw[#7] \Q{\aA}{\bB}{\cC}         -- \Q{\aA}{\bB+\lb}{\cC};
+    \draw[#7] \Q{\aA+\la}{\bB}{\cC}     -- \Q{\aA+\la}{\bB+\lb}{\cC};
+    \draw[#7] \Q{\aA}{\bB}{\cC+\lc}     -- \Q{\aA}{\bB+\lb}{\cC+\lc};
+    \draw[#7] \Q{\aA+\la}{\bB}{\cC+\lc} -- \Q{\aA+\la}{\bB+\lb}{\cC+\lc};
+    % the four edges along c
+    \draw[#7] \Q{\aA}{\bB}{\cC}         -- \Q{\aA}{\bB}{\cC+\lc};
+    \draw[#7] \Q{\aA+\la}{\bB}{\cC}     -- \Q{\aA+\la}{\bB}{\cC+\lc};
+    \draw[#7] \Q{\aA}{\bB+\lb}{\cC}     -- \Q{\aA}{\bB+\lb}{\cC+\lc};
+    \draw[#7] \Q{\aA+\la}{\bB+\lb}{\cC} -- \Q{\aA+\la}{\bB+\lb}{\cC+\lc};
+  }
+
   \def\X{40}   % big cube edge
   \def\dx{10}  % growth step
 
@@ -35,52 +71,75 @@
 
   % --- Arrow between the two cubes.
   \def\Rx{95}  % page-mm x-shift to the right-hand exploded view
-  \draw[edge, ink, ->] (66, {\X/2}) -- (\Rx-6, {\X/2});
+  \draw[edge, ink, ->] (66, {\X/2}) -- (\Rx-14, {\X/2});
 
-  % --- Right: exploded grown cube. Ghost of (x+dx)^3 as faint dashed edges.
+  % --- Right: exploded (x+dx)^3. The x^3 core, with its 7 growth pieces pulled
+  % out along their axes so every piece is visible: three x^2 dx slabs (colored,
+  % the leading 3x^2) and three x dx^2 edges + one dx^3 corner (faint, subleading
+  % — they vanish in the limit). Pieces are pulled by \pull along each growth
+  % axis; colored faces are filled (translucent tint) so slabs read as solid.
   \begin{scope}[shift={(\Rx,0)}]
-    \def\Xg{50} % \X + \dx
-    % ghost: three visible faces of the grown cube as faint dashed edges
-    \draw[hair, muted, dashed] \Q{0}{0}{0} -- \Q{\Xg}{0}{0} -- \Q{\Xg}{\Xg}{0} -- \Q{0}{\Xg}{0} -- cycle;
-    \draw[hair, muted, dashed] \Q{0}{\Xg}{0} -- \Q{\Xg}{\Xg}{0} -- \Q{\Xg}{\Xg}{\Xg} -- \Q{0}{\Xg}{\Xg} -- cycle;
-    \draw[hair, muted, dashed] \Q{\Xg}{0}{0} -- \Q{\Xg}{\Xg}{0} -- \Q{\Xg}{\Xg}{\Xg} -- \Q{\Xg}{0}{\Xg} -- cycle;
+    \def\pull{9}
+    % Per-axis pull offsets in page mm: +a is (\pull,0); +b is (0,\pull);
+    % +c (depth) is (\pull*\cx, \pull*\cy).
+    % Solid pieces: opaque page-color fill (figbg) so you can't see through them;
+    % only the EDGES carry the piece's color.
+    \tikzset{
+      redface/.style    = {fill=figbg, draw=figred},
+      blueface/.style   = {fill=figbg, draw=figblue},
+      orangeface/.style = {fill=figbg, draw=figorange},
+      coreface/.style   = {fill=figbg, draw=ink},
+      wire/.style       = {muted, dashed, line width=1pt},
+    }
 
-    % --- Three leading x^2 dx slabs, each pulled \pull off the ghost along its
-    % outward normal so the "explosion" reads. Colors match the reference sketch.
-    \def\pull{6}
+    % The three growth directions all point toward the VIEWER's front: +a
+    % (right), +b (up), and -c (out of the screen = down-left). Every piece is
+    % pulled by \pull along the axes it grows on, so the subleading edges/corner
+    % nestle in the FRONT gaps between the slabs.
 
-    % TOP slab (figred): the x-face extruded up by dx (+b). Pulled up by \pull.
+    % --- x^3 core cube. ------------------------------------------------------
+    \boxABC{0}{0}{0}{\X}{\X}{\X}{coreface}{edge}
+    \node[text=ink] at \Q{\X/2}{\X/2}{0} {$x^3$};
+
+    % --- Three leading x^2 dx slabs. -----------------------------------------
+    % TOP slab (figred): grows +b, pulled up.
     \begin{scope}[shift={(0,\pull)}]
-      \draw[edge, figred] \Q{0}{\X}{0} -- \Q{\X}{\X}{0} -- \Q{\X}{\X+\dx}{0} -- \Q{0}{\X+\dx}{0} -- cycle;                   % front
-      \draw[edge, figred] \Q{0}{\X+\dx}{0} -- \Q{\X}{\X+\dx}{0} -- \Q{\X}{\X+\dx}{\X} -- \Q{0}{\X+\dx}{\X} -- cycle;        % top
-      \draw[edge, figred] \Q{\X}{\X}{0} -- \Q{\X}{\X+\dx}{0} -- \Q{\X}{\X+\dx}{\X} -- \Q{\X}{\X}{\X} -- cycle;              % right
-      \node[text=figred] at \Q{\X/2}{\X+\dx/2}{0} {$x^2\,dx$};
+      \boxABC{0}{\X}{0}{\X}{\dx}{\X}{redface}{edge}
+      % label on the (large) top face, centered.
+      \node[text=figred] at \Q{\X/2}{\X+\dx}{\X/2} {$x^2\,dx$};
     \end{scope}
-
-    % RIGHT slab (figblue): the x-face extruded right by dx (+a). Pulled right by \pull.
+    % RIGHT slab (figblue): grows +a, pulled right.
     \begin{scope}[shift={(\pull,0)}]
-      \draw[edge, figblue] \Q{\X}{0}{0} -- \Q{\X+\dx}{0}{0} -- \Q{\X+\dx}{\X}{0} -- \Q{\X}{\X}{0} -- cycle;                 % front
-      \draw[edge, figblue] \Q{\X}{\X}{0} -- \Q{\X+\dx}{\X}{0} -- \Q{\X+\dx}{\X}{\X} -- \Q{\X}{\X}{\X} -- cycle;             % top
-      \draw[edge, figblue] \Q{\X+\dx}{0}{0} -- \Q{\X+\dx}{\X}{0} -- \Q{\X+\dx}{\X}{\X} -- \Q{\X+\dx}{0}{\X} -- cycle;       % right
+      \boxABC{\X}{0}{0}{\dx}{\X}{\X}{blueface}{edge}
+      % label on the (large) right face, centered, running vertically.
       \node[text=figblue, rotate=-90] at \Q{\X+\dx}{\X/2}{\X/2} {$x^2\,dx$};
     \end{scope}
-
-    % FRONT slab (figorange): the x-face extruded toward viewer by dx (-c depth).
-    % Pulled toward viewer (-c) by \pull.
+    % FRONT slab (figorange): grows -c (toward viewer), the c=-dx..0 layer in
+    % front of the core, pulled down-left so it sits clear in front.
     \begin{scope}[shift={({-\pull*\cx},{-\pull*\cy})}]
-      \draw[edge, figorange] \Q{0}{0}{0} -- \Q{\X}{0}{0} -- \Q{\X}{\X}{0} -- \Q{0}{\X}{0} -- cycle;                        % front face
-      \draw[edge, figorange] \Q{0}{\X}{-\dx} -- \Q{\X}{\X}{-\dx} -- \Q{\X}{\X}{0} -- \Q{0}{\X}{0} -- cycle;                % top
-      \draw[edge, figorange] \Q{\X}{0}{-\dx} -- \Q{\X}{\X}{-\dx} -- \Q{\X}{\X}{0} -- \Q{\X}{0}{0} -- cycle;                % right
-      \node[text=figorange] at \Q{\X/2}{\X/2}{0} {$x^2\,dx$};
+      \boxABC{0}{0}{-\dx}{\X}{\X}{\dx}{orangeface}{edge}
+      \node[text=figorange] at \Q{\X/2}{\X/2}{-\dx} {$x^2\,dx$};
     \end{scope}
 
-    % Subleading dx^3 corner cube at the far top-right-back of the ghost — the
-    % tiny piece where all three slabs would overlap. Faint (muted dashed); it
-    % vanishes fastest in the limit. The three x dx^2 columns are left implicit
-    % in the ghost outline to keep the figure readable.
-    \draw[hair, muted, dashed] \Q{\X}{\X}{\X} -- \Q{\Xg}{\X}{\X} -- \Q{\Xg}{\Xg}{\X} -- \Q{\X}{\Xg}{\X} -- cycle;                 % front
-    \draw[hair, muted, dashed] \Q{\X}{\Xg}{\X} -- \Q{\Xg}{\Xg}{\X} -- \Q{\Xg}{\Xg}{\Xg} -- \Q{\X}{\Xg}{\Xg} -- cycle;            % top
-    \draw[hair, muted, dashed] \Q{\Xg}{\X}{\X} -- \Q{\Xg}{\Xg}{\X} -- \Q{\Xg}{\Xg}{\Xg} -- \Q{\Xg}{\X}{\Xg} -- cycle;            % right
+    % --- Subleading pieces: TRUE WIREFRAMES (see-through), nestled in the FRONT
+    % gaps. They vanish fastest in the limit, so they're drawn as faint dashed
+    % skeletons rather than solid volumes.
+    % x dx^2 edge (grows +b,-c): front-top edge, pulled up + down-left.
+    \begin{scope}[shift={({-\pull*\cx},{\pull-\pull*\cy})}]
+      \wireABC{0}{\X}{-\dx}{\X}{\dx}{\dx}{wire}
+    \end{scope}
+    % x dx^2 edge (grows +a,-c): front-right edge, pulled right + down-left.
+    \begin{scope}[shift={({\pull-\pull*\cx},{-\pull*\cy})}]
+      \wireABC{\X}{0}{-\dx}{\dx}{\X}{\dx}{wire}
+    \end{scope}
+    % x dx^2 edge (grows +a,+b): top-right edge, pulled right + up.
+    \begin{scope}[shift={(\pull,\pull)}]
+      \wireABC{\X}{\X}{0}{\dx}{\dx}{\X}{wire}
+    \end{scope}
+    % dx^3 corner (grows +a,+b,-c): front-top-right, pulled along all three.
+    \begin{scope}[shift={({\pull-\pull*\cx},{\pull-\pull*\cy})}]
+      \wireABC{\X}{\X}{-\dx}{\dx}{\dx}{\dx}{wire}
+    \end{scope}
   \end{scope}
 \end{tikzpicture}
 \end{document}

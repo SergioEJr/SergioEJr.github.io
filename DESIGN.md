@@ -20,7 +20,7 @@ Values mirror `src/styles/global.css`, which is **authoritative** — if the
 | `--color-accent-light` | `#e6f0fa` | `#1e3a8a` | Accent fill / highlight backgrounds. |
 | `--color-border` | `#eaeaea` | `#334155` | Hairlines, dividers, card borders. |
 | `--fig-red` | `#b91c1c` | `#f87171` | Figure-only red slab/accent (see `src/assets/blog/README.md`). |
-| `--fig-blue` | `#1d4ed8` | `#60a5fa` | Figure-only blue (legible on white; dark = the accent blue). |
+| `--fig-blue` | `#173f7a` | `#60a5fa` | Figure-only blue (legible on white; dark = the accent blue). |
 | `--fig-orange` | `#c2410c` | `#fb923c` | Figure-only orange for a third distinct slab color. |
 
 ## Theme-aware SVG rules
