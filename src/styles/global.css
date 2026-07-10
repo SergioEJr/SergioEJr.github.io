@@ -21,6 +21,8 @@
 
 	/* Diagrams (figure-only accent; see src/assets/blog/README.md) */
 	--fig-red: #b91c1c;
+	--fig-blue: #1d4ed8;
+	--fig-orange: #c2410c;
 
 	/* Spacing & UI */
 	--max-width: 960px;
@@ -48,6 +50,8 @@
 
 	/* Diagrams */
 	--fig-red: #f87171;
+	--fig-blue: #60a5fa;
+	--fig-orange: #fb923c;
 
 	--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
 	--shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);

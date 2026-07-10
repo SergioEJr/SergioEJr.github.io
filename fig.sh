@@ -31,6 +31,8 @@ perl -pe '
   s/#003366\b|#036\b/var(--color-accent, #003366)/g;
   s/#555555\b|#555\b/var(--color-text-muted, #555555)/g;
   s/#b91c1c\b/var(--fig-red, #b91c1c)/gi;
+  s/#1d4ed8\b/var(--fig-blue, #1d4ed8)/gi;
+  s/#c2410c\b/var(--fig-orange, #c2410c)/gi;
   s/currentColor/var(--color-text-main, currentColor)/g;
 ' "build/$n.svg" > "src/assets/blog/$n.svg"
 
