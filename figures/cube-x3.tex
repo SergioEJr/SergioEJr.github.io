@@ -73,6 +73,14 @@
       \draw[edge, figorange] \Q{\X}{0}{-\dx} -- \Q{\X}{\X}{-\dx} -- \Q{\X}{\X}{0} -- \Q{\X}{0}{0} -- cycle;                % right
       \node[text=figorange] at \Q{\X/2}{\X/2}{0} {$x^2\,dx$};
     \end{scope}
+
+    % Subleading dx^3 corner cube at the far top-right-back of the ghost — the
+    % tiny piece where all three slabs would overlap. Faint (muted dashed); it
+    % vanishes fastest in the limit. The three x dx^2 columns are left implicit
+    % in the ghost outline to keep the figure readable.
+    \draw[hair, muted, dashed] \Q{\X}{\X}{\X} -- \Q{\Xg}{\X}{\X} -- \Q{\Xg}{\Xg}{\X} -- \Q{\X}{\Xg}{\X} -- cycle;                 % front
+    \draw[hair, muted, dashed] \Q{\X}{\Xg}{\X} -- \Q{\Xg}{\Xg}{\X} -- \Q{\Xg}{\Xg}{\Xg} -- \Q{\X}{\Xg}{\Xg} -- cycle;            % top
+    \draw[hair, muted, dashed] \Q{\Xg}{\X}{\X} -- \Q{\Xg}{\Xg}{\X} -- \Q{\Xg}{\Xg}{\Xg} -- \Q{\Xg}{\X}{\Xg} -- cycle;            % right
   \end{scope}
 \end{tikzpicture}
 \end{document}

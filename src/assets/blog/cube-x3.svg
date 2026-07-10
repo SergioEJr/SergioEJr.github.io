@@ -153,6 +153,27 @@ text.f1 {font-family:cmr9;font-size:8.966376px}
 </g>
 </g>
 </g>
+<g stroke-width='1.0'>
+<g fill='var(--color-text-muted, #555555)' stroke='var(--color-text-muted, #555555)'>
+<g stroke-dasharray='3.0,3.0' stroke-dashoffset='0.0'>
+<path d='M441.0154 153.64476H469.468V182.09737H441.0154Z' fill='none'/>
+</g>
+</g>
+</g>
+<g stroke-width='1.0'>
+<g fill='var(--color-text-muted, #555555)' stroke='var(--color-text-muted, #555555)'>
+<g stroke-dasharray='3.0,3.0' stroke-dashoffset='0.0'>
+<path d='M441.0154 182.09737H469.468L483.6943 192.05595H455.2417Z' fill='none'/>
+</g>
+</g>
+</g>
+<g stroke-width='1.0'>
+<g fill='var(--color-text-muted, #555555)' stroke='var(--color-text-muted, #555555)'>
+<g stroke-dasharray='3.0,3.0' stroke-dashoffset='0.0'>
+<path d='M469.468 153.64476V182.09737L483.6943 192.05595V163.60335Z' fill='none'/>
+</g>
+</g>
+</g>
 </g>
 </g>
 </g>
