@@ -24,7 +24,7 @@ Recommended hero size: ~1600px wide. Anything large is fine — Astro downscales
 
 ## Diagrams (`<Figure>`)
 
-For diagrams that must work in light *and* dark mode, use the `Figure` component
+For diagrams that must work in light _and_ dark mode, use the `Figure` component
 (`src/components/Figure.astro`) in `.mdx` posts. Three modes:
 
 1. **Adaptive SVG** (best for line-art) — export an SVG with black ink, then
@@ -39,3 +39,10 @@ For diagrams that must work in light *and* dark mode, use the `Figure` component
 3. **Single image on a card** — `<Figure src="/blog/fig.png" caption="..." />`
 
 Optional `width` (px) caps the figure. Export raster images at ~2× display size.
+
+### Canvas colors
+
+Diagrams sit on the page background, which flips with the theme:
+`#ffffff` (light) / `#0f172a` deep slate (dark). Design for both — prefer
+`currentColor` ink so line-art adapts automatically. See `/DESIGN.md` (repo
+root) for the full palette and theme-aware SVG rules.

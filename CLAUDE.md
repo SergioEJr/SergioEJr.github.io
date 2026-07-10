@@ -62,6 +62,8 @@ Always finish a change with `npm run build` and confirm it's clean.
   works, display math doesn't (MDX limitation).
 - **`src/components/Figure.astro`** — diagrams that adapt to light/dark
   (adaptive `currentColor` SVG, light/dark image pair, or single-image card).
+- **`DESIGN.md`** (repo root) — light/dark color palette and theme-aware SVG
+  rules. Read it before generating any diagram, chart, or `.svg`.
 
 ## Math in MDX
 
