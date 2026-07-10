@@ -1,0 +1,36 @@
+% Derivative of x^3 as an exploded cube: a solid x^3 cube grows by dx on its
+% three visible faces -> three x^2 dx slabs (the derivative 3x^2) plus faint
+% subleading pieces that vanish in the limit. See _template.tex / _preamble.tex
+% for the shared setup; this file keeps only the driver switch and the drawing.
+\ifnum\pdfoutput>0
+  \documentclass[tikz,border=3pt]{standalone}         % pdflatex → PDF proof
+\else
+  \documentclass[tikz,border=3pt,dvisvgm]{standalone} % latex   → web SVG
+\fi
+\input{_preamble}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+  % Isometric-ish projection: cube-space (a=right, b=up, c=depth) -> page mm.
+  % Depth axis goes up-and-right for a standard "3/4 view" cube.
+  \def\ax{1}\def\ay{0}      % right  direction (page dx,dy per unit a)
+  \def\bx{0}\def\by{1}      % up     direction
+  \def\cx{0.5}\def\cy{0.35} % depth  direction (foreshortened)
+  % Point macro: \Q{a}{b}{c} expands to a page coordinate in mm.
+  \newcommand{\Q}[3]{({(#1)*\ax + (#2)*\bx + (#3)*\cx}, {(#1)*\ay + (#2)*\by + (#3)*\cy})}
+
+  \def\X{40}   % big cube edge
+  \def\dx{10}  % growth step
+
+  % --- Left: solid cube x^3 (three visible faces). Origin at its near-bottom-left.
+  \begin{scope}[shift={(0,0)}]
+    % front face
+    \draw[edge, ink] \Q{0}{0}{0} -- \Q{\X}{0}{0} -- \Q{\X}{\X}{0} -- \Q{0}{\X}{0} -- cycle;
+    % top face
+    \draw[edge, ink] \Q{0}{\X}{0} -- \Q{\X}{\X}{0} -- \Q{\X}{\X}{\X} -- \Q{0}{\X}{\X} -- cycle;
+    % right face
+    \draw[edge, ink] \Q{\X}{0}{0} -- \Q{\X}{\X}{0} -- \Q{\X}{\X}{\X} -- \Q{\X}{0}{\X} -- cycle;
+    \node[text=ink] at \Q{\X/2}{\X/2}{0} {$x^3$};
+  \end{scope}
+\end{tikzpicture}
+\end{document}
