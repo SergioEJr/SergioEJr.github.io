@@ -35,10 +35,10 @@ const isNote = post.data.category === 'notes';
 				<a
 					href={link.href}
 					{...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-					data-umami-event="journal-post"
-					data-umami-event-title={post.data.title}
-					data-umami-event-category={post.data.category}
-					data-umami-event-external={link.external ? 'true' : 'false'}
+					data-track-journal
+					data-track-title={post.data.title}
+					data-track-category={post.data.category}
+					data-track-external={link.external ? 'true' : 'false'}
 				>
 					<span class="j-title-text" set:html={renderInline(post.data.title)} />
 					{link.external && (
@@ -140,3 +140,40 @@ const isNote = post.data.category === 'notes';
 		.j-index { display: none; }
 	}
 </style>
+
+<script>
+	// Journal-post click analytics, fired MANUALLY on pointerdown rather than via
+	// umami's declarative `data-umami-event` attributes.
+	//
+	// Why: umami's built-in click tracking hooks the `click` event and sends its
+	// beacon (POST gateway.umami.is/api/send) before the link's navigation
+	// proceeds. In Firefox that send blocks the navigation for a noticeable beat
+	// — the "delay before the request is sent" on Journal links (Research/Project
+	// links have no data-umami-event, so they never hit this). pointerdown fires
+	// ~before the click that triggers navigation, so tracking here puts the beacon
+	// in flight early and never delays the load. See the `data-track-*` attrs on
+	// the title <a> above (renamed from data-umami-event so umami's own handler
+	// doesn't also fire and re-introduce the block/double-count).
+	//
+	// One delegated listener on `document`, which survives ClientRouter swaps, so
+	// it's registered exactly once (guarded) and covers posts rendered on any nav.
+	(() => {
+		const w = window as any;
+		if (w.__journalTrackBound) return;
+		w.__journalTrackBound = true;
+		document.addEventListener(
+			'pointerdown',
+			(e) => {
+				const a = (e.target as Element)?.closest?.('a[data-track-journal]') as HTMLElement | null;
+				if (!a || typeof w.umami?.track !== 'function') return;
+				w.umami.track('journal-post', {
+					title: a.dataset.trackTitle,
+					category: a.dataset.trackCategory,
+					external: a.dataset.trackExternal,
+				});
+			},
+			// passive: we never preventDefault; lets the browser proceed immediately.
+			{ passive: true, capture: true }
+		);
+	})();
+</script>
