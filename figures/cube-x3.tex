@@ -36,28 +36,13 @@
   \def\X{40}   % big cube edge
   \def\dx{5}   % growth step
 
-  % --- Left: solid cube x^3 (three visible faces). Origin at its near-bottom-left.
-  \begin{scope}[shift={(0,0)}]
-    % front face
-    \draw[edge, ink] \Q{0}{0}{0} -- \Q{\X}{0}{0} -- \Q{\X}{\X}{0} -- \Q{0}{\X}{0} -- cycle;
-    % top face
-    \draw[edge, ink] \Q{0}{\X}{0} -- \Q{\X}{\X}{0} -- \Q{\X}{\X}{\X} -- \Q{0}{\X}{\X} -- cycle;
-    % right face
-    \draw[edge, ink] \Q{\X}{0}{0} -- \Q{\X}{\X}{0} -- \Q{\X}{\X}{\X} -- \Q{\X}{0}{\X} -- cycle;
-    \node[text=ink] at \Q{\X/2}{\X/2}{0} {$x^3$};
-  \end{scope}
-
-  % --- Arrow between the two cubes.
-  \def\Rx{95}  % page-mm x-shift to the right-hand exploded view
-  \draw[edge, ink, ->] (66, {\X/2}) -- (\Rx-14, {\X/2});
-
-  % --- Right: exploded (x+dx)^3. The x^3 core, with its 7 growth pieces pulled
-  % out along their axes so every piece is visible: three x^2 dx slabs (colored,
-  % the leading 3x^2) and three x dx^2 edges + one dx^3 corner (faint, subleading
-  % — they vanish in the limit). Pieces are pulled by \pull along each growth
-  % axis; colored faces are filled (translucent tint) so slabs read as solid.
-  \begin{scope}[shift={(\Rx,0)}]
-    \def\pull{9}
+  % --- Exploded (x+dx)^3. The x^3 core, with its 7 growth pieces pulled out
+  % along their axes so every piece is visible: three x^2 dx slabs (colored, the
+  % leading 3x^2) and three x dx^2 edges + one dx^3 corner (faint, subleading —
+  % they vanish in the limit). Pieces are pulled by \pull along each growth axis;
+  % colored faces are filled (page color) so slabs read as solid.
+  \begin{scope}
+    \def\pull{16}
     % Per-axis pull offsets in page mm: +a is (\pull,0); +b is (0,\pull);
     % +c (depth) is (\pull*\cx, \pull*\cy).
     % Solid pieces: opaque page-color fill (figbg) so you can't see through them;
