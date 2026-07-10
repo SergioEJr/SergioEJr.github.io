@@ -13,16 +13,16 @@
 
   \draw[edge, ink]              (0,0)      rectangle (\F,\G);
    \draw[hair, muted]            (\F,\G)    rectangle (\F+\df,\G+\dg);
-  \draw[edge, accent]           (0,\G)     rectangle (\F,\G+\dg);
+  \draw[edge, figblue]          (0,\G)     rectangle (\F,\G+\dg);
   \draw[edge, figred]           (\F,0)     rectangle (\F+\df,\G);
  
 
-  \node[left,  text=accent] at (-2,\G+\dg/2)     {$dg$};
+  \node[left,  text=figblue] at (-2,\G+\dg/2)     {$dg$};
   \node[left,  text=ink]    at (-2,\G/2)         {$g$};
   \node[below, text=ink]    at (\F/2,-2)         {$f$};
   \node[below, text=figred] at (\F+\df/2,-2)     {$df$};
 
-  \node[text=accent]                    at (\F/2,\G+\dg/2)   {$f\,dg$};
+  \node[text=figblue]                   at (\F/2,\G+\dg/2)   {$f\,dg$};
   \node[text=figred, rotate=-90]        at (\F+\df/2,\G/2)   {$g\,df$};
   \node[text=muted, scale=0.8]        at (\F+\df/2,\G+\dg/2) {$O(d^2)$};
 \end{tikzpicture}

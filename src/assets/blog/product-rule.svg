@@ -26,7 +26,7 @@ text.f2 {font-family:cmr12;font-size:14.346196px}
 </g>
 </g>
 <g stroke-width='1.0'>
-<g fill='var(--color-accent, #003366)' stroke='var(--color-accent, #003366)'>
+<g fill='var(--fig-blue, #1d4ed8)' stroke='var(--fig-blue, #1d4ed8)'>
 <path d='M0 113.81042V153.64407H176.40616V113.81042ZM176.40616 153.64407' fill='none'/>
 </g>
 </g>
@@ -37,9 +37,9 @@ text.f2 {font-family:cmr12;font-size:14.346196px}
 </g>
 <g transform='translate(-23.81834,130.12726)'>
 <g stroke='none' transform='scale(-1.00375,1.00375)translate(-41.961328,84.556981)scale(-1,-1)'>
-<g fill='var(--color-accent, #003366)'>
+<g fill='var(--fig-blue, #1d4ed8)'>
 <g stroke='none'>
-<text class='f0' x='-41.961328' y='84.556981'><tspan fill='var(--color-accent, #003366)'>dg</tspan></text>
+<text class='f0' x='-41.961328' y='84.556981'><tspan fill='var(--fig-blue, #1d4ed8)'>dg</tspan></text>
 </g>
 </g>
 </g>
@@ -73,9 +73,9 @@ text.f2 {font-family:cmr12;font-size:14.346196px}
 </g>
 <g transform='translate(75.46198,130.12726)'>
 <g stroke='none' transform='scale(-1.00375,1.00375)translate(-41.961328,84.556981)scale(-1,-1)'>
-<g fill='var(--color-accent, #003366)'>
+<g fill='var(--fig-blue, #1d4ed8)'>
 <g stroke='none'>
-<text class='f0' x='-41.961328' y='84.556981'><tspan fill='var(--color-accent, #003366)'>f</tspan><tspan fill='var(--color-accent, #003366)' x='-31.114616'>dg</tspan></text>
+<text class='f0' x='-41.961328' y='84.556981'><tspan fill='var(--fig-blue, #1d4ed8)'>f</tspan><tspan fill='var(--fig-blue, #1d4ed8)' x='-31.114616'>dg</tspan></text>
 </g>
 </g>
 </g>
