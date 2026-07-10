@@ -33,28 +33,6 @@
     \filldraw[#7, #8] \Q{\aA+\la}{\bB}{\cC} -- \Q{\aA+\la}{\bB+\lb}{\cC} -- \Q{\aA+\la}{\bB+\lb}{\cC+\lc} -- \Q{\aA+\la}{\bB}{\cC+\lc} -- cycle;
   }
 
-  % Wireframe box: \wireABC{a0}{b0}{c0}{la}{lb}{lc}{style} draws ALL 12 edges of
-  % the box (so it's see-through) with {style}. For the subleading pieces.
-  \newcommand{\wireABC}[7]{%
-    \def\aA{#1}\def\bB{#2}\def\cC{#3}%
-    \def\la{#4}\def\lb{#5}\def\lc{#6}%
-    % the four edges along a
-    \draw[#7] \Q{\aA}{\bB}{\cC}         -- \Q{\aA+\la}{\bB}{\cC};
-    \draw[#7] \Q{\aA}{\bB+\lb}{\cC}     -- \Q{\aA+\la}{\bB+\lb}{\cC};
-    \draw[#7] \Q{\aA}{\bB}{\cC+\lc}     -- \Q{\aA+\la}{\bB}{\cC+\lc};
-    \draw[#7] \Q{\aA}{\bB+\lb}{\cC+\lc} -- \Q{\aA+\la}{\bB+\lb}{\cC+\lc};
-    % the four edges along b
-    \draw[#7] \Q{\aA}{\bB}{\cC}         -- \Q{\aA}{\bB+\lb}{\cC};
-    \draw[#7] \Q{\aA+\la}{\bB}{\cC}     -- \Q{\aA+\la}{\bB+\lb}{\cC};
-    \draw[#7] \Q{\aA}{\bB}{\cC+\lc}     -- \Q{\aA}{\bB+\lb}{\cC+\lc};
-    \draw[#7] \Q{\aA+\la}{\bB}{\cC+\lc} -- \Q{\aA+\la}{\bB+\lb}{\cC+\lc};
-    % the four edges along c
-    \draw[#7] \Q{\aA}{\bB}{\cC}         -- \Q{\aA}{\bB}{\cC+\lc};
-    \draw[#7] \Q{\aA+\la}{\bB}{\cC}     -- \Q{\aA+\la}{\bB}{\cC+\lc};
-    \draw[#7] \Q{\aA}{\bB+\lb}{\cC}     -- \Q{\aA}{\bB+\lb}{\cC+\lc};
-    \draw[#7] \Q{\aA+\la}{\bB+\lb}{\cC} -- \Q{\aA+\la}{\bB+\lb}{\cC+\lc};
-  }
-
   \def\X{40}   % big cube edge
   \def\dx{5}   % growth step
 
@@ -89,7 +67,7 @@
       blueface/.style   = {fill=figbg, draw=figblue},
       orangeface/.style = {fill=figbg, draw=figorange},
       coreface/.style   = {fill=figbg, draw=ink},
-      wire/.style       = {muted, dashed, line width=1pt},
+      subface/.style    = {fill=figbg, draw=muted, line width=1pt},
     }
 
     % The three growth directions all point toward the VIEWER's front: +a
@@ -121,24 +99,23 @@
       \node[text=figorange] at \Q{\X/2}{\X/2}{-\dx} {$x^2\,dx$};
     \end{scope}
 
-    % --- Subleading pieces: TRUE WIREFRAMES (see-through), nestled in the FRONT
-    % gaps. They vanish fastest in the limit, so they're drawn as faint dashed
-    % skeletons rather than solid volumes.
+    % --- Subleading pieces: solid (figbg fill, faint muted solid edges),
+    % nestled in the FRONT gaps. They vanish fastest in the limit.
     % x dx^2 edge (grows +b,-c): front-top edge, pulled up + down-left.
     \begin{scope}[shift={({-\pull*\cx},{\pull-\pull*\cy})}]
-      \wireABC{0}{\X}{-\dx}{\X}{\dx}{\dx}{wire}
+      \boxABC{0}{\X}{-\dx}{\X}{\dx}{\dx}{subface}{}
     \end{scope}
     % x dx^2 edge (grows +a,-c): front-right edge, pulled right + down-left.
     \begin{scope}[shift={({\pull-\pull*\cx},{-\pull*\cy})}]
-      \wireABC{\X}{0}{-\dx}{\dx}{\X}{\dx}{wire}
+      \boxABC{\X}{0}{-\dx}{\dx}{\X}{\dx}{subface}{}
     \end{scope}
     % x dx^2 edge (grows +a,+b): top-right edge, pulled right + up.
     \begin{scope}[shift={(\pull,\pull)}]
-      \wireABC{\X}{\X}{0}{\dx}{\dx}{\X}{wire}
+      \boxABC{\X}{\X}{0}{\dx}{\dx}{\X}{subface}{}
     \end{scope}
     % dx^3 corner (grows +a,+b,-c): front-top-right, pulled along all three.
     \begin{scope}[shift={({\pull-\pull*\cx},{\pull-\pull*\cy})}]
-      \wireABC{\X}{\X}{-\dx}{\dx}{\dx}{\dx}{wire}
+      \boxABC{\X}{\X}{-\dx}{\dx}{\dx}{\dx}{subface}{}
     \end{scope}
   \end{scope}
 \end{tikzpicture}
