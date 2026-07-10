@@ -82,6 +82,11 @@ const titleText = stripInline(title);
 				color: var(--color-text-main);
 			}
 			.prose :global(p) {
+				/* Match body text to the heading/math brightness. The global
+				   `p { color: muted }` rule otherwise wins over the .prose color,
+				   so restate the main color here (article prose only — descriptions,
+				   meta, and captions keep their own muted colors). */
+				color: var(--color-text-main);
 				text-align: justify;
 				hyphens: auto;
 			}
