@@ -3,14 +3,14 @@ import BaseHead from "../components/BaseHead.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import { SITE_TITLE } from "../consts";
-import { getCollection } from "astro:content";
 import { url } from "../utils/paths";
 import { pageFade } from "../utils/pageTransition";
 import BlueprintGrid from "../components/BlueprintGrid.astro";
+import { getPublishedProjects } from "../utils/posts";
 
 // Default: reverse chronological (newest first). `order` is an optional manual
 // override — projects with one are pinned to the front in ascending order.
-const projects = (await getCollection("projects")).sort((a, b) => {
+const projects = (await getPublishedProjects()).sort((a, b) => {
   const ao = a.data.order,
     bo = b.data.order;
   if (ao != null && bo != null) return ao - bo; // both pinned → by order

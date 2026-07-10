@@ -10,6 +10,7 @@ tags:
   - astro
   - frameworks
   - webdev
+draft: false # set to true to unpublish
 ---
 
 Astro is a web development framework. Minimal JavaScript, which makes the website insanely fast.

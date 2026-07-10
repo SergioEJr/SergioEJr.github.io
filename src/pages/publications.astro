@@ -3,15 +3,15 @@ import BaseHead from "../components/BaseHead.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import { SITE_TITLE } from "../consts";
-import { getCollection } from "astro:content";
 import AuthorLink from "../components/AuthorLink.astro";
 import { url } from "../utils/paths";
 import { pageFade } from "../utils/pageTransition";
 import { renderInline } from "../utils/inlineText";
+import { getPublishedResearch } from "../utils/posts";
 
 // Newest first (reverse chronological), with a stable id tiebreak for entries
 // that share a date.
-const research = (await getCollection("research")).sort(
+const research = (await getPublishedResearch()).sort(
   (a, b) =>
     b.data.date.valueOf() - a.data.date.valueOf() || a.id.localeCompare(b.id),
 );

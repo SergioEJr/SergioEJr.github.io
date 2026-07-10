@@ -8,3 +8,18 @@ export async function getPublishedPosts() {
 	if (import.meta.env.DEV) return posts;
 	return posts.filter((p) => !p.data.draft);
 }
+
+// Same draft convention for projects: hidden in production, kept in dev so you
+// can preview work in progress locally.
+export async function getPublishedProjects() {
+	const projects = await getCollection('projects');
+	if (import.meta.env.DEV) return projects;
+	return projects.filter((p) => !p.data.draft);
+}
+
+// Same draft convention for research entries.
+export async function getPublishedResearch() {
+	const research = await getCollection('research');
+	if (import.meta.env.DEV) return research;
+	return research.filter((p) => !p.data.draft);
+}

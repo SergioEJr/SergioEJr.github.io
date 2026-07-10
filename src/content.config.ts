@@ -66,6 +66,9 @@ const projects = defineCollection({
 		// Optional manual override. Projects with an `order` are listed first, in
 		// ascending order; everything else falls back to reverse-chronological.
 		order: z.number().optional(),
+		// Draft projects are excluded from all listings, routes, and OG images.
+		// Set `draft: true` while writing; set false (or remove) to publish.
+		draft: z.boolean().default(false),
 	}),
 });
 
@@ -85,6 +88,9 @@ const research = defineCollection({
 		authors: z.array(z.string()).default([]),
 		tags: z.array(z.string()).default([]),
 		selected: z.boolean().default(false), // featured on the home page
+		// Draft entries are excluded from all listings, routes, and OG images.
+		// Set `draft: true` while writing; set false (or remove) to publish.
+		draft: z.boolean().default(false),
 	}),
 });
 

@@ -9,6 +9,7 @@ toc: false
 tags:
   - travel
   - korea
+draft: true # unpublished — body is still a template placeholder; set false to publish
 ---
 
 A standalone News post lives entirely here on the site, with its own page.
