@@ -4,6 +4,9 @@
   "version": "0.6.1",
   "scripts": {
     "dev": "astro dev",
+    "watch:figures": "node scripts/watch-figures.mjs",
+    "check:figures": "node scripts/check-figures.mjs",
+    "prebuild": "npm run check:figures",
     "build": "astro build",
     "postbuild": "pagefind --site dist",
     "preview": "astro preview",
