@@ -28,7 +28,7 @@ type Props = Partial<CollectionEntry<'blog'>['data']> & {
 	categoryBadges?: CategoryBadge[],
 };
 
-const { title, description, pubDate, updatedDate, heroImage, authors, tags, headings = [], toc, noHero, showDate = true, categoryBadges = [] } = Astro.props;
+const { title, description, pubDate, updatedDate, heroImage, authors, headings = [], toc, noHero, showDate = true, categoryBadges = [] } = Astro.props;
 // Plain text (markers stripped) for metadata/alt; HTML form is used for the visible <h1>.
 const titleText = stripInline(title);
 ---
@@ -604,15 +604,6 @@ const titleText = stripInline(title);
 												<AuthorLink nameOrSlug={authorId} />
 												{i < authors.length - 1 ? ', ' : ''}
 											</span>
-										))}
-									</div>
-								)}
-								{tags && tags.length > 0 && (
-									<div class="blog-tags" style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-top: 0.75rem;">
-										{tags.map((tag) => (
-											<a href={url(`/tags/${tag}`)} style="text-decoration: none; font-size: 0.85rem; font-weight: 600; color: var(--color-accent); background: var(--color-bg-offset); padding: 0.2rem 0.6rem; border-radius: 999px; border: 1px solid var(--color-border);">
-												#{tag}
-											</a>
 										))}
 									</div>
 								)}

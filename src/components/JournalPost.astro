@@ -52,7 +52,11 @@ const isNote = post.data.category === 'notes';
 			<FormattedDate date={post.data.pubDate} />
 			{!isNote && post.data.topic && <span class="j-topic-tag">{post.data.topic}</span>}
 			{post.data.tags && post.data.tags.length > 0 && (
-				<span class="j-tags">{post.data.tags.map((t: string) => `#${t}`).join('  ')}</span>
+				<span class="j-tags">
+					{post.data.tags.map((t: string) => (
+						<a class="j-tag" href={url(`/tags/${t}`)}>#{t}</a>
+					))}
+				</span>
 			)}
 		</div>
 	</div>
@@ -134,7 +138,21 @@ const isNote = post.data.category === 'notes';
 	.j-desc { color: var(--color-text-muted); margin: 0 0 0.75rem; max-width: 680px; }
 	.j-meta { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; font-size: 0.82rem; color: var(--color-text-muted); font-style: italic; }
 	.j-topic-tag { font-style: normal; padding: 0.1rem 0.6rem; border-radius: 999px; background: var(--color-bg-offset); border: 1px solid var(--color-border); }
-	.j-tags { font-style: normal; letter-spacing: 0.02em; opacity: 0.8; }
+	.j-tags { font-style: normal; letter-spacing: 0.02em; display: inline-flex; flex-wrap: wrap; gap: 0.5rem; }
+	/* Tags are individually clickable. They must sit ABOVE the row's stretched
+	   ::after link overlay (which otherwise captures every click in the row), so
+	   give them their own stacking context with position + z-index. Rest muted,
+	   lift to the main text color on hover. */
+	.j-tag {
+		position: relative;
+		z-index: 1;
+		color: var(--color-text-muted);
+		text-decoration: none;
+		transition: color 0.15s ease;
+	}
+	/* Cancel the global `a:hover { opacity: 0.8 }` graying; the color lift is the
+	   only intended hover cue. */
+	.j-tag:hover { color: var(--color-text-main); opacity: 1; }
 	@media (max-width: 600px) {
 		.j-post { grid-template-columns: 1fr; }
 		.j-index { display: none; }
