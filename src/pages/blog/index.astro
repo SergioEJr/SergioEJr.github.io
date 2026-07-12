@@ -7,45 +7,46 @@ import { pageFade } from "../../utils/pageTransition";
 import { getPublishedPosts } from "../../utils/posts";
 import JournalPost from "../../components/JournalPost.astro";
 import JournalGlowField from "../../components/JournalGlowField.astro";
+import {
+  BLOG_CATEGORY_LABELS,
+  ESSAY_SUBJECT_COLORS,
+} from "../../utils/categories";
 
-type Cat = "all" | "news" | "math" | "physics" | "notes";
+type Cat = "all" | "updates" | "essays" | "notebook";
 
+// Registers (organize by reader intent, not subject). `color` is a theme-flipping
+// CSS var (defined in global.css) so the header/pill color adapts to light/dark.
 const CATS: Record<
   Cat,
   { label: string; color: string; title: string; subtitle: string }
 > = {
-  news: {
-    label: "News",
-    color: "#3b82f6",
-    title: "News & Updates",
+  updates: {
+    label: BLOG_CATEGORY_LABELS.updates,
+    color: "var(--cat-updates)",
+    title: "Updates",
     subtitle: "Announcements, milestones, and what I’m up to.",
   },
-  math: {
-    label: "Math",
-    color: "#8b5cf6",
-    title: "On Mathematics",
-    subtitle: "Small results, tricks, and ideas worth remembering.",
+  essays: {
+    label: BLOG_CATEGORY_LABELS.essays,
+    color: "var(--cat-essays)",
+    title: "Essays",
+    subtitle:
+      "Big-picture ideas in science, math, and life — written to be read by anyone.",
   },
-  physics: {
-    label: "Physics",
-    color: "#10b981",
-    title: "On Physics",
-    subtitle: "Intuition and notes on physical systems.",
-  },
-  notes: {
-    label: "Notebook",
-    color: "#f59e0b",
+  notebook: {
+    label: BLOG_CATEGORY_LABELS.notebook,
+    color: "var(--cat-notebook)",
     title: "Things I’m learning",
-    subtitle: "A growing notebook of guides and explainers, written plainly.",
+    subtitle: "A growing notebook of guides and notes, technical to plain.",
   },
   all: {
     label: "All",
     color: "var(--color-accent)",
     title: "The Journal",
-    subtitle: "Tech, math, physics & notes — all in one place.",
+    subtitle: "Updates, essays & notebook — all in one place.",
   },
 };
-const FILTER_ORDER: Cat[] = ["news", "math", "physics", "all", "notes"];
+const FILTER_ORDER: Cat[] = ["updates", "essays", "all", "notebook"];
 
 // Oldest → newest, with a stable id tiebreak so posts that share a pubDate keep
 // a consistent order. This is the canonical chronological order.
@@ -65,20 +66,19 @@ const posts = [...byDate].reverse();
 
 const counts: Record<string, number> = {
   all: 0,
-  news: 0,
-  math: 0,
-  physics: 0,
-  notes: 0,
+  updates: 0,
+  essays: 0,
+  notebook: 0,
 };
 for (const p of posts) {
   counts[p.data.category] = (counts[p.data.category] || 0) + 1;
-  if (p.data.category !== "notes") counts.all++;
+  if (p.data.category !== "notebook") counts.all++;
 }
 
-// Topics for the Notes view
+// Topics for the Notebook view
 const topicCounts = new Map<string, number>();
 for (const p of posts) {
-  if (p.data.category === "notes" && p.data.topic) {
+  if (p.data.category === "notebook" && p.data.topic) {
     topicCounts.set(p.data.topic, (topicCounts.get(p.data.topic) || 0) + 1);
   }
 }
@@ -86,15 +86,15 @@ const topics = [...topicCounts.entries()].sort((a, b) =>
   a[0].localeCompare(b[0]),
 );
 
-// Blog posts (everything except notes) keep their reverse-chronological order.
-const blogPosts = posts.filter((p) => p.data.category !== "notes");
+// Non-notebook posts (Updates + Essays) keep their reverse-chronological order.
+const blogPosts = posts.filter((p) => p.data.category !== "notebook");
 
 // Notebook posts grouped by topic. `posts` is newest-first, so the first time a
 // topic appears is its newest post — that order is also the group order
 // (newest-group-first). Posts within a group stay newest-first.
 const noteGroupMap = new Map<string, typeof posts>();
 for (const p of posts) {
-  if (p.data.category !== "notes") continue;
+  if (p.data.category !== "notebook") continue;
   const t = p.data.topic ?? "Other";
   if (!noteGroupMap.has(t)) noteGroupMap.set(t, []);
   noteGroupMap.get(t)!.push(p);
@@ -105,9 +105,22 @@ const noteGroups = [...noteGroupMap.entries()].map(([topic, ps]) => ({
   posts: ps,
 }));
 
-const catColor = (c: string) =>
-  (CATS as any)[c]?.color ?? "var(--color-accent)";
 const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
+// Per-row dot/underline color. Essays rows take their `subject` color; Updates
+// and Notebook take the register color. Returns a theme-flipping CSS var (the
+// --cat-* / --subj-* vars live in global.css).
+const rowColor = (post: {
+  data: { category: string; subject?: string };
+}) => {
+  if (
+    post.data.category === "essays" &&
+    post.data.subject &&
+    ESSAY_SUBJECT_COLORS[post.data.subject]
+  ) {
+    return `var(--subj-${post.data.subject})`;
+  }
+  return `var(--cat-${post.data.category})`;
+};
 ---
 
 <!doctype html>
@@ -115,7 +128,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
   <head>
     <BaseHead
       title={`Journal | ${SITE_TITLE}`}
-      description="Writing on tech, math, physics, and notes."
+      description="Updates, essays, and a notebook of things I'm learning."
     />
   </head>
   <body>
@@ -144,7 +157,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
       <div class="j-filters-bar">
         <div class="j-filters">
           {
-            FILTER_ORDER.filter((c) => c !== "notes").map((c) => (
+            FILTER_ORDER.filter((c) => c !== "notebook").map((c) => (
               <button
                 class:list={["j-filter", { active: c === "all" }]}
                 data-filter={c}
@@ -157,10 +170,10 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
           <span class="j-filter-divider" aria-hidden="true"></span>
           <button
             class="j-filter j-filter--text"
-            data-filter="notes"
-            style={`--f-color:${CATS.notes.color}`}
+            data-filter="notebook"
+            style={`--f-color:${CATS.notebook.color}`}
           >
-            {CATS.notes.label}
+            {CATS.notebook.label}
           </button>
         </div>
       </div>
@@ -172,7 +185,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
             <aside id="j-notes-side" class="j-notes-side" hidden>
               <div class="j-side-label">Topics</div>
               <button class="j-topic active" data-topic="all">
-                All <span>{counts.notes}</span>
+                All <span>{counts.notebook}</span>
               </button>
               {topics.map(([t, n]) => (
                 <button class="j-topic" data-topic={t}>
@@ -189,7 +202,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
               <JournalPost
                 post={post}
                 number={postNumber.get(post.id) ?? 0}
-                catColor={catColor(post.data.category)}
+                catColor={rowColor(post)}
                 catLabel={catLabel(post.data.category)}
               />
             ))
@@ -205,7 +218,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
                   <JournalPost
                     post={post}
                     number={postNumber.get(post.id) ?? 0}
-                    catColor={catColor(post.data.category)}
+                    catColor={rowColor(post)}
                     catLabel={catLabel(post.data.category)}
                   />
                 ))}
@@ -244,8 +257,8 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 
         // The active filter lives in the URL hash so it survives navigation
         // (Back from a post returns to the chosen filter) and is shareable.
-        //   #notes        → Notebook, all topics
-        //   #notes:Git    → Notebook, Git topic
+        //   #notebook     → Notebook, all topics
+        //   #notebook:Git → Notebook, Git topic
         //   (no hash)     → All (default)
         function readHash() {
           const raw = decodeURIComponent(
@@ -254,7 +267,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
           const [cat, topic] = raw.split(":");
           activeCat = validCats.includes(cat) ? cat : "all";
           activeTopic =
-            activeCat === "notes" && topic && validTopics.includes(topic)
+            activeCat === "notebook" && topic && validTopics.includes(topic)
               ? topic
               : "all";
           // Reflect the parsed state on the controls.
@@ -287,7 +300,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
           let hash = "";
           if (activeCat !== "all") {
             hash = "#" + activeCat;
-            if (activeCat === "notes" && activeTopic !== "all")
+            if (activeCat === "notebook" && activeTopic !== "all")
               hash += ":" + encodeURIComponent(activeTopic);
           }
           history.replaceState(
@@ -304,15 +317,15 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
           subEl.textContent = meta.subtitle;
           eyeLabel.textContent = meta.label;
 
-          if (side) side.hidden = activeCat !== "notes";
+          if (side) side.hidden = activeCat !== "notebook";
 
           let visible = 0;
           posts.forEach((el) => {
             const cat = el.getAttribute("data-category");
             const topic = el.getAttribute("data-topic");
             let show =
-              activeCat === "all" ? cat !== "notes" : cat === activeCat;
-            if (show && activeCat === "notes" && activeTopic !== "all") {
+              activeCat === "all" ? cat !== "notebook" : cat === activeCat;
+            if (show && activeCat === "notebook" && activeTopic !== "all") {
               show = topic === activeTopic;
             }
             el.style.display = show ? "" : "none";
@@ -322,7 +335,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
           groupHeaders.forEach((h) => {
             const t = h.getAttribute("data-group-topic");
             const show =
-              activeCat === "notes" &&
+              activeCat === "notebook" &&
               (activeTopic === "all" || t === activeTopic);
             h.style.display = show ? "" : "none";
           });
