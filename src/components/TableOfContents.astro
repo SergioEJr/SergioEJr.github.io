@@ -7,10 +7,16 @@ export interface Props {
 
 const { headings, mobile = false, open = false } = Astro.props;
 
-// Filter headings to only include h2 and h3
-const toc = headings.filter(
-  (heading) => heading.depth > 1 && heading.depth < 4,
-);
+// Filter headings to only include h2 and h3, and relabel the auto-generated GFM
+// footnotes heading ("Footnotes", slug "footnote-label") to "References" so the
+// TOC matches the styled References section in the post body (see BlogPost.astro).
+const toc = headings
+  .filter((heading) => heading.depth > 1 && heading.depth < 4)
+  .map((heading) =>
+    heading.slug === 'footnote-label'
+      ? { ...heading, text: 'References' }
+      : heading,
+  );
 ---
 
 {/* Desktop Sidebar */}
