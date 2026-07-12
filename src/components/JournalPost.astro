@@ -17,7 +17,7 @@ function postLink(data: any, id: string): { href: string; external: boolean } {
 	return { href: url(`/blog/${id}/`), external: false };
 }
 const link = postLink(post.data, post.id);
-const isNote = post.data.category === 'notes';
+const isNote = post.data.category === 'notebook';
 ---
 <article
 	class:list={['j-post', { 'is-note': isNote }]}
