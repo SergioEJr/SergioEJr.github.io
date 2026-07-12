@@ -24,6 +24,16 @@
 	--fig-blue: #173f7a;
 	--fig-orange: #c2410c;
 
+	/* Journal register colors (header + filter pill) and Essays subject accents
+	   (dot + title underline). Render-time source of truth; keep in sync with the
+	   BLOG_CATEGORY_COLORS / ESSAY_SUBJECT_COLORS maps in src/utils/categories.ts. */
+	--cat-updates: #2563eb;
+	--cat-essays: #db2777;
+	--cat-notebook: #d97706;
+	--subj-Science: #0d9488;
+	--subj-Math: #7c3aed;
+	--subj-Ideas: #c2410c;
+
 	/* Spacing & UI */
 	--max-width: 960px;
 	--radius: 8px;
@@ -52,6 +62,14 @@
 	--fig-red: #f87171;
 	--fig-blue: #60a5fa;
 	--fig-orange: #fb923c;
+
+	/* Journal registers + Essays subjects (dark). Keep in sync with categories.ts. */
+	--cat-updates: #60a5fa;
+	--cat-essays: #f472b6;
+	--cat-notebook: #fbbf24;
+	--subj-Science: #2dd4bf;
+	--subj-Math: #a78bfa;
+	--subj-Ideas: #fb923c;
 
 	--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
 	--shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);
