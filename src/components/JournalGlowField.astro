@@ -96,14 +96,10 @@ const { count = 46, class: className = "" } = Astro.props;
           hy: er.height / 2,
         };
       }
-      // Push the glow's vertical anchor down from the eyebrow so its bloom sits
-      // over the title and its falloff reaches closer to the filter bar (rather
-      // than dying out mid-description). Horizontal anchor stays on the eyebrow.
-      const GLOW_Y_OFFSET = 70;
       function recomputeTarget() {
         const m = measureLight();
         targetX = m.x;
-        light.y = m.y + GLOW_Y_OFFSET;
+        light.y = m.y;
         light.hx = m.hx;
         light.hy = m.hy;
       }
