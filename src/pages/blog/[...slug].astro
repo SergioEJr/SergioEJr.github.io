@@ -21,11 +21,18 @@ type Props = CollectionEntry<'blog'>;
 const post = Astro.props;
 const { Content, headings } = await render(post);
 
+// Header badge. Essays posts show their SUBJECT (Science / Math / Ideas) in the
+// subject color, mirroring the Journal row eyebrow; other registers show the
+// register label + register color. Colors are global --cat-* / --subj-* vars.
+const isEssayWithSubject =
+	post.data.category === 'essays' && !!post.data.subject;
 const categoryBadges = [{
-	label: BLOG_CATEGORY_LABELS[post.data.category] ?? post.data.category,
-	// Register color via the global --cat-* var (defined in global.css) so the
-	// badge flips with the theme.
-	color: `var(--cat-${post.data.category}, var(--color-accent))`,
+	label: isEssayWithSubject
+		? post.data.subject!
+		: (BLOG_CATEGORY_LABELS[post.data.category] ?? post.data.category),
+	color: isEssayWithSubject
+		? `var(--subj-${post.data.subject}, var(--color-accent))`
+		: `var(--cat-${post.data.category}, var(--color-accent))`,
 }];
 ---
 

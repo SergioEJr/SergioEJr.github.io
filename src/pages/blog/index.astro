@@ -23,13 +23,13 @@ const CATS: Record<
   updates: {
     label: BLOG_CATEGORY_LABELS.updates,
     color: "var(--cat-updates)",
-    title: "Updates",
+    title: "The story so far",
     subtitle: "Announcements, milestones, and what I’m up to.",
   },
   essays: {
     label: BLOG_CATEGORY_LABELS.essays,
     color: "var(--cat-essays)",
-    title: "Essays",
+    title: "Ideas worth sharing",
     subtitle:
       "Big-picture ideas in science, math, and life — written to be read by anyone.",
   },
@@ -39,14 +39,19 @@ const CATS: Record<
     title: "Things I’m learning",
     subtitle: "A growing notebook of guides and notes, technical to plain.",
   },
+  // "All" is not a register — give it a neutral ink color (not the accent blue,
+  // which collides with the Updates blue in dark mode) since it renders as the
+  // text-style filter, and a title that isn't a repeat of a filter label.
   all: {
     label: "All",
-    color: "var(--color-accent)",
+    color: "var(--color-text-main)",
     title: "The Journal",
     subtitle: "Updates, essays & notebook — all in one place.",
   },
 };
-const FILTER_ORDER: Cat[] = ["updates", "essays", "all", "notebook"];
+// The three registers render as pills; "All" renders separately as the text-style
+// button on the right (it's the unfiltered view, not a register).
+const FILTER_ORDER: Cat[] = ["updates", "essays", "notebook"];
 
 // Oldest → newest, with a stable id tiebreak so posts that share a pubDate keep
 // a consistent order. This is the canonical chronological order.
@@ -163,9 +168,9 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
       <div class="j-filters-bar">
         <div class="j-filters">
           {
-            FILTER_ORDER.filter((c) => c !== "notebook").map((c) => (
+            FILTER_ORDER.map((c) => (
               <button
-                class:list={["j-filter", { active: c === "all" }]}
+                class="j-filter"
                 data-filter={c}
                 style={`--f-color:${CATS[c].color}`}
               >
@@ -175,11 +180,11 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
           }
           <span class="j-filter-divider" aria-hidden="true"></span>
           <button
-            class="j-filter j-filter--text"
-            data-filter="notebook"
-            style={`--f-color:${CATS.notebook.color}`}
+            class="j-filter j-filter--text active"
+            data-filter="all"
+            style={`--f-color:${CATS.all.color}`}
           >
-            {CATS.notebook.label}
+            {CATS.all.label}
           </button>
         </div>
       </div>
@@ -543,7 +548,7 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         background: var(--color-border);
         margin: 0rem 0.2rem 0rem 0.7rem;
       }
-      /* Notebook filter: plain text, not a pill */
+      /* "All" filter: plain text, not a pill (it's the unfiltered view). */
       .j-filter--text {
         border: none;
         background: transparent;
@@ -653,36 +658,26 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
           margin-inline: -1rem;
           padding-inline: 1rem;
         }
-        /* Tighten the gap between the two rows. The zero-height divider is its
-           own flex line, so the row-gap applies twice between the pills and the
-           Notebook pill; a small row-gap keeps them close. */
+        /* On mobile the filters are a single horizontally-scrollable row so all
+           three register pills + the All button stay on one line. */
         .j-filters {
-          row-gap: 0.3rem;
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          /* Bleed to the screen edges + scroll-padding so pills don't clip. */
+          margin-inline: -1rem;
+          padding-inline: 1rem;
+          scrollbar-width: none; /* hide the scrollbar; the row still scrolls */
         }
-        /* Repurpose the (desktop) divider as a zero-height full-width flex break
-           so Notebook wraps onto its own row without itself being visible. */
+        .j-filters::-webkit-scrollbar {
+          display: none;
+        }
+        .j-filter {
+          flex: 0 0 auto; /* don't shrink; keep each pill its natural width */
+        }
         .j-filter-divider {
-          flex-basis: 100%;
-          width: 100%;
-          height: 0;
-          margin: 0;
-          background: none;
-        }
-        /* On mobile, Notebook is a pill on its own (left-aligned) row, not the
-           desktop plain-text treatment, so it clearly reads as clickable.
-           Restore the base pill look, sized to its content (no stretch). */
-        .j-filter--text {
-          padding: 0.35rem 1rem;
-          border: 1px solid var(--color-border);
-          border-radius: 999px;
-        }
-        .j-filter--text:hover {
-          border-color: var(--f-color);
-        }
-        .j-filter--text.active {
-          color: #fff;
-          background: var(--f-color);
-          border-color: var(--f-color);
+          flex: 0 0 auto;
+          align-self: center;
+          height: 1.1rem;
         }
         /* On mobile the topics list scrolls horizontally as a row of pills
            instead of stacking vertically above the post list. */
