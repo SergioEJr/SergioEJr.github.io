@@ -657,43 +657,30 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         color: var(--color-text-muted);
         opacity: 0.6;
       }
-      /* Below the sidebar breakpoint there's no margin room, so topics become a
-         wrapping row of pills above the post list (they wrap onto new lines as
-         topics grow, instead of a tall stacked column). `:not([hidden])` so this
-         doesn't override the `hidden` attribute in non-Notebook views. */
+      /* MEDIUM screens (below the sidebar breakpoint, above mobile): topics are a
+         WRAPPING row above the list, in the same rounded-rectangle style they had
+         as sidebar rows. `:not([hidden])` so this doesn't override the `hidden`
+         attribute in non-Notebook views. */
       @media (max-width: 879px) {
         .j-notes-side:not([hidden]) {
           display: flex;
           flex-wrap: wrap;
-          align-items: baseline;
+          align-items: center;
           gap: 0.5rem;
-          margin-bottom: 0.25rem;
+          margin-top: 0.25rem;
         }
         .j-side-label {
           margin-bottom: 0;
           margin-right: 0.25rem;
-          align-self: center;
         }
         .j-topic {
           width: auto;
           justify-content: flex-start;
           gap: 0.4rem;
-          align-items: center;
-          border: 1px solid var(--color-border);
-          border-radius: 999px;
-          padding: 0.3rem 0.85rem;
+          border-radius: 8px;
+          background: var(--color-bg-offset);
+          padding: 0.4rem 0.85rem;
           font-size: 0.85rem;
-          line-height: 1;
-        }
-        .j-topic span {
-          font-variant-numeric: tabular-nums;
-        }
-        .j-topic:hover {
-          background: transparent;
-          border-color: var(--color-text-muted);
-        }
-        .j-topic.active {
-          border-color: var(--color-accent-light);
         }
       }
       @media (max-width: 600px) {
@@ -719,8 +706,25 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         .j-body {
           gap: 1.25rem;
         }
-        /* Hide the "Topics" label on the narrowest screens to save room; the
-           wrapping topic pills (from the max-width:879px block) still show. */
+        /* SMALL screens: the topics row scrolls horizontally instead of wrapping,
+           so a long topic list stays a single tidy row. Same rounded-rect topic
+           style as medium; just switch wrap→scroll and bleed to the screen edges
+           (main's 1rem gutter) for a clear "more to scroll" affordance. */
+        .j-notes-side:not([hidden]) {
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          margin: 1rem -1rem 0rem -1rem;
+          padding: 0 1rem 0.25rem;
+          scrollbar-width: none;
+        }
+        .j-notes-side::-webkit-scrollbar {
+          display: none;
+        }
+        .j-topic {
+          flex: 0 0 auto;
+          white-space: nowrap;
+        }
+        /* Hide the "Topics" label on the narrowest screens to save room. */
         .j-side-label {
           display: none;
         }
