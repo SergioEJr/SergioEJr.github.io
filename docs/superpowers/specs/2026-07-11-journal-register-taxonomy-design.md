@@ -37,8 +37,8 @@ irrelevant to the bucket — it lives in tags.
 |---|---|---|---|
 | Admitted to MIT … | news | **updates** | — |
 | Graduated from Emory | news | **updates** | — |
-| Op-Ed: passion for grades | news | **essays** | — |
-| The Entropy Equation | physics | **essays** | — |
+| Op-Ed: passion for grades | news | **essays** | subject: Ideas |
+| The Entropy Equation | physics | **essays** | subject: Science |
 | A picture proof of the product rule | math | **notebook** | Math |
 | A tiny note on the Gaussian integral | math | **notebook** | Math |
 | Why random walks spread like √t | physics | **notebook** | Physics |
@@ -58,30 +58,31 @@ Two color sources, deliberately:
 
 1. **Register color** — each of the 3 categories has its own unique color, driving
    the **Journal header color** and the **filter pill color** (exactly as the
-   category color does today). Pick a **fresh 3-color set**, legible in both
-   themes. Proposed (to be visually confirmed):
-   - Updates → blue `#3b82f6` (light) / `#60a5fa` (dark)
-   - Essays → rose/amber-warm, distinct from the others, e.g. `#e11d48` (light) /
-     `#fb7185` (dark)  *(final hue confirmed visually)*
-   - Notebook → amber `#f59e0b` (light) / `#fbbf24` (dark)
-2. **Subject accent** — the per-row **category dot + title underline** color comes
-   from the post's **subject**, but **only in the Essays section**. In Updates and
-   Notebook the dot/underline uses the register color (current behavior). Subject→
-   color map reuses the old subject hues (e.g. calculus/math purple `#8b5cf6`,
-   thermodynamics/physics green `#10b981`), keyed off the post's primary tag or
-   topic. Essays posts with no recognized subject fall back to the Essays register
-   color.
+   category color does today). **Fresh 3-color set**, legible in both themes
+   (final hexes confirmed visually during implementation).
+2. **Essays subject accent** — the per-row **dot + title underline** color in the
+   **Essays section only** comes from an explicit **`subject` frontmatter field**
+   (NOT derived from tags). Fixed, small enum of subjects:
+   - **Science**, **Math**, **Ideas** (non-STEM: op-ed, education, culture).
+   - A **fresh 3-subject palette**, distinct from the register colors and from
+     each other, legible in both themes (hexes proposed + confirmed visually).
+   - Essays post with no `subject` → falls back to the Essays register color.
+
+   In **Updates** and **Notebook**, the dot/underline uses the **register color**
+   (current behavior) — `subject` is ignored there. Essays is NOT grouped; it's a
+   flat reverse-chron list whose rows are subject-colored.
 
 ## Files to change
 
 1. **`src/utils/categories.ts`** — rename `BLOG_CATEGORY_COLORS`/`_LABELS` keys
    `news`→`updates`, drop `math`/`physics`, keep/rename `notes`→`notebook`, add
-   `essays`. Add a **subject→color map** (new export) for the Essays dots. Keep OG
+   `essays` (fresh register colors). Add an **`ESSAY_SUBJECT_COLORS`** map (new
+   export): `Science` / `Math` / `Ideas` → fresh hexes (light + dark). Keep OG
    consumers working.
 2. **`src/content.config.ts`** — category enum
    `['news','math','physics','notes']` → `['updates','essays','notebook']`,
-   default `'updates'`. (Add topic to schema if not already free-form — it is a
-   string already.)
+   default `'updates'`. Add optional **`subject: z.enum(['Science','Math','Ideas'])
+   .optional()`** for Essays dot color. `topic` stays a free string.
 3. **`src/pages/blog/index.astro`** — the big one:
    - `Cat` type + `CATS` config: three registers + `all`, new labels
      (Updates/Essays/Notebook), titles/subtitles, register colors.
@@ -89,8 +90,10 @@ Two color sources, deliberately:
    - Replace every hardcoded `"notes"` with `"notebook"` (grouping, filter, hash,
      sidebar visibility).
    - Notebook grouping: unchanged mechanism, now keyed on `notebook`.
-   - Per-row dot/underline color: for `essays` posts, resolve subject color;
-     else register color. Pass the resolved color to `JournalPost` as `catColor`.
+   - Per-row dot/underline color: for `essays` posts, resolve the `subject`
+     frontmatter → `ESSAY_SUBJECT_COLORS` (fallback = Essays register color);
+     for `updates`/`notebook`, use the register color. Pass the resolved color to
+     `JournalPost` as `catColor`. Essays remains a flat list (not grouped).
 4. **`src/components/JournalPost.astro`** — `isNote` check `=== 'notes'` →
    `=== 'notebook'`. (The dot/underline already come from the `catColor` prop, so
    the subject-vs-register logic lives in the caller.)
@@ -98,8 +101,9 @@ Two color sources, deliberately:
    category-color lookups updated to the new keys / new helper.
 6. **OG image generator (`src/pages/[...route].png.ts`)** — if it maps category→
    color, update keys.
-7. **Post frontmatter** — update `category:` on all 10 posts per the table, and add
-   `topic: Math` / `topic: Physics` to the three incoming notes.
+7. **Post frontmatter** — update `category:` on all 10 posts per the table; add
+   `topic: Math` / `topic: Physics` to the three incoming Notebook notes; add
+   `subject: Science` (entropy) and `subject: Ideas` (op-ed) to the Essays posts.
 
 ## Migration / correctness
 
@@ -116,8 +120,8 @@ Two color sources, deliberately:
 2. `visual-check` in both themes:
    - Filter bar shows Updates · Essays · Notebook with 3 distinct pill colors;
      header color changes per active filter.
-   - Essays rows: dot/underline colored by subject (entropy=green, op-ed=its
-     subject or Essays fallback). Updates/Notebook rows: register color.
+   - Essays rows: dot/underline colored by `subject` (entropy=Science, op-ed=
+     Ideas). Updates/Notebook rows: register color.
    - Notebook grouped by Math / Physics / Git / WebDev.
    - Product rule now appears under Notebook › Math.
    - `/tags/<tag>` and post headers still render correct category colors.
