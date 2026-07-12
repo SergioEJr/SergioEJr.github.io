@@ -39,7 +39,7 @@ As an example, we will now visually prove the power rule
 $$
 dx^n = n x^{n-1} \, dx
 $$
-for the case $n = 3$. Take $x^3$ as the volume of a cube with
+for the case $n = 3$, but the same argument holds for arbitrary $n$. Take $x^3$ as the volume of a cube with
 sides $x$, and grow each side by $dx$. Three faces of the cube each grow
 outward into a slab of volume $x^2\,dx$, so the volume gains $3x^2\,dx$, the
 derivative of $x^3$. There are some remaining pieces: three long edges of order
@@ -50,5 +50,5 @@ the limit.
   svg={cubeX3}
   width={520}
   alt="A cube of volume x³ growing by dx on three faces: three x²dx slabs plus a faint higher-order corner"
-  caption="Growing the cube adds three x²dx slabs — the derivative 3x² — plus the faint dx³ corner that vanishes."
+  caption="Growing the cube adds three x²dx slabs, giving the derivative 3x². The faint subleading contributions are of order $dx^2$ or higher and vanish in the limit."
 />
