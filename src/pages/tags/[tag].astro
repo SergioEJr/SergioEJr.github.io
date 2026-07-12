@@ -7,7 +7,7 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
 import { url } from '../../utils/paths';
 import { pageFade } from '../../utils/pageTransition';
 import { getPublishedPosts } from '../../utils/posts';
-import { BLOG_CATEGORY_COLORS, BLOG_CATEGORY_LABELS } from '../../utils/categories';
+import { BLOG_CATEGORY_LABELS, ESSAY_SUBJECT_COLORS } from '../../utils/categories';
 
 export async function getStaticPaths() {
 	const posts = await getPublishedPosts();
@@ -26,8 +26,14 @@ export async function getStaticPaths() {
 const { tag } = Astro.params;
 const { posts } = Astro.props;
 
-const catColor = (c: string) => BLOG_CATEGORY_COLORS[c] ?? 'var(--color-accent)';
 const catLabel = (c: string) => BLOG_CATEGORY_LABELS[c] ?? c;
+// Per-row dot/underline color, mirroring the Journal: Essays rows take their
+// `subject` color; Updates/Notebook take the register color. Theme-flipping vars
+// come from global.css.
+const rowColor = (post: any) =>
+	post.data.category === 'essays' && post.data.subject && ESSAY_SUBJECT_COLORS[post.data.subject]
+		? `var(--subj-${post.data.subject})`
+		: `var(--cat-${post.data.category}, var(--color-accent))`;
 
 // Running index numbers the rows, matching the Journal's reverse-chronological
 // numbering (newest = highest). Notebook entries render un-numbered inside
@@ -60,7 +66,7 @@ posts.forEach((p, i) => postNumber.set(p.id, posts.length - i));
 							<JournalPost
 								post={post}
 								number={postNumber.get(post.id) ?? 0}
-								catColor={catColor(post.data.category)}
+								catColor={rowColor(post)}
 								catLabel={catLabel(post.data.category)}
 							/>
 						))

@@ -1,7 +1,7 @@
 ---
 import { type CollectionEntry, render } from 'astro:content';
 import BlogPost from '../../layouts/BlogPost.astro';
-import { BLOG_CATEGORY_COLORS, BLOG_CATEGORY_LABELS } from '../../utils/categories';
+import { BLOG_CATEGORY_LABELS } from '../../utils/categories';
 import { getPublishedPosts } from '../../utils/posts';
 
 export async function getStaticPaths() {
@@ -23,7 +23,9 @@ const { Content, headings } = await render(post);
 
 const categoryBadges = [{
 	label: BLOG_CATEGORY_LABELS[post.data.category] ?? post.data.category,
-	color: BLOG_CATEGORY_COLORS[post.data.category] ?? 'var(--color-accent)',
+	// Register color via the global --cat-* var (defined in global.css) so the
+	// badge flips with the theme.
+	color: `var(--cat-${post.data.category}, var(--color-accent))`,
 }];
 ---
 
