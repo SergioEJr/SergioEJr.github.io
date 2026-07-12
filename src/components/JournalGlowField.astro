@@ -62,9 +62,7 @@ const { count = 46, class: className = "" } = Astro.props;
       const LOOK = {
         innerR: 70, // inner pill halo radius (px) — tight to the text
         innerAlpha: 0.05, // inner peak opacity
-        outerR: 260, // outer pill halo radius UPWARD (px) — soft
-        outerRDown: 520, // outer pill halo radius DOWNWARD (px) — carries the fade
-        // lower, toward the filter bar, without moving the eyebrow-anchored peak
+        outerR: 260, // outer pill halo radius (px) — soft, extends further
         outerAlpha: 0.1, // outer peak opacity
         lightAlpha: 0.55, // proximity brightening weight
         shade: 0.01, // directional highlight/shadow weight
@@ -259,26 +257,17 @@ const { count = 46, class: className = "" } = Astro.props;
         //     line is equally bright (the uniform "line" source); plus
         //   • two RADIAL CAPS at the endpoints, same falloff profile, rounding the
         //     ends and covering the band's vertical side edges (no hard seam).
-        // gr = upward reach; grDown = downward reach. The peak (0.5 stop) stays at
-        // `ly` (the eyebrow), so the SOURCE doesn't move — but the DOWNWARD fade
-        // boundary is pushed to `ly + grDown` (farther than the symmetric `ly + gr`
-        // would give). This moves where the glow fades OUT lower toward the filter
-        // bar, rather than just making the same-height glow brighter.
-        const drawPill = (gr: number, grDown: number, alpha: number) => {
+        const drawPill = (gr: number, alpha: number) => {
           const gA = alpha * glowK;
-          // Vertical band: transparent at top (ly-gr), peak at the eyebrow (ly),
-          // transparent again at the (lower) bottom (ly+grDown). Peak offset within
-          // the gradient shifts with the asymmetry so `ly` stays the brightest row.
-          const span = gr + grDown;
-          const mid = ctx!.createLinearGradient(0, ly - gr, 0, ly + grDown);
+          const mid = ctx!.createLinearGradient(0, ly - gr, 0, ly + gr);
           mid.addColorStop(0, `rgba(${r},${g},${b},0)`);
-          mid.addColorStop(gr / span, `rgba(${r},${g},${b},${gA})`);
+          mid.addColorStop(0.5, `rgba(${r},${g},${b},${gA})`);
           mid.addColorStop(1, `rgba(${r},${g},${b},0)`);
           ctx!.fillStyle = mid;
-          ctx!.fillRect(lx - hx, ly - gr, hx * 2, span);
-          // Caps round the band ends. Use an ELLIPTICAL radial (via transform) so
-          // the cap's vertical reach matches the asymmetric band: tight up, long
-          // down. Scale Y so radius `gr` maps to grDown downward.
+          ctx!.fillRect(lx - hx, ly - gr, hx * 2, gr * 2);
+          // Caps: only the OUTER semicircle beyond each endpoint, so they don't
+          // overlap (and double-brighten) the band. Left cap fills [cx-gr, cx];
+          // right cap fills [cx, cx+gr].
           const caps: [number, number][] = [
             [lx - hx, lx - hx - gr],
             [lx + hx, lx + hx],
@@ -289,11 +278,11 @@ const { count = 46, class: className = "" } = Astro.props;
             cap.addColorStop(0.5, `rgba(${r},${g},${b},${gA * 0.5})`);
             cap.addColorStop(1, `rgba(${r},${g},${b},0)`);
             ctx!.fillStyle = cap;
-            ctx!.fillRect(rectX, ly - gr, gr, span);
+            ctx!.fillRect(rectX, ly - gr, gr, gr * 2);
           }
         };
-        drawPill(LOOK.outerR, LOOK.outerRDown, LOOK.outerAlpha); // soft, extends further
-        drawPill(LOOK.innerR, LOOK.innerR, LOOK.innerAlpha); // tight, anchors the source (symmetric)
+        drawPill(LOOK.outerR, LOOK.outerAlpha); // soft, extends further
+        drawPill(LOOK.innerR, LOOK.innerAlpha); // tight, anchors the source
 
         // Particles lit by distance to the capsule SEGMENT (not a point), so the
         // whole text line acts as the source.
