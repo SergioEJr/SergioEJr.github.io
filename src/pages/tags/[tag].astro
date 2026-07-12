@@ -34,6 +34,11 @@ const rowColor = (post: any) =>
 	post.data.category === 'essays' && post.data.subject && ESSAY_SUBJECT_COLORS[post.data.subject]
 		? `var(--subj-${post.data.subject})`
 		: `var(--cat-${post.data.category}, var(--color-accent))`;
+// Essays rows show their subject (Science / Math / Ideas); others the register label.
+const rowLabel = (post: any) =>
+	post.data.category === 'essays' && post.data.subject
+		? post.data.subject
+		: catLabel(post.data.category);
 
 // Running index numbers the rows, matching the Journal's reverse-chronological
 // numbering (newest = highest). Notebook entries render un-numbered inside
@@ -67,7 +72,7 @@ posts.forEach((p, i) => postNumber.set(p.id, posts.length - i));
 								post={post}
 								number={postNumber.get(post.id) ?? 0}
 								catColor={rowColor(post)}
-								catLabel={catLabel(post.data.category)}
+								catLabel={rowLabel(post)}
 							/>
 						))
 					}

@@ -121,6 +121,12 @@ const rowColor = (post: {
   }
   return `var(--cat-${post.data.category})`;
 };
+// Per-row eyebrow label. Essays rows show their subject (Science / Math / Ideas)
+// instead of the register word "Essays"; other registers show the register label.
+const rowLabel = (post: { data: { category: string; subject?: string } }) =>
+  post.data.category === "essays" && post.data.subject
+    ? post.data.subject
+    : catLabel(post.data.category);
 ---
 
 <!doctype html>
@@ -203,7 +209,7 @@ const rowColor = (post: {
                 post={post}
                 number={postNumber.get(post.id) ?? 0}
                 catColor={rowColor(post)}
-                catLabel={catLabel(post.data.category)}
+                catLabel={rowLabel(post)}
               />
             ))
           }
@@ -219,7 +225,7 @@ const rowColor = (post: {
                     post={post}
                     number={postNumber.get(post.id) ?? 0}
                     catColor={rowColor(post)}
-                    catLabel={catLabel(post.data.category)}
+                    catLabel={rowLabel(post)}
                   />
                 ))}
               </Fragment>
