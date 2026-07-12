@@ -806,5 +806,33 @@ const titleText = stripInline(title);
 				window.__academicPortfolioCodeBlockListener = true;
 			}
 		</script>
+
+		<script is:inline>
+			// Footnote jumps (in-body [1] refs and the ↩ back-links) are anchor links
+			// to #user-content-fn-* / #user-content-fnref-*. By default each click
+			// pushes a HISTORY entry, so Back/Forward then steps through every footnote
+			// hop instead of returning to the previous page. Intercept them: smooth-
+			// scroll to the target and update the hash with replaceState (no new
+			// history entry), so footnotes never enter the back/forward stack.
+			// One delegated listener on `document` (survives ClientRouter swaps).
+			if (!window.__footnoteScrollBound) {
+				window.__footnoteScrollBound = true;
+				document.addEventListener('click', (e) => {
+					const a = e.target.closest(
+						'a[data-footnote-ref], a.data-footnote-backref',
+					);
+					if (!a) return;
+					const href = a.getAttribute('href') || '';
+					if (!href.startsWith('#')) return;
+					const target = document.getElementById(decodeURIComponent(href.slice(1)));
+					if (!target) return;
+					e.preventDefault();
+					const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+					target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+					// Reflect the anchor in the URL without adding a history entry.
+					history.replaceState(history.state, '', href);
+				});
+			}
+		</script>
 	</body>
 </html>

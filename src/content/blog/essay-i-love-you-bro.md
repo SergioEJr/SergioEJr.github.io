@@ -1,0 +1,174 @@
+---
+title: "i love you, bro"
+description: "A cultural-analysis essay on how male intimacy is policed — and how the line between who's allowed it and who's mocked for it falls along race."
+pubDate: "2022-05-03"
+category: essays
+subject: Ideas
+authors:
+  - sergio-eraso
+tags:
+  - culture
+  - masculinity
+draft: true # set to false to publish
+---
+
+This is a cultural-analysis essay I wrote in 2022 for a Gender & Sexuality Studies
+course at Emory, not physics. It starts from something most men will recognize:
+how little room we're given to be physically or emotionally close with other men
+without it reading as gay. But that room isn't handed out evenly. The essay looks
+at who gets to be intimate and who gets mocked for it, and how that line falls
+along race. It's academic in register and it earns its R-rating from the films it
+reads closely. Read on if that's your thing.
+
+---
+
+Contrary to public belief, male same-sex friendships can be quite complex. Before
+the modern era, men were often physically intimate, emotional, and endearing
+toward other male friends.[^ibson] In the 1900s, Freud's *Three Essays on the
+Theory of Sexuality* (1905) introduced sexuality as a social construction of
+one's upbringing, a culturally malleable phenomenon. Growing awareness of
+homosexuality in America led to the stigmatization of a homosexuality that could
+supposedly develop from "feminine" upbringings, those where men received
+emotional nurturing and support.[^cancian] So for the greater part of the 20th
+century, straight male friendships were socially disallowed the physical and
+emotional intimacy that had become associated with homosexuality.[^diamond] Only
+recently, with the increased visibility and acceptance of homosexuality, have some
+groups of mostly white straight men been allowed to once again publicly
+participate in physically and emotionally intimate same-sex friendship, or
+homosociality. The exclusivity of intimate homosociality to white men has made it
+a pathway to further marginalize Black people and members of the LGBTQ community
+through popular mediums like film and social media.
+
+In contrast to the early 1900s, the dominant narrative in America today is one of
+an innate, stable sexual orientation. There are several reasons for this shift.
+Studies during the 1990s, including a widely covered 1991 study that reported
+neural-structure differences between straight and gay men, laid a biological
+foundation for the cause of homosexuality.[^levay] Extensive media coverage of
+these discoveries gave rise to a determinism-versus-choice debate and inspired the
+search for a "gay gene." Research in attribution theory finds that people are more
+likely to support homosexuality when it is seen as outside one's control;
+otherwise it can be read as a flawed choice or personal failure.[^lewis] So these
+biological narratives were also widely used, whether intentionally or not, as an
+effective political device to generate support for LGBTQ rights. This is easy to
+see in the pop culture around the same-sex marriage movement. Take Macklemore and
+Ryan Lewis's anthem *Same Love* (2012), whose chorus insists "And I can't change,
+even if I wanted to, even if I tried," or Lady Gaga's *Born This Way* (2011):
+"there ain't no other way, baby, I was born this way." Both buy fully into the
+immutability of sexual orientation, cementing the idea that sexuality is not a
+choice. This shift from a socially construed to an unchangeable sexuality is
+partly responsible for the increased acceptance of LGBTQ people today. It is also
+partly responsible for why straight white men are now allowed more of the
+homosociality they enjoyed in the past.
+
+A study by Robinson et al. (2018) on "bromances" followed the same-sex friendships
+of 30 heterosexual white undergraduates in the UK.[^robinson] These men showed
+high support for male homosexuality, which correlates with physical and intimate
+homosociality. Nearly all of the 30 reported being publicly intimate with their
+bromances: kissing them on the mouth, hugging them, sharing a bed, even
+participating in threesomes with their bro and a woman. They regarded these
+relationships as extremely valuable, an emotional and physical outlet that
+sometimes even romantic relationships could not provide. As Robinson et al. put
+it, these men have "disassociat[ed] the intimacies of same-sex touch from
+homosexuality." This homosociality can be quite healthy for men, *if* they can
+make that disassociation and are socially allowed to. For Black men, it is not so
+easy.
+
+The rise in socially permissible homosociality has not been equally available to
+the Black community. This may not be surprising. Ingrained expectations of Black
+hypermasculinity perpetuate the policing of "feminine" behaviors, vulnerability,
+tactility, open expression, of the kind that was prevalent in the 1900s. That
+hypermasculinity is audible in gangsta rap, where violent and sexist themes
+advertise male toughness,[^oware] and visible on social media. Consider the "flip
+the switch challenge," a trend in which couples swap clothing to Drake's
+*Nonstop*: it drew criticism from several Black rappers. Waka Flocka posted,
+"Never will I act or dress like a female … where's the be a real man challenge."
+Casanova filmed his own version of the trend in disapproval.[^casanova] This
+hypermasculinity carries over into policing the intimacy allowed in Black male
+friendship. The level of intimacy in Robinson et al.'s study is close to unheard
+of in Black communities. In fact, it is hard for almost any intimacy between Black
+men to read as socially acceptable. Film reflects this. In bromance comedies like
+*The 40-Year-Old Virgin* (2005), *Pineapple Express* (2008), and *Forgetting
+Sarah Marshall* (2008), Black characters are relegated to scenery, used as the
+butt of jokes, and easily discarded.[^yoseph] These films feature primarily white
+casts, and the few Black characters present are never shown needing the emotional
+attention the white characters receive, which makes them forgettable and distills
+them to their extreme masculinity. As Saaret Yoseph puts it, "if *this* is what it
+takes to be one of the boys, the brothers may just be better off fading to black."
+
+White characters, meanwhile, get to emasculate Black characters and use their own
+physical intimacy to poke fun at gay men. In *Pineapple Express*, Craig, a Black
+assassin, is written as overtly violent and careless. He mocks his partner for not
+being as ruthless as he is, and eventually kills him for "going soft." Yet his
+primary comedic value comes from unexpected feminine lapses. In one scene he is
+hit with a coffee pot, knocked to the ground, and left crying helplessly. In
+another he blurts, "I might act tough, but I got a lot of feelings," to his
+partner's surprise. Most telling: right after killing his partner for "going
+soft," Craig is startled by a car speeding toward him and lets out an unnaturally
+high-pitched squeal before he dies. One of the top YouTube comments on the scene
+reads, "i love that hes an emotional gangster haha." His emasculation for comedic
+value is a common trope of Hollywood comedy.
+
+The same scene also sneaks in a gay joke. Red, driving the car that kills Craig,
+has just saved his bro from being murdered. In the heat of the moment he confesses,
+"I came back for you bro … I want to be a better friend to you … I want to be
+inside you holmes," then immediately squirms in regret.
+
+Ironically, as Robinson et al. and Jane Ward both point out, homosexual contact is
+a major component of white heterosexual bromance. In *Not Gay* (2015), Ward
+describes how white men can practice unquestioned, context-dependent
+heteroflexibility by manufacturing "opportunities for sexual contact with other
+men."[^ward] She recounts a fraternity ritual in which straight white men strip
+naked and insert their thumbs into each other's rectums to "build brotherhood." A
+more recent version is the "acting sus" trend on TikTok, in which presumably
+heterosexual men perform homosexual advances toward other straight men for laughs.
+The bit can be used to prove one's heterosexuality by reacting with disgust, or to
+demonstrate loyalty by showing a willingness to be a little bit gay for a friend.
+Either way, its comedic framing files homosexuality under abnormal and unexpected,
+something to be laughed at. And the phrase itself comes from the social-deduction
+game *Among Us* (2018), where "sus" marks the person you can't trust, the
+impostor. So the trend paints homosexuality as undesirable and invasive while
+licensing same-sex contact as a tool for establishing heterosexual masculinity and
+power.
+
+Ward argues these encounters are most common in hyper-masculine heterosexual
+settings: the military, sports teams, fraternities. There, white men can use their
+privilege and presumed-static heterosexuality to dissociate homosexuality from
+same-sex contact. Military initiation, like fraternity hazing, can involve
+cross-dressing, nipple piercing, anal penetration, and simulated sex.[^ward] Yet
+these acts are never read as homosexual, because associating homosexuality with
+the military would puncture its hyper-masculine image. Movies do the same work in
+the cliché locker-room scene, staging "homosexual accidents" as comedy for the
+sake of male bonding rather than anything genuinely homosexual. In the Canadian
+film *Goon* (2011), two men simultaneously thrust into another player's helmet
+purely for the joke. In *Crazy, Stupid, Love* (2011), Steve Carell passes out on
+top of Ryan Gosling's nude genitals while getting advice on how to win women back
+and reestablish his manhood, a scene that neatly captures the paradox of
+heterosexual masculinity benefiting from homosexual behavior. Both scenes,
+unsurprisingly, feature only white actors, since only they are granted the public
+"sexual border crossing" (Ward) these acts require.
+
+Male same-sex friendship is complicated. The shifting attitudes about where sexual
+orientation comes from, together with the intersection of sexuality and race, make
+it a genuinely hard thing to analyze. We have seen that complexity arises from the
+constant public awareness and defensiveness required to keep a male friendship
+socially acceptable, especially for Black men. It also arises from the use of
+homosexual contact as a demonstration of heterosexual loyalty and a tool for
+building white male bonds inside hypermasculine groups. Those same groups of
+straight white men have been granted context-dependent heterofluidity,
+participation in spontaneous homosexual acts, without ever having to carry the
+label of homosexual and what it brings. Through these accounts and examples from
+popular culture, we have seen how that arrangement can quietly undermine gay men
+and Black men alike. Studies like Robinson's suggest these depictions are not far
+from the current state of male homosociality. But we need far more research into
+Black homosociality to understand the role race plays in men's relationships.
+
+[^ibson]: Ibson, J. (2002). *Picturing Men: A Century of Male Relationships in Everyday American Photography.* University of Chicago Press.
+[^cancian]: Cancian, F. (1986). The feminization of love. *Signs,* 11(4), 692–709. <https://doi.org/10.1086/494272>
+[^diamond]: [fill in: Diamond et al. (1999) — full citation. Cited in-text but missing from the original Works Cited; add the real reference or remove this citation.]
+[^levay]: LeVay, S. (1991). A difference in hypothalamic structure between heterosexual and homosexual men. *Science,* 253(5023), 1034–1037. <https://doi.org/10.1126/science.1887219>
+[^lewis]: Lewis, G. B. (2009). Does believing homosexuality is innate increase support for gay rights? *Policy Studies Journal,* 37, 669–693. <https://doi.org/10.1111/j.1541-0072.2009.00330.x>
+[^robinson]: Robinson, S., Anderson, E. & White, A. (2018). The bromance: Undergraduate male friendships and the expansion of contemporary homosocial boundaries. *Sex Roles,* 78, 94–106. <https://doi.org/10.1007/s11199-017-0768-5>
+[^oware]: Oware, M. (2011). Brotherly love: Homosociality and Black masculinity in gangsta rap music. *Journal of African American Studies,* 15(1), 22–39.
+[^casanova]: Casanova does the FLIP THE SWITCH CHALLENGE. [fill in: YouTube URL / channel, if you want to keep this as a citation.]
+[^yoseph]: [fill in: Yoseph, S. (2009) — full citation. Cited in-text but missing from the original Works Cited; add the real reference or remove this citation.]
+[^ward]: Ward, J. (2015). *Not Gay: Sex Between Straight White Men.* NYU Press. (Reviewed in *Sexualities,* 19(8), 1001–1003.)
