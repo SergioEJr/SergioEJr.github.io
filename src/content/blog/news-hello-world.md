@@ -2,7 +2,7 @@
 title: "Hello, world!"
 description: "My first post — what this blog is for, with a quick demo of math and code."
 pubDate: "2020-01-30"
-category: news
+category: updates
 authors:
   - sergio-eraso
 toc: false # table of contents flag

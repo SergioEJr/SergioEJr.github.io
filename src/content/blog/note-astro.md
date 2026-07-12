@@ -2,7 +2,7 @@
 title: "What is Astro?"
 description: "A simple introduction to Astro — the web framework powering this website."
 pubDate: "2026-05-28"
-category: notes
+category: notebook
 topic: WebDev
 authors:
   - sergio-eraso

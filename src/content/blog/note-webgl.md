@@ -2,7 +2,7 @@
 title: "What is WebGL?"
 description: "Use that GPU!"
 pubDate: "2026-05-27"
-category: notes
+category: notebook
 topic: WebDev
 authors:
   - sergio-eraso

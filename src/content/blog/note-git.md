@@ -2,7 +2,7 @@
 title: "Rebase vs. merge, briefly"
 description: "When I reach for each, without the holy war."
 pubDate: "2026-05-15"
-category: notes
+category: notebook
 topic: Git
 authors:
   - sergio-eraso

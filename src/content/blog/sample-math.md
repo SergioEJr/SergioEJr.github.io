@@ -2,7 +2,8 @@
 title: 'A tiny note on the Gaussian integral'
 description: 'The classic polar-coordinates trick for evaluating the Gaussian integral.'
 pubDate: '2026-05-20'
-category: math
+category: notebook
+topic: Math
 authors:
   - sergio-eraso
 tags:

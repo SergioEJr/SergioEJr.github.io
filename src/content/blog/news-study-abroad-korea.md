@@ -2,7 +2,7 @@
 title: "My Study Abroad in Korea"
 description: "A semester in Seoul @ Yonsei — what I worked on, what I learned, and a few things that surprised me."
 pubDate: "2022-12-26"
-category: news
+category: updates
 authors:
   - sergio-eraso
 toc: false

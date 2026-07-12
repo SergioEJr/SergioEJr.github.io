@@ -8,7 +8,7 @@
 export const BLOG_CATEGORY_COLORS: Record<string, { light: string; dark: string }> = {
 	updates: { light: '#2563eb', dark: '#60a5fa' },
 	essays: { light: '#db2777', dark: '#f472b6' },
-	notebook: { light: '#d97706', dark: '#fbbf24' },
+	notebook: { light: '#d97706', dark: '#f59e0b' },
 };
 
 export const BLOG_CATEGORY_LABELS: Record<string, string> = {

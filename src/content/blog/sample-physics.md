@@ -2,7 +2,8 @@
 title: 'Why random walks spread like √t'
 description: 'A one-paragraph intuition for diffusive scaling.'
 pubDate: '2026-05-12'
-category: physics
+category: notebook
+topic: Physics
 authors:
   - sergio-eraso
 tags:
