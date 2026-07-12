@@ -21,8 +21,13 @@ const blog = defineCollection({
 			authors: z.array(z.string()).optional(),
 			toc: z.boolean().optional(),
 			tags: z.array(z.string()).optional(),
-			category: z.enum(['news', 'math', 'physics', 'notes']).default('news'),
-			topic: z.string().optional(), // used to group Notes posts
+			// Journal register: how the reader engages, not the subject.
+			//   updates  → timeline (announcements, milestones)
+			//   essays   → pop-sci/pop-math, big-picture, accessible
+			//   notebook → notes/explainers on a topic, technical → simple
+			category: z.enum(['updates', 'essays', 'notebook']).default('updates'),
+			topic: z.string().optional(), // groups Notebook posts (Math, Physics, Git, WebDev…)
+			subject: z.enum(['Science', 'Math', 'Ideas']).optional(), // Essays dot/underline color
 			// "Pointer" posts: a Journal entry whose title/description are timeline-friendly
 			// and that links straight to a full article instead of rendering its own page.
 			// `externalUrl` → off-site link (opens in a new tab);
