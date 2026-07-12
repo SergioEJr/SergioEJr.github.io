@@ -382,9 +382,19 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
 
         filters.forEach((btn) => {
           btn.addEventListener("click", () => {
-            filters.forEach((b) => b.classList.remove("active"));
-            btn.classList.add("active");
-            activeCat = btn.getAttribute("data-filter");
+            const clicked = btn.getAttribute("data-filter");
+            // Clicking the already-active register pill deselects it back to All.
+            // (This is the only way back to All on mobile, where the All button is
+            // hidden; on desktop it's a harmless second path alongside the button.)
+            const next =
+              clicked !== "all" && clicked === activeCat ? "all" : clicked;
+            activeCat = next;
+            filters.forEach((b) =>
+              b.classList.toggle(
+                "active",
+                b.getAttribute("data-filter") === activeCat,
+              ),
+            );
             activeTopic = "all";
             topicBtns.forEach((b) =>
               b.classList.toggle(
@@ -575,11 +585,13 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
       .j-notes-side {
         align-self: start;
       }
+      /* Wide enough for a margin sidebar: topics are a sticky 200px left column
+         of full-width rows (the original look). Below 880px they become a
+         wrapping row of pills above the list (see the max-width block). */
       @media (min-width: 880px) {
         .j-body:has(#j-notes-side:not([hidden])) {
           grid-template-columns: 200px 1fr;
         }
-        /* Only stick when it's actually a side column; on stacked layouts it scrolls normally */
         .j-notes-side {
           position: sticky;
           top: 8.5rem;
@@ -645,6 +657,45 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         color: var(--color-text-muted);
         opacity: 0.6;
       }
+      /* Below the sidebar breakpoint there's no margin room, so topics become a
+         wrapping row of pills above the post list (they wrap onto new lines as
+         topics grow, instead of a tall stacked column). `:not([hidden])` so this
+         doesn't override the `hidden` attribute in non-Notebook views. */
+      @media (max-width: 879px) {
+        .j-notes-side:not([hidden]) {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: baseline;
+          gap: 0.5rem;
+          margin-bottom: 0.25rem;
+        }
+        .j-side-label {
+          margin-bottom: 0;
+          margin-right: 0.25rem;
+          align-self: center;
+        }
+        .j-topic {
+          width: auto;
+          justify-content: flex-start;
+          gap: 0.4rem;
+          align-items: center;
+          border: 1px solid var(--color-border);
+          border-radius: 999px;
+          padding: 0.3rem 0.85rem;
+          font-size: 0.85rem;
+          line-height: 1;
+        }
+        .j-topic span {
+          font-variant-numeric: tabular-nums;
+        }
+        .j-topic:hover {
+          background: transparent;
+          border-color: var(--color-text-muted);
+        }
+        .j-topic.active {
+          border-color: var(--color-accent-light);
+        }
+      }
       @media (max-width: 600px) {
         #j-title {
           font-size: 2.2rem;
@@ -658,63 +709,20 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
           margin-inline: -1rem;
           padding-inline: 1rem;
         }
-        /* On mobile the filters are a single horizontally-scrollable row so all
-           three register pills + the All button stay on one line. */
-        .j-filters {
-          flex-wrap: nowrap;
-          overflow-x: auto;
-          /* Bleed to the screen edges + scroll-padding so pills don't clip. */
-          margin-inline: -1rem;
-          padding-inline: 1rem;
-          scrollbar-width: none; /* hide the scrollbar; the row still scrolls */
-        }
-        .j-filters::-webkit-scrollbar {
+        /* On mobile there isn't room for the full row, so drop the "All" button
+           and its divider entirely — users return to All by clicking the active
+           register pill again. The three register pills then wrap cleanly. */
+        .j-filter--text,
+        .j-filter-divider {
           display: none;
         }
-        .j-filter {
-          flex: 0 0 auto; /* don't shrink; keep each pill its natural width */
-        }
-        .j-filter-divider {
-          flex: 0 0 auto;
-          align-self: center;
-          height: 1.1rem;
-        }
-        /* On mobile the topics list scrolls horizontally as a row of pills
-           instead of stacking vertically above the post list. */
         .j-body {
           gap: 1.25rem;
         }
-        /* :not([hidden]) so this display:flex doesn't override the hidden
-           attribute and leak the topics row into non-Notebook views. */
-        .j-notes-side:not([hidden]) {
-          display: flex;
-          gap: 0.5rem;
-          overflow-x: auto;
-          /* Bleed to the screen edges (main's 1rem gutter) so pills can scroll
-             off-edge, then pad back in — a clearer "more to scroll" affordance. */
-          margin: 1rem -1rem 0rem -1rem;
-          padding: 0 1rem 0.25rem;
-          scrollbar-width: none;
-        }
-        .j-notes-side::-webkit-scrollbar {
-          display: none;
-        }
+        /* Hide the "Topics" label on the narrowest screens to save room; the
+           wrapping topic pills (from the max-width:879px block) still show. */
         .j-side-label {
           display: none;
-        }
-        .j-topic {
-          width: auto;
-          flex: 0 0 auto;
-          white-space: nowrap;
-          justify-content: flex-start;
-          gap: 0.4rem;
-          /* Rounded rectangles (not pills) so topics read as a different control
-             type from the pill-shaped category filters above. No border — the
-             active fill / hover background carry the affordance. */
-          border-radius: 8px;
-          background: var(--color-bg-offset);
-          padding: 0.4rem 0.85rem;
-          font-size: 0.85rem;
         }
       }
     </style>
