@@ -1,5 +1,5 @@
 ---
-title: "Op-Ed: The passion for ~~learning~~ grades"
+title: "The passion for ~~learning~~ grades"
 description: "College students are more worried about their test scores than their actual understanding of the content they are learning, to no fault of their own. Read about this issue and my proposed solution on the Emory Wheel."
 pubDate: "2020-02-26"
 category: essays

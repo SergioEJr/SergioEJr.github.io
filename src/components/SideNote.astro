@@ -11,18 +11,26 @@
 // text. On narrow screens it collapses to an indented inline block under the
 // paragraph so nothing is lost on mobile.
 //
+// Optional `inline` forces the in-column (block) rendering at ALL widths — the
+// note never floats into the gutter, even on wide screens:
+//   <SideNote inline>A framing note that stays in the reading column.</SideNote>
+// Use this for notes that are too long or too important to relegate to the
+// margin (e.g. a framing paragraph).
+//
 // On wide screens the right gutter is shared with the sticky Table of Contents,
-// so a small script fades each note out as it scrolls up into the ToC's band,
-// keeping things from overlapping awkwardly.
+// so a small script fades each floating note out as it scrolls up into the ToC's
+// band, keeping things from overlapping awkwardly. Inline notes are exempt (they
+// never enter the gutter, so there's nothing to overlap).
 
 interface Props {
   label?: string;
+  inline?: boolean;
 }
 
-const { label = "Note" } = Astro.props;
+const { label = "Note", inline = false } = Astro.props;
 ---
 
-<span class="sidenote__body" data-sidenote>
+<span class:list={["sidenote__body", { "sidenote__body--inline": inline }]} data-sidenote={inline ? "inline" : ""}>
   <span class="sidenote__head">
     <svg
       class="sidenote__icon"
@@ -90,12 +98,17 @@ const { label = "Note" } = Astro.props;
      negative margin — below that the -margin would push past the viewport edge,
      causing horizontal overflow (which also breaks the sticky navbar). */
   @media (min-width: 1200px) {
-    .sidenote__body {
+    .sidenote__body:not(.sidenote__body--inline) {
       float: right;
       clear: right;
       width: 190px;
       margin: 0 -222px 1rem 0; /* -(gutter width) so it sits outside the column */
       transition: opacity 0.2s ease;
+    }
+    /* `inline` notes keep the base in-column card even on wide screens. They read
+       full-width in the prose column, so give them a touch more breathing room. */
+    .sidenote__body--inline {
+      margin: 1.1rem 0 1.3rem;
     }
   }
 </style>
@@ -143,8 +156,10 @@ const { label = "Note" } = Astro.props;
     }
 
     function setup() {
+      // Only the FLOATING notes need fading; inline notes (data-sidenote="inline")
+      // stay in-column and never overlap the ToC, so exclude them.
       notes = Array.prototype.slice.call(
-        document.querySelectorAll("[data-sidenote]"),
+        document.querySelectorAll('[data-sidenote]:not([data-sidenote="inline"])'),
       );
       if (notes.length === 0) return;
       // Only fade when a sticky ToC actually shares the right gutter: rendered

@@ -1,622 +1,659 @@
 ---
-import { Image } from 'astro:assets';
-import type { CollectionEntry } from 'astro:content';
-import BaseHead from '../components/BaseHead.astro';
-import AuthorLink from '../components/AuthorLink.astro';
-import Footer from '../components/Footer.astro';
-import FormattedDate from '../components/FormattedDate.astro';
-import Header from '../components/Header.astro';
-import TableOfContents from '../components/TableOfContents.astro';
-import { url } from '../utils/paths';
-import { renderInline, stripInline } from '../utils/inlineText';
+import { Image } from "astro:assets";
+import type { CollectionEntry } from "astro:content";
+import BaseHead from "../components/BaseHead.astro";
+import AuthorLink from "../components/AuthorLink.astro";
+import Footer from "../components/Footer.astro";
+import FormattedDate from "../components/FormattedDate.astro";
+import Header from "../components/Header.astro";
+import TableOfContents from "../components/TableOfContents.astro";
+import { url } from "../utils/paths";
+import { renderInline, stripInline } from "../utils/inlineText";
 
 type CategoryBadge = { label: string; color: string };
 // Blog-collection fields are optional here because this layout is also reused by
 // the Projects and Research detail pages, which don't supply blog-only fields.
-type Props = Partial<CollectionEntry<'blog'>['data']> & {
-	title: string,
-	description: string,
-	pubDate: Date,
-	// Blog posts pass optimized ImageMetadata; simple pages (e.g. About) may pass
-	// a plain path string to a file in /public.
-	heroImage?: CollectionEntry<'blog'>['data']['heroImage'] | string,
-	id?: string,
-	headings?: { depth: number; slug: string; text: string }[],
-	toc?: boolean,
-	noHero?: boolean,
-	showDate?: boolean,
-	categoryBadges?: CategoryBadge[],
+type Props = Partial<CollectionEntry<"blog">["data"]> & {
+  title: string;
+  description: string;
+  pubDate: Date;
+  // Blog posts pass optimized ImageMetadata; simple pages (e.g. About) may pass
+  // a plain path string to a file in /public.
+  heroImage?: CollectionEntry<"blog">["data"]["heroImage"] | string;
+  id?: string;
+  headings?: { depth: number; slug: string; text: string }[];
+  toc?: boolean;
+  noHero?: boolean;
+  showDate?: boolean;
+  categoryBadges?: CategoryBadge[];
 };
 
-const { title, description, pubDate, updatedDate, heroImage, authors, headings = [], toc, noHero, showDate = true, categoryBadges = [] } = Astro.props;
+const {
+  title,
+  description,
+  pubDate,
+  updatedDate,
+  heroImage,
+  authors,
+  headings = [],
+  toc,
+  noHero,
+  showDate = true,
+  categoryBadges = [],
+} = Astro.props;
 // Plain text (markers stripped) for metadata/alt; HTML form is used for the visible <h1>.
 const titleText = stripInline(title);
 ---
 
 <html lang="en">
-	<head>
-		<BaseHead title={titleText} description={description} />
-		<style>
-			html {
-				scroll-padding-top: 5.5rem; /* Account for sticky header height when scrolling to anchors */
-			}
-			main {
-				width: 100%;
-				max-width: 100%;
-				margin: 0;
-				/* Contain any horizontal overflow from gutter elements (side notes
+  <head>
+    <BaseHead title={titleText} description={description} />
+    <style>
+      html {
+        scroll-padding-top: 5.5rem; /* Account for sticky header height when scrolling to anchors */
+      }
+      main {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        /* Contain any horizontal overflow from gutter elements (side notes
 				   floated with negative margins) without creating a scroll container
 				   — `clip` (unlike hidden/auto) does NOT break the sticky navbar. */
-				overflow-x: clip;
-			}
-			.hero-image {
-				width: 100%;
-				overflow: hidden;
-			}
-			.hero-image img {
-				display: block;
-				margin: 0 auto;
-				border-radius: 12px;
-				box-shadow: var(--shadow-md);
-				max-width: 100%;
-				height: auto;
-			}
+        overflow-x: clip;
+      }
+      .hero-image {
+        width: 100%;
+        overflow: hidden;
+      }
+      .hero-image img {
+        display: block;
+        margin: 0 auto;
+        border-radius: 12px;
+        box-shadow: var(--shadow-md);
+        max-width: 100%;
+        height: auto;
+      }
 
-			.blog-container {
-				position: relative;
-				max-width: 1200px;
-				margin: 0 auto;
-				display: flex;
-				justify-content: center;
-			}
+      .blog-container {
+        position: relative;
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: center;
+      }
 
-			.prose-wrapper {
-				position: relative;
-				width: 760px;
-				max-width: 100%;
-			}
+      .prose-wrapper {
+        position: relative;
+        width: 760px;
+        max-width: 100%;
+      }
 
-			.prose {
-				width: 100%;
-				padding: 1rem;
-				color: var(--color-text-main);
-			}
-			.prose :global(p) {
-				/* Match body text to the heading/math brightness. The global
+      .prose {
+        width: 100%;
+        padding: 1rem;
+        color: var(--color-text-main);
+      }
+      .prose :global(p) {
+        /* Match body text to the heading/math brightness. The global
 				   `p { color: muted }` rule otherwise wins over the .prose color,
 				   so restate the main color here (article prose only — descriptions,
 				   meta, and captions keep their own muted colors). */
-				color: var(--color-text-main);
-				text-align: justify;
-				hyphens: auto;
-			}
-			.prose :global(ul),
-			.prose :global(ol) {
-				margin: 0 0 1.5rem;
-				padding-left: 1.5rem;
-			}
-			.prose :global(li) {
-				margin: 0.45rem 0;
-			}
-			.prose :global(li > p) {
-				margin-bottom: 0.75rem;
-			}
-			.prose :global(blockquote) {
-				position: relative;
-				margin: 2.25rem 0;
-				padding: 1.3rem 3.25rem 1.3rem 3.25rem;
-				border: 1px solid var(--color-border);
-				border-left: 4px solid var(--color-accent);
-				background:
-					linear-gradient(135deg, var(--color-accent-light) 0%, transparent 100%),
-					var(--color-bg-offset);
-				border-radius: 18px;
-				box-shadow: var(--shadow-sm);
-				overflow: hidden;
-				quotes: '"' '"' "'" "'";
-			}
-			.prose :global(blockquote::before) {
-				content: open-quote;
-				position: absolute;
-				top: 0.35rem;
-				left: 0.95rem;
-				font-family: var(--font-serif);
-				font-size: 4rem;
-				line-height: 1;
-				color: var(--color-accent);
-				opacity: 0.22;
-			}
-			.prose :global(blockquote::after) {
-				content: close-quote;
-				position: absolute;
-				right: 0.95rem;
-				bottom: -0.45rem;
-				font-family: var(--font-serif);
-				font-size: 4rem;
-				line-height: 1;
-				color: var(--color-accent);
-				opacity: 0.18;
-			}
-			.prose :global(blockquote p) {
-				margin: 0.3rem 0;
-				color: var(--color-text-main);
-				text-align: left;
-				font-size: 1.02rem;
-			}
-			.prose :global(blockquote p:first-child) {
-				margin-top: 0;
-			}
-			.prose :global(blockquote p:last-child) {
-				margin-bottom: 0;
-			}
-			.prose :global(blockquote cite) {
-				display: block;
-				margin-top: 0.85rem;
-				font-style: normal;
-				font-size: 0.92rem;
-				color: var(--color-text-muted);
-			}
-			.prose :global(hr) {
-				margin: 2.5rem 0;
-				border: 0;
-				border-top: 1px solid var(--color-border);
-			}
+        color: var(--color-text-main);
+        text-align: justify;
+        hyphens: auto;
+      }
+      .prose :global(ul),
+      .prose :global(ol) {
+        margin: 0 0 1.5rem;
+        padding-left: 1.5rem;
+      }
+      .prose :global(li) {
+        margin: 0.45rem 0;
+      }
+      .prose :global(li > p) {
+        margin-bottom: 0.75rem;
+      }
+      .prose :global(blockquote) {
+        position: relative;
+        margin: 2.25rem 0;
+        padding: 1.3rem 3.25rem 1.3rem 3.25rem;
+        border: 1px solid var(--color-border);
+        border-left: 4px solid var(--color-accent);
+        background:
+          linear-gradient(
+            135deg,
+            var(--color-accent-light) 0%,
+            transparent 100%
+          ),
+          var(--color-bg-offset);
+        border-radius: 18px;
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+        quotes: '"' '"' "'" "'";
+      }
+      .prose :global(blockquote::before) {
+        content: open-quote;
+        position: absolute;
+        top: 0.35rem;
+        left: 0.95rem;
+        font-family: var(--font-serif);
+        font-size: 4rem;
+        line-height: 1;
+        color: var(--color-accent);
+        opacity: 0.22;
+      }
+      .prose :global(blockquote::after) {
+        content: close-quote;
+        position: absolute;
+        right: 0.95rem;
+        bottom: -0.45rem;
+        font-family: var(--font-serif);
+        font-size: 4rem;
+        line-height: 1;
+        color: var(--color-accent);
+        opacity: 0.18;
+      }
+      .prose :global(blockquote p) {
+        margin: 0.3rem 0;
+        color: var(--color-text-main);
+        text-align: left;
+        font-size: 1.02rem;
+      }
+      .prose :global(blockquote p:first-child) {
+        margin-top: 0;
+      }
+      .prose :global(blockquote p:last-child) {
+        margin-bottom: 0;
+      }
+      .prose :global(blockquote cite) {
+        display: block;
+        margin-top: 0.85rem;
+        font-style: normal;
+        font-size: 0.92rem;
+        color: var(--color-text-muted);
+      }
+      .prose :global(hr) {
+        margin: 2.5rem 0rem 1.5rem 0rem;
+        border: 0;
+        border-top: 1px solid var(--color-border);
+      }
 
-			/* Footnotes / references. GFM (remark) emits identical markup for BOTH .md and
+      /* Footnotes / references. GFM (remark) emits identical markup for BOTH .md and
 			   .mdx posts: a <section class="footnotes" data-footnotes> with an auto
 			   "Footnotes" heading (#footnote-label), a numbered <ol>, and back-links
 			   (.data-footnote-backref). One set of styles therefore covers either type. */
-			.prose :global(sup[id^='user-content-fnref']) {
-				font-size: 0.7em;
-				line-height: 0;
-			}
-			.prose :global([data-footnote-ref]) {
-				text-decoration: none;
-				font-weight: 600;
-				padding: 0 0.1em;
-			}
-			.prose :global([data-footnote-ref]:hover) {
-				text-decoration: underline;
-			}
-			/* The references section: set apart, quieter, smaller than the body. */
-			.prose :global(.footnotes) {
-				margin-top: 3rem;
-				padding-top: 1.5rem;
-				border-top: 1px solid var(--color-border);
-				font-size: 0.9rem;
-				color: var(--color-text-muted);
-			}
-			/* Relabel the auto "Footnotes" heading as a "References" eyebrow (hide the
+      .prose :global(sup[id^="user-content-fnref"]) {
+        font-size: 0.7em;
+        line-height: 0;
+      }
+      .prose :global([data-footnote-ref]) {
+        text-decoration: none;
+        font-weight: 600;
+        padding: 0 0.1em;
+      }
+      .prose :global([data-footnote-ref]:hover) {
+        text-decoration: underline;
+      }
+      /* The references section: set apart, quieter, smaller than the body. */
+      .prose :global(.footnotes) {
+        margin-top: 3rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--color-border);
+        font-size: 0.9rem;
+        color: var(--color-text-muted);
+      }
+      /* Relabel the auto "Footnotes" heading as a "References" eyebrow (hide the
 			   literal text via font-size:0, show the ::after label). */
-			.prose :global(#footnote-label) {
-				font-size: 0;
-				font-weight: 700;
-				text-transform: uppercase;
-				letter-spacing: 0.1em;
-				color: var(--color-text-muted);
-				margin: 0 0 1rem;
-			}
-			.prose :global(#footnote-label)::after {
-				content: 'References';
-				font-size: 0.72rem;
-			}
-			.prose :global(.footnotes ol) {
-				margin: 0;
-				padding-left: 1.4rem;
-			}
-			.prose :global(.footnotes li) {
-				margin: 0.5rem 0;
-				line-height: 1.55;
-			}
-			.prose :global(.footnotes li p) {
-				margin: 0;
-				display: inline;
-			}
-			.prose :global(.footnotes a:not(.data-footnote-backref)) {
-				color: var(--color-accent);
-				text-decoration: none;
-				word-break: break-word;
-			}
-			.prose :global(.footnotes a:not(.data-footnote-backref):hover) {
-				text-decoration: underline;
-			}
-			/* The back-to-reference link: subtle, doesn't compete with the source text. */
-			.prose :global(.data-footnote-backref) {
-				margin-left: 0.35rem;
-				text-decoration: none;
-				color: var(--color-text-muted);
-				opacity: 0.7;
-			}
-			.prose :global(.data-footnote-backref:hover) {
-				opacity: 1;
-				color: var(--color-accent);
-			}
-			.prose :global(code) {
-				font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
-				font-size: 0.92em;
-				background: var(--color-accent-light);
-				padding: 0.15rem 0.35rem;
-				border-radius: 0.35rem;
-			}
-			.prose :global(pre) {
-				margin: 1.75rem 0;
-				overflow-x: auto;
-				line-height: 1.1;
-				/* Stop iOS Safari from auto-enlarging individual lines (e.g. the
+      .prose :global(#footnote-label) {
+        font-size: 0;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--color-text-muted);
+        margin: 0 0 1rem;
+      }
+      .prose :global(#footnote-label)::after {
+        content: "References";
+        font-size: 0.72rem;
+      }
+      .prose :global(.footnotes ol) {
+        margin: 0;
+        padding-left: 1.4rem;
+      }
+      .prose :global(.footnotes li) {
+        margin: 0.5rem 0;
+        line-height: 1.55;
+      }
+      .prose :global(.footnotes li p) {
+        margin: 0;
+        display: inline;
+      }
+      .prose :global(.footnotes a:not(.data-footnote-backref)) {
+        color: var(--color-accent);
+        text-decoration: none;
+        word-break: break-word;
+      }
+      .prose :global(.footnotes a:not(.data-footnote-backref):hover) {
+        text-decoration: underline;
+      }
+      /* The back-to-reference link: subtle, doesn't compete with the source text. */
+      .prose :global(.data-footnote-backref) {
+        margin-left: 0.35rem;
+        text-decoration: none;
+        color: var(--color-text-muted);
+        opacity: 0.7;
+      }
+      .prose :global(.data-footnote-backref:hover) {
+        opacity: 1;
+        color: var(--color-accent);
+      }
+      .prose :global(code) {
+        font-family:
+          ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo,
+          monospace;
+        font-size: 0.92em;
+        background: var(--color-accent-light);
+        padding: 0.15rem 0.35rem;
+        border-radius: 0.35rem;
+      }
+      .prose :global(pre) {
+        margin: 1.75rem 0;
+        overflow-x: auto;
+        line-height: 1.1;
+        /* Stop iOS Safari from auto-enlarging individual lines (e.g. the
 				   `return` line rendering larger than the rest on mobile). */
-				-webkit-text-size-adjust: 100%;
-				text-size-adjust: 100%;
-			}
-			.prose :global(pre code) {
-				display: block;
-				background: transparent;
-				padding: 0;
-				border-radius: 0;
-				font-size: 0.88rem;
-				font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
-				line-height: 1.5 !important;
-				letter-spacing: -0.01em;
-				-webkit-text-size-adjust: 100%;
-				text-size-adjust: 100%;
-			}
-			.prose :global(.code-block-frame) {
-				position: relative;
-				margin: 2.5rem 0 2rem;
-			}
-			.prose :global(.code-block-frame::after) {
-				content: '';
-				position: absolute;
-				inset: 0;
-				border-radius: 18px;
-				pointer-events: none;
-				box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-			}
-			.prose :global(.code-block-frame pre) {
-				margin: 0;
-			}
-			.prose :global(pre.astro-code) {
-				border: 1px solid rgba(148, 163, 184, 0.22);
-				border-radius: 18px;
-				padding: 1.2rem 1.35rem !important;
-				box-shadow: 0 20px 45px rgba(15, 23, 42, 0.14);
-				background-image:
-					radial-gradient(circle at top right, rgba(96, 165, 250, 0.16), transparent 32%),
-					linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0));
-				scrollbar-color: rgba(148, 163, 184, 0.75) transparent;
-			}
-			html[data-theme='dark'] .prose :global(pre.astro-code) {
-				border-color: rgba(148, 163, 184, 0.24);
-				box-shadow: 0 20px 45px rgba(2, 6, 23, 0.4);
-				/* Shiki sets background-color:#fff inline on the <pre>; that beats a
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+      }
+      .prose :global(pre code) {
+        display: block;
+        background: transparent;
+        padding: 0;
+        border-radius: 0;
+        font-size: 0.88rem;
+        font-family:
+          ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo,
+          monospace;
+        line-height: 1.5 !important;
+        letter-spacing: -0.01em;
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+      }
+      .prose :global(.code-block-frame) {
+        position: relative;
+        margin: 2.5rem 0 2rem;
+      }
+      .prose :global(.code-block-frame::after) {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 18px;
+        pointer-events: none;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      }
+      .prose :global(.code-block-frame pre) {
+        margin: 0;
+      }
+      .prose :global(pre.astro-code) {
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 18px;
+        padding: 1.2rem 1.35rem !important;
+        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.14);
+        background-image:
+          radial-gradient(
+            circle at top right,
+            rgba(96, 165, 250, 0.16),
+            transparent 32%
+          ),
+          linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.04),
+            rgba(255, 255, 255, 0)
+          );
+        scrollbar-color: rgba(148, 163, 184, 0.75) transparent;
+      }
+      html[data-theme="dark"] .prose :global(pre.astro-code) {
+        border-color: rgba(148, 163, 184, 0.24);
+        box-shadow: 0 20px 45px rgba(2, 6, 23, 0.4);
+        /* Shiki sets background-color:#fff inline on the <pre>; that beats a
 				   normal stylesheet rule, so override with !important using the
 				   theme's own dark background (github-dark = #24292e). */
-				background-color: var(--shiki-dark-bg, #24292e) !important;
-			}
-			html[data-theme='dark'] .prose :global(pre.astro-code),
-			html[data-theme='dark'] .prose :global(pre.astro-code span) {
-				color: var(--shiki-dark) !important;
-				font-style: var(--shiki-dark-font-style) !important;
-				font-weight: var(--shiki-dark-font-weight) !important;
-				text-decoration: var(--shiki-dark-text-decoration) !important;
-			}
-			/* Let the code block's own styled background show through — don't paint
+        background-color: var(--shiki-dark-bg, #24292e) !important;
+      }
+      html[data-theme="dark"] .prose :global(pre.astro-code),
+      html[data-theme="dark"] .prose :global(pre.astro-code span) {
+        color: var(--shiki-dark) !important;
+        font-style: var(--shiki-dark-font-style) !important;
+        font-weight: var(--shiki-dark-font-weight) !important;
+        text-decoration: var(--shiki-dark-text-decoration) !important;
+      }
+      /* Let the code block's own styled background show through — don't paint
 			   the per-token Shiki background (which created a gray box per span). */
-			html[data-theme='dark'] .prose :global(pre.astro-code span) {
-				background-color: transparent !important;
-			}
-			.prose :global(pre.astro-code:focus-visible) {
-				outline: 2px solid var(--color-accent);
-				outline-offset: 3px;
-			}
-			.prose :global(pre.astro-code code) {
-				min-width: max-content;
-			}
-			.prose :global(pre.astro-code .line) {
-				display: inline-block;
-				line-height: 1.5 !important;
-				margin: 0;
-				padding: 0;
-			}
-			.prose :global(pre.astro-code .line span) {
-				line-height: inherit !important;
-			}
-			.prose :global(pre.astro-code .line.diff.add) {
-				background: rgba(34, 197, 94, 0.15);
-			}
-			.prose :global(pre.astro-code .line.diff.remove) {
-				background: rgba(239, 68, 68, 0.15);
-			}
-			.prose :global(pre.astro-code .line.highlighted) {
-				background: rgba(96, 165, 250, 0.18);
-			}
-			.prose :global(.code-block-label),
-			.prose :global(.copy-code-button) {
-				position: absolute;
-				top: 0;
-				z-index: 2;
-				transform: translateY(-50%);
-				display: inline-flex;
-				align-items: center;
-				gap: 0.5rem;
-				border: 1px solid var(--color-border);
-				border-radius: 999px;
-				background: var(--color-bg);
-				box-shadow: var(--shadow-md);
-				backdrop-filter: blur(12px);
-				-webkit-backdrop-filter: blur(12px);
-			}
-			.prose :global(.code-block-label) {
-				left: 1rem;
-				padding: 0.45rem 0.85rem;
-				font-size: 0.72rem;
-				font-weight: 700;
-				line-height: 1;
-				letter-spacing: 0.08em;
-				text-transform: uppercase;
-				color: var(--color-text-main);
-			}
-			.prose :global(.code-block-label::before) {
-				content: '';
-				width: 0.5rem;
-				height: 0.5rem;
-				border-radius: 999px;
-				background: var(--color-accent);
-				box-shadow: 0 0 0 0.2rem rgba(96, 165, 250, 0.16);
-			}
-			.prose :global(.copy-code-button) {
-				right: 1rem;
-				padding: 0.45rem 0.85rem;
-				font: inherit;
-				font-size: 0.78rem;
-				font-weight: 700;
-				line-height: 1;
-				color: var(--color-text-muted);
-				cursor: pointer;
-				transition:
-					transform 0.2s ease,
-					color 0.2s ease,
-					background-color 0.2s ease,
-					border-color 0.2s ease;
-			}
-			.prose :global(.copy-code-button:hover) {
-				color: var(--color-accent);
-			}
-			.prose :global(.copy-code-button:focus-visible) {
-				outline: 2px solid var(--color-accent);
-				outline-offset: 2px;
-			}
-			.prose :global(.copy-code-button:active) {
-				transform: translateY(-50%) scale(0.97);
-			}
-			.prose :global(.copy-code-button__success) {
-				display: none;
-			}
-			.prose :global(.copy-code-button[data-copied='true']) {
-				color: var(--color-accent);
-				background: var(--color-accent-light);
-				border-color: rgba(96, 165, 250, 0.35);
-			}
-			.prose :global(.copy-code-button[data-copied='true'] .copy-code-button__default) {
-				display: none;
-			}
-			.prose :global(.copy-code-button[data-copied='true'] .copy-code-button__success) {
-				display: inline;
-			}
-			.prose :global(table) {
-				width: 100%;
-				margin: 2rem 0;
-				border-collapse: collapse;
-				display: block;
-				overflow-x: auto;
-				font-size: 0.95rem;
-			}
-			.prose :global(th),
-			.prose :global(td) {
-				padding: 0.75rem 1rem;
-				border: 1px solid var(--color-border);
-				text-align: left;
-			}
-			.prose :global(th) {
-				background: var(--color-accent-light);
-				color: var(--color-text-main);
-			}
-			.prose :global(img) {
-				max-width: 100%;
-				height: auto;
-				border-radius: 12px;
-				box-shadow: var(--shadow-sm);
-			}
-			/* Generic prose <details> (collapsibles). The TOC dropdown is also a
+      html[data-theme="dark"] .prose :global(pre.astro-code span) {
+        background-color: transparent !important;
+      }
+      .prose :global(pre.astro-code:focus-visible) {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 3px;
+      }
+      .prose :global(pre.astro-code code) {
+        min-width: max-content;
+      }
+      .prose :global(pre.astro-code .line) {
+        display: inline-block;
+        line-height: 1.5 !important;
+        margin: 0;
+        padding: 0;
+      }
+      .prose :global(pre.astro-code .line span) {
+        line-height: inherit !important;
+      }
+      .prose :global(pre.astro-code .line.diff.add) {
+        background: rgba(34, 197, 94, 0.15);
+      }
+      .prose :global(pre.astro-code .line.diff.remove) {
+        background: rgba(239, 68, 68, 0.15);
+      }
+      .prose :global(pre.astro-code .line.highlighted) {
+        background: rgba(96, 165, 250, 0.18);
+      }
+      .prose :global(.code-block-label),
+      .prose :global(.copy-code-button) {
+        position: absolute;
+        top: 0;
+        z-index: 2;
+        transform: translateY(-50%);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: 1px solid var(--color-border);
+        border-radius: 999px;
+        background: var(--color-bg);
+        box-shadow: var(--shadow-md);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+      .prose :global(.code-block-label) {
+        left: 1rem;
+        padding: 0.45rem 0.85rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--color-text-main);
+      }
+      .prose :global(.code-block-label::before) {
+        content: "";
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 999px;
+        background: var(--color-accent);
+        box-shadow: 0 0 0 0.2rem rgba(96, 165, 250, 0.16);
+      }
+      .prose :global(.copy-code-button) {
+        right: 1rem;
+        padding: 0.45rem 0.85rem;
+        font: inherit;
+        font-size: 0.78rem;
+        font-weight: 700;
+        line-height: 1;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        transition:
+          transform 0.2s ease,
+          color 0.2s ease,
+          background-color 0.2s ease,
+          border-color 0.2s ease;
+      }
+      .prose :global(.copy-code-button:hover) {
+        color: var(--color-accent);
+      }
+      .prose :global(.copy-code-button:focus-visible) {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 2px;
+      }
+      .prose :global(.copy-code-button:active) {
+        transform: translateY(-50%) scale(0.97);
+      }
+      .prose :global(.copy-code-button__success) {
+        display: none;
+      }
+      .prose :global(.copy-code-button[data-copied="true"]) {
+        color: var(--color-accent);
+        background: var(--color-accent-light);
+        border-color: rgba(96, 165, 250, 0.35);
+      }
+      .prose
+        :global(
+          .copy-code-button[data-copied="true"] .copy-code-button__default
+        ) {
+        display: none;
+      }
+      .prose
+        :global(
+          .copy-code-button[data-copied="true"] .copy-code-button__success
+        ) {
+        display: inline;
+      }
+      .prose :global(table) {
+        width: 100%;
+        margin: 2rem 0;
+        border-collapse: collapse;
+        display: block;
+        overflow-x: auto;
+        font-size: 0.95rem;
+      }
+      .prose :global(th),
+      .prose :global(td) {
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--color-border);
+        text-align: left;
+      }
+      .prose :global(th) {
+        background: var(--color-accent-light);
+        color: var(--color-text-main);
+      }
+      .prose :global(img) {
+        max-width: 100%;
+        height: auto;
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+      }
+      /* Generic prose <details> (collapsibles). The TOC dropdown is also a
 			   <details> but styles itself, so exclude it to avoid double padding. */
-			.prose :global(details:not(.toc-mobile-details)) {
-				margin: 1.5rem 0;
-				padding: 1rem 1.25rem;
-				border: 1px solid var(--color-border);
-				border-radius: 12px;
-				background: var(--color-bg-offset);
-			}
-			.prose :global(summary:not(.toc-mobile-summary)) {
-				cursor: pointer;
-				font-weight: 700;
-				color: var(--color-text-main);
-			}
-			.prose :global(input[type='checkbox']) {
-				margin-right: 0.6rem;
-				accent-color: var(--color-accent);
-			}
-			.prose :global(section[data-footnotes]) {
-				margin-top: 2.5rem;
-				padding-top: 1.25rem;
-				border-top: 1px solid var(--color-border);
-			}
-			.prose :global(section[data-footnotes] p) {
-				text-align: left;
-			}
-			.prose :global(.callout) {
-				--callout-accent: var(--color-accent);
-				--callout-surface: rgba(0, 51, 102, 0.08);
-				position: relative;
-				margin: 2rem 0;
-				padding: 1rem 1.2rem 1rem 1.25rem;
-				border: 1px solid color-mix(in srgb, var(--callout-accent) 22%, var(--color-border));
-				border-left: 4px solid var(--callout-accent);
-				border-radius: 16px;
-				background:
-					linear-gradient(135deg, var(--callout-surface) 0%, transparent 100%),
-					var(--color-bg-offset);
-				box-shadow: var(--shadow-sm);
-			}
-			.prose :global(.callout::before) {
-				content: attr(data-callout);
-				display: inline-flex;
-				align-items: center;
-				margin-bottom: 0.7rem;
-				padding: 0.32rem 0.62rem;
-				border-radius: 999px;
-				background: color-mix(in srgb, var(--callout-accent) 14%, transparent);
-				color: var(--callout-accent);
-				font-size: 0.72rem;
-				font-weight: 800;
-				letter-spacing: 0.08em;
-				line-height: 1;
-				text-transform: uppercase;
-			}
-			.prose :global(.callout p) {
-				margin: 0.35rem 0;
-				text-align: left;
-			}
-			.prose :global(.callout p:first-child) {
-				margin-top: 0;
-			}
-			.prose :global(.callout p:last-child) {
-				margin-bottom: 0;
-			}
-			.prose :global(.callout strong) {
-				color: var(--color-text-main);
-			}
-			.prose :global(.callout[data-callout='note']) {
-				--callout-accent: #7c3aed;
-				--callout-surface: rgba(124, 58, 237, 0.12);
-			}
-			.prose :global(.callout[data-callout='info']) {
-				--callout-accent: #2563eb;
-				--callout-surface: rgba(37, 99, 235, 0.12);
-			}
-			.prose :global(.callout[data-callout='tip']) {
-				--callout-accent: #0f766e;
-				--callout-surface: rgba(15, 118, 110, 0.12);
-			}
-			.prose :global(.callout[data-callout='success']) {
-				--callout-accent: #15803d;
-				--callout-surface: rgba(21, 128, 61, 0.12);
-			}
-			.prose :global(.callout[data-callout='warning']) {
-				--callout-accent: #d97706;
-				--callout-surface: rgba(217, 119, 6, 0.14);
-			}
-			.prose :global(.callout[data-callout='danger']) {
-				--callout-accent: #dc2626;
-				--callout-surface: rgba(220, 38, 38, 0.12);
-			}
+      .prose :global(details:not(.toc-mobile-details)) {
+        margin: 1.5rem 0;
+        padding: 1rem 1.25rem;
+        border: 1px solid var(--color-border);
+        border-radius: 12px;
+        background: var(--color-bg-offset);
+      }
+      .prose :global(summary:not(.toc-mobile-summary)) {
+        cursor: pointer;
+        font-weight: 700;
+        color: var(--color-text-main);
+      }
+      .prose :global(input[type="checkbox"]) {
+        margin-right: 0.6rem;
+        accent-color: var(--color-accent);
+      }
+      .prose :global(section[data-footnotes]) {
+        margin-top: 2.5rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--color-border);
+      }
+      .prose :global(section[data-footnotes] p) {
+        text-align: left;
+      }
+      .prose :global(.callout) {
+        --callout-accent: var(--color-accent);
+        --callout-surface: rgba(0, 51, 102, 0.08);
+        position: relative;
+        margin: 2rem 0;
+        padding: 1rem 1.2rem 1rem 1.25rem;
+        border: 1px solid
+          color-mix(in srgb, var(--callout-accent) 22%, var(--color-border));
+        border-left: 4px solid var(--callout-accent);
+        border-radius: 16px;
+        background:
+          linear-gradient(135deg, var(--callout-surface) 0%, transparent 100%),
+          var(--color-bg-offset);
+        box-shadow: var(--shadow-sm);
+      }
+      .prose :global(.callout::before) {
+        content: attr(data-callout);
+        display: inline-flex;
+        align-items: center;
+        margin-bottom: 0.7rem;
+        padding: 0.32rem 0.62rem;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--callout-accent) 14%, transparent);
+        color: var(--callout-accent);
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        line-height: 1;
+        text-transform: uppercase;
+      }
+      .prose :global(.callout p) {
+        margin: 0.35rem 0;
+        text-align: left;
+      }
+      .prose :global(.callout p:first-child) {
+        margin-top: 0;
+      }
+      .prose :global(.callout p:last-child) {
+        margin-bottom: 0;
+      }
+      .prose :global(.callout strong) {
+        color: var(--color-text-main);
+      }
+      .prose :global(.callout[data-callout="note"]) {
+        --callout-accent: #7c3aed;
+        --callout-surface: rgba(124, 58, 237, 0.12);
+      }
+      .prose :global(.callout[data-callout="info"]) {
+        --callout-accent: #2563eb;
+        --callout-surface: rgba(37, 99, 235, 0.12);
+      }
+      .prose :global(.callout[data-callout="tip"]) {
+        --callout-accent: #0f766e;
+        --callout-surface: rgba(15, 118, 110, 0.12);
+      }
+      .prose :global(.callout[data-callout="success"]) {
+        --callout-accent: #15803d;
+        --callout-surface: rgba(21, 128, 61, 0.12);
+      }
+      .prose :global(.callout[data-callout="warning"]) {
+        --callout-accent: #d97706;
+        --callout-surface: rgba(217, 119, 6, 0.14);
+      }
+      .prose :global(.callout[data-callout="danger"]) {
+        --callout-accent: #dc2626;
+        --callout-surface: rgba(220, 38, 38, 0.12);
+      }
 
-			.title {
-				margin-bottom: 1em;
-				padding: 1em 0;
-				text-align: center;
-				line-height: 1.2;
-			}
-			.category-badges {
-				display: flex;
-				justify-content: center;
-				flex-wrap: wrap;
-				gap: 0.5rem;
-				margin-bottom: 1rem;
-			}
-			.category-badge {
-				display: inline-flex;
-				align-items: center;
-				padding: 0.25rem 0.8rem;
-				border-radius: 999px;
-				font-size: 0.72rem;
-				font-weight: 700;
-				text-transform: uppercase;
-				letter-spacing: 0.08em;
-				color: var(--badge-color);
-				border: 1px solid color-mix(in srgb, var(--badge-color) 55%, transparent);
-				background: color-mix(in srgb, var(--badge-color) 12%, transparent);
-			}
-			.title h1 {
-				margin: 0 0 0.5em 0;
-				font-size: 2.2rem;
-			}
-			.date {
-				margin-bottom: 0.5em;
-				color: var(--color-text-muted);
-			}
-			.last-updated-on {
-				font-style: italic;
-			}
-			.blog-authors {
-				display: flex;
-				gap: 0.5rem;
-				justify-content: center;
-				flex-wrap: wrap;
-				margin-top: 0.75rem;
-				font-size: 0.9rem;
-				color: var(--color-text-muted);
-			}
-			.blog-authors span {
-				font-size: 0.9rem;
-			}
-			@media (max-width: 768px) {
-				.title h1 {
-					font-size: 1.6rem;
-				}
-				.prose {
-					padding: 1rem 0.5rem;
-				}
-				.prose :global(blockquote) {
-					padding: 1.1rem 2.7rem 1.1rem 2.7rem;
-					border-radius: 14px;
-				}
-				.prose :global(blockquote::before) {
-					top: 0.45rem;
-					left: 0.75rem;
-					font-size: 3.2rem;
-				}
-				.prose :global(blockquote::after) {
-					right: 0.7rem;
-					bottom: -0.3rem;
-					font-size: 3.2rem;
-				}
-				.prose :global(.code-block-frame) {
-					margin: 2.3rem 0 1.8rem;
-				}
-				.prose :global(pre.astro-code) {
-					border-radius: 14px;
-					padding: 1rem 1rem 1.1rem !important;
-				}
-				.prose :global(.code-block-label) {
-					left: 0.75rem;
-					padding: 0.4rem 0.7rem;
-					font-size: 0.66rem;
-				}
-				.prose :global(.copy-code-button) {
-					right: 0.75rem;
-					padding: 0.4rem 0.7rem;
-					font-size: 0.72rem;
-				}
-				.prose :global(.callout) {
-					padding: 0.95rem 1rem;
-					border-radius: 14px;
-				}
-			}
-		</style>
-	</head>
+      .title {
+        margin-bottom: 1em;
+        padding: 1em 0 0 0;
+        text-align: center;
+        line-height: 1.2;
+      }
+      .category-badges {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+      .category-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.8rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--badge-color);
+        border: 1px solid
+          color-mix(in srgb, var(--badge-color) 55%, transparent);
+        background: color-mix(in srgb, var(--badge-color) 12%, transparent);
+      }
+      .title h1 {
+        margin: 0 0 0.5em 0;
+        font-size: 2.2rem;
+      }
+      .date {
+        margin-bottom: 0.5em;
+        color: var(--color-text-muted);
+      }
+      .last-updated-on {
+        font-style: italic;
+      }
+      .blog-authors {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 0.75rem;
+        font-size: 0.9rem;
+        color: var(--color-text-muted);
+      }
+      .blog-authors span {
+        font-size: 0.9rem;
+      }
+      @media (max-width: 768px) {
+        .title h1 {
+          font-size: 1.6rem;
+        }
+        .prose {
+          padding: 1rem 0.5rem;
+        }
+        .prose :global(blockquote) {
+          padding: 1.1rem 2.7rem 1.1rem 2.7rem;
+          border-radius: 14px;
+        }
+        .prose :global(blockquote::before) {
+          top: 0.45rem;
+          left: 0.75rem;
+          font-size: 3.2rem;
+        }
+        .prose :global(blockquote::after) {
+          right: 0.7rem;
+          bottom: -0.3rem;
+          font-size: 3.2rem;
+        }
+        .prose :global(.code-block-frame) {
+          margin: 2.3rem 0 1.8rem;
+        }
+        .prose :global(pre.astro-code) {
+          border-radius: 14px;
+          padding: 1rem 1rem 1.1rem !important;
+        }
+        .prose :global(.code-block-label) {
+          left: 0.75rem;
+          padding: 0.4rem 0.7rem;
+          font-size: 0.66rem;
+        }
+        .prose :global(.copy-code-button) {
+          right: 0.75rem;
+          padding: 0.4rem 0.7rem;
+          font-size: 0.72rem;
+        }
+        .prose :global(.callout) {
+          padding: 0.95rem 1rem;
+          border-radius: 14px;
+        }
+      }
+    </style>
+  </head>
 
-	<body>
-		<Header />
-		{/* Unlike the other pages, this layout's <main> is intentionally NOT given
+  <body>
+    <Header />
+    {
+      /* Unlike the other pages, this layout's <main> is intentionally NOT given
 		    `transition:animate={pageFade}`. That directive stamps a
 		    `view-transition-name` on <main>, which in WebKit forces a
 		    compositing/containing context on an ancestor of the sticky desktop TOC
@@ -625,214 +662,254 @@ const titleText = stripInline(title);
 		    global `::view-transition-* { animation: none }` kills it anyway), so
 		    naming <main> bought nothing here while causing the Safari-only jitter.
 		    The sticky header keeps its own named view-transition group, so the
-		    navbar flash-prevention in Header.astro is unaffected. */}
-		<main>
-			<article>
-				{Astro.slots.has('hero') ? (
-					<slot name="hero" />
-				) : (
-					!noHero && heroImage && (
-						<div class="hero-image">
-							{typeof heroImage === 'string' ? (
-								<img width={1020} height={510} src={url(heroImage)} alt={titleText} loading="eager" fetchpriority="high" decoding="async" />
-							) : (
-								<Image width={1020} height={510} src={heroImage} alt={titleText} loading="eager" fetchpriority="high" />
-							)}
-						</div>
-					)
-				)}
-				<div class="blog-container" style="position: relative;">
-					<div class="prose-wrapper">
-						<div class="prose">
-							<div class="title">
-								{categoryBadges.length > 0 && (
-									<div class="category-badges">
-										{categoryBadges.map((b) => (
-											<span class="category-badge" style={`--badge-color:${b.color}`}>
-												{b.label}
-											</span>
-										))}
-									</div>
-								)}
-								<h1 set:html={renderInline(title)} />
-								{showDate && (
-									<div class="date">
-										<FormattedDate date={pubDate} />
-										{
-											updatedDate && (
-												<div class="last-updated-on">
-													Last updated on <FormattedDate date={updatedDate} />
-												</div>
-											)
-										}
-									</div>
-								)}
-								{authors && authors.length > 0 && (
-									<div class="blog-authors">
-										{authors.map((authorId, i) => (
-											<span>
-												<AuthorLink nameOrSlug={authorId} />
-												{i < authors.length - 1 ? ', ' : ''}
-											</span>
-										))}
-									</div>
-								)}
-								<hr />
-							</div>
+		    navbar flash-prevention in Header.astro is unaffected. */
+    }
+    <main>
+      <article>
+        {
+          Astro.slots.has("hero") ? (
+            <slot name="hero" />
+          ) : (
+            !noHero &&
+            heroImage && (
+              <div class="hero-image">
+                {typeof heroImage === "string" ? (
+                  <img
+                    width={1020}
+                    height={510}
+                    src={url(heroImage)}
+                    alt={titleText}
+                    loading="eager"
+                    fetchpriority="high"
+                    decoding="async"
+                  />
+                ) : (
+                  <Image
+                    width={1020}
+                    height={510}
+                    src={heroImage}
+                    alt={titleText}
+                    loading="eager"
+                    fetchpriority="high"
+                  />
+                )}
+              </div>
+            )
+          )
+        }
+        <div class="blog-container" style="position: relative;">
+          <div class="prose-wrapper">
+            <div class="prose">
+              <div class="title">
+                {
+                  categoryBadges.length > 0 && (
+                    <div class="category-badges">
+                      {categoryBadges.map((b) => (
+                        <span
+                          class="category-badge"
+                          style={`--badge-color:${b.color}`}
+                        >
+                          {b.label}
+                        </span>
+                      ))}
+                    </div>
+                  )
+                }
+                <h1 set:html={renderInline(title)} />
+                {
+                  showDate && (
+                    <div class="date">
+                      <FormattedDate date={pubDate} />
+                      {updatedDate && (
+                        <div class="last-updated-on">
+                          Last updated on <FormattedDate date={updatedDate} />
+                        </div>
+                      )}
+                    </div>
+                  )
+                }
+                {
+                  authors && authors.length > 0 && (
+                    <div class="blog-authors">
+                      {authors.map((authorId, i) => (
+                        <span>
+                          <AuthorLink nameOrSlug={authorId} />
+                          {i < authors.length - 1 ? ", " : ""}
+                        </span>
+                      ))}
+                    </div>
+                  )
+                }
+                <hr />
+              </div>
 
-							{toc !== false && headings.length > 0 && (
-								<>
-									<TableOfContents headings={headings} mobile={true} />
-									<TableOfContents headings={headings} mobile={false} />
-								</>
-							)}
-							<slot />
-						</div>
-					</div>
-				</div>
-			</article>
-		</main>
-		<Footer />
-		<script is:inline data-astro-rerun>
-			function getCodeBlockLabel(pre) {
-				const explicitLabel =
-					pre.getAttribute('data-file') ||
-					pre.getAttribute('data-filename') ||
-					pre.dataset.file ||
-					pre.dataset.filename;
-				if (explicitLabel) return explicitLabel;
+              {
+                toc !== false && headings.length > 0 && (
+                  <>
+                    <TableOfContents headings={headings} mobile={true} />
+                    <TableOfContents headings={headings} mobile={false} />
+                  </>
+                )
+              }
+              <slot />
+            </div>
+          </div>
+        </div>
+      </article>
+    </main>
+    <Footer />
+    <script is:inline data-astro-rerun>
+      function getCodeBlockLabel(pre) {
+        const explicitLabel =
+          pre.getAttribute("data-file") ||
+          pre.getAttribute("data-filename") ||
+          pre.dataset.file ||
+          pre.dataset.filename;
+        if (explicitLabel) return explicitLabel;
 
-				const code = pre.querySelector('code');
-				const languageClass = code
-					? Array.from(code.classList).find((className) => className.startsWith('language-'))
-					: null;
-				const language =
-					pre.getAttribute('data-language') ||
-					pre.dataset.language ||
-					(languageClass ? languageClass.replace('language-', '') : '');
-				const normalized = language.toLowerCase();
+        const code = pre.querySelector("code");
+        const languageClass = code
+          ? Array.from(code.classList).find((className) =>
+              className.startsWith("language-"),
+            )
+          : null;
+        const language =
+          pre.getAttribute("data-language") ||
+          pre.dataset.language ||
+          (languageClass ? languageClass.replace("language-", "") : "");
+        const normalized = language.toLowerCase();
 
-				const labels = {
-					astro: 'Astro',
-					bash: 'Bash',
-					css: 'CSS',
-					diff: 'Diff',
-					html: 'HTML',
-					js: 'JavaScript',
-					json: 'JSON',
-					md: 'Markdown',
-					plaintext: 'Code',
-					sh: 'Shell',
-					shell: 'Shell',
-					text: 'Code',
-					toml: 'TOML',
-					ts: 'TypeScript',
-					tsx: 'TSX',
-					yaml: 'YAML',
-					yml: 'YAML',
-				};
+        const labels = {
+          astro: "Astro",
+          bash: "Bash",
+          css: "CSS",
+          diff: "Diff",
+          html: "HTML",
+          js: "JavaScript",
+          json: "JSON",
+          md: "Markdown",
+          plaintext: "Code",
+          sh: "Shell",
+          shell: "Shell",
+          text: "Code",
+          toml: "TOML",
+          ts: "TypeScript",
+          tsx: "TSX",
+          yaml: "YAML",
+          yml: "YAML",
+        };
 
-				if (!normalized) return 'Code';
-				return labels[normalized] || normalized.toUpperCase();
-			}
+        if (!normalized) return "Code";
+        return labels[normalized] || normalized.toUpperCase();
+      }
 
-			async function writeToClipboard(text) {
-				if (navigator.clipboard && navigator.clipboard.writeText) {
-					await navigator.clipboard.writeText(text);
-					return;
-				}
+      async function writeToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          return;
+        }
 
-				const textarea = document.createElement('textarea');
-				textarea.value = text;
-				textarea.setAttribute('readonly', 'true');
-				textarea.style.position = 'absolute';
-				textarea.style.left = '-9999px';
-				document.body.appendChild(textarea);
-				textarea.select();
-				document.execCommand('copy');
-				document.body.removeChild(textarea);
-			}
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "true");
+        textarea.style.position = "absolute";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
 
-			function enhanceCodeBlocks() {
-				const codeBlocks = Array.from(document.querySelectorAll('.prose pre'));
+      function enhanceCodeBlocks() {
+        const codeBlocks = Array.from(document.querySelectorAll(".prose pre"));
 
-				for (const pre of codeBlocks) {
-					if (pre.dataset.enhancedCodeBlock === 'true') continue;
+        for (const pre of codeBlocks) {
+          if (pre.dataset.enhancedCodeBlock === "true") continue;
 
-					const code = pre.querySelector('code');
-					if (!code) continue;
+          const code = pre.querySelector("code");
+          if (!code) continue;
 
-					pre.dataset.enhancedCodeBlock = 'true';
-					pre.setAttribute('tabindex', '0');
+          pre.dataset.enhancedCodeBlock = "true";
+          pre.setAttribute("tabindex", "0");
 
-					const wrapper = document.createElement('div');
-					wrapper.className = 'code-block-frame';
+          const wrapper = document.createElement("div");
+          wrapper.className = "code-block-frame";
 
-					pre.parentNode?.insertBefore(wrapper, pre);
-					wrapper.appendChild(pre);
+          pre.parentNode?.insertBefore(wrapper, pre);
+          wrapper.appendChild(pre);
 
-					const label = document.createElement('span');
-					label.className = 'code-block-label';
-					label.textContent = getCodeBlockLabel(pre);
+          const label = document.createElement("span");
+          label.className = "code-block-label";
+          label.textContent = getCodeBlockLabel(pre);
 
-					const copyButton = document.createElement('button');
-					copyButton.type = 'button';
-					copyButton.className = 'copy-code-button';
-					copyButton.innerHTML =
-						'<span class="copy-code-button__default">Copy</span><span class="copy-code-button__success">Copied</span>';
-					copyButton.setAttribute('aria-label', `Copy ${label.textContent} code`);
+          const copyButton = document.createElement("button");
+          copyButton.type = "button";
+          copyButton.className = "copy-code-button";
+          copyButton.innerHTML =
+            '<span class="copy-code-button__default">Copy</span><span class="copy-code-button__success">Copied</span>';
+          copyButton.setAttribute(
+            "aria-label",
+            `Copy ${label.textContent} code`,
+          );
 
-					copyButton.addEventListener('click', async () => {
-						try {
-							await writeToClipboard(code.innerText || '');
-							copyButton.dataset.copied = 'true';
-							window.setTimeout(() => {
-								copyButton.dataset.copied = 'false';
-							}, 1200);
-						} catch (error) {
-							console.error('Failed to copy code block', error);
-						}
-					});
+          copyButton.addEventListener("click", async () => {
+            try {
+              await writeToClipboard(code.innerText || "");
+              copyButton.dataset.copied = "true";
+              window.setTimeout(() => {
+                copyButton.dataset.copied = "false";
+              }, 1200);
+            } catch (error) {
+              console.error("Failed to copy code block", error);
+            }
+          });
 
-					wrapper.appendChild(label);
-					wrapper.appendChild(copyButton);
-				}
-			}
+          wrapper.appendChild(label);
+          wrapper.appendChild(copyButton);
+        }
+      }
 
-			enhanceCodeBlocks();
+      enhanceCodeBlocks();
 
-			if (!window.__academicPortfolioCodeBlockListener) {
-				document.addEventListener('astro:after-swap', enhanceCodeBlocks);
-				window.__academicPortfolioCodeBlockListener = true;
-			}
-		</script>
+      if (!window.__academicPortfolioCodeBlockListener) {
+        document.addEventListener("astro:after-swap", enhanceCodeBlocks);
+        window.__academicPortfolioCodeBlockListener = true;
+      }
+    </script>
 
-		<script is:inline>
-			// Footnote jumps (in-body [1] refs and the ↩ back-links) are anchor links
-			// to #user-content-fn-* / #user-content-fnref-*. By default each click
-			// pushes a HISTORY entry, so Back/Forward then steps through every footnote
-			// hop instead of returning to the previous page. Intercept them: smooth-
-			// scroll to the target and update the hash with replaceState (no new
-			// history entry), so footnotes never enter the back/forward stack.
-			// One delegated listener on `document` (survives ClientRouter swaps).
-			if (!window.__footnoteScrollBound) {
-				window.__footnoteScrollBound = true;
-				document.addEventListener('click', (e) => {
-					const a = e.target.closest(
-						'a[data-footnote-ref], a.data-footnote-backref',
-					);
-					if (!a) return;
-					const href = a.getAttribute('href') || '';
-					if (!href.startsWith('#')) return;
-					const target = document.getElementById(decodeURIComponent(href.slice(1)));
-					if (!target) return;
-					e.preventDefault();
-					const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-					target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
-					// Reflect the anchor in the URL without adding a history entry.
-					history.replaceState(history.state, '', href);
-				});
-			}
-		</script>
-	</body>
+    <script is:inline>
+      // Footnote jumps (in-body [1] refs and the ↩ back-links) are anchor links
+      // to #user-content-fn-* / #user-content-fnref-*. By default each click
+      // pushes a HISTORY entry, so Back/Forward then steps through every footnote
+      // hop instead of returning to the previous page. Intercept them: smooth-
+      // scroll to the target and update the hash with replaceState (no new
+      // history entry), so footnotes never enter the back/forward stack.
+      // One delegated listener on `document` (survives ClientRouter swaps).
+      if (!window.__footnoteScrollBound) {
+        window.__footnoteScrollBound = true;
+        document.addEventListener("click", (e) => {
+          const a = e.target.closest(
+            "a[data-footnote-ref], a.data-footnote-backref",
+          );
+          if (!a) return;
+          const href = a.getAttribute("href") || "";
+          if (!href.startsWith("#")) return;
+          const target = document.getElementById(
+            decodeURIComponent(href.slice(1)),
+          );
+          if (!target) return;
+          e.preventDefault();
+          const reduce = window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+          ).matches;
+          target.scrollIntoView({
+            behavior: reduce ? "auto" : "smooth",
+            block: "center",
+          });
+          // Reflect the anchor in the URL without adding a history entry.
+          history.replaceState(history.state, "", href);
+        });
+      }
+    </script>
+  </body>
 </html>
