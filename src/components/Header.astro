@@ -17,9 +17,11 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
 const stripped = logoSvg
   .replace(/<\?xml[^>]*>\s*/, "")
   // The integral/e is recolored via a CSS var so it can follow the theme; the
-  // pink glyphs keep their color. Match both fill and stroke, with or without #.
+  // pink glyphs become the theme's "hot mark" so the logo matches the sim's jr
+  // spark and the accent language in each theme. Match fill/stroke, with or w/o #.
   .replaceAll("#6cf", "var(--brand-logo-primary)")
-  .replaceAll("#00deff", "var(--brand-logo-primary)");
+  .replaceAll("#00deff", "var(--brand-logo-primary)")
+  .replaceAll("#ff49ff", "var(--color-hot)");
 
 // Keep only the <path> elements whose class matches `cls`, leaving <defs> (the
 // shared <style>) and the <svg> wrapper intact so each layer renders identically
@@ -464,7 +466,9 @@ const brandLayerSecondary = layerFor("cls-2");
        in light mode the symbol is black, so we glow with the theme cyan
        rather than black so it actually reads as light. */
     --brand-glow-primary: #77a4f5;
-    --brand-glow-secondary: #ff49ff;
+    /* Glow for the hot glyphs — tracks the theme's hot mark so it matches the
+       recolored glyph (var(--color-hot)) in both light and dark. */
+    --brand-glow-secondary: var(--color-hot);
   }
   /* The two color layers stack so they overlay pixel-perfectly (shared viewBox).
      The first is in normal flow to size the box; the second is absolutely
