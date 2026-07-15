@@ -239,7 +239,10 @@ const { count = 46, class: className = "" } = Astro.props;
         // and DARKEN particles toward a deeper accent (so they show on white).
         const dark =
           document.documentElement.getAttribute("data-theme") === "dark";
-        const glowK = dark ? 1 : 1.6; // light mode needs a stronger glow to read
+        // Light mode: a COMPACT tinted pool of the register color bleeding into the
+        // paper, not a wide gray haze. A gentle multiplier + a tighter outer radius
+        // (see `outerR` below) keep it reading as colored ink around the eyebrow.
+        const glowK = dark ? 1 : 1.1;
 
         ctx!.clearRect(0, 0, W, H);
 
@@ -281,7 +284,10 @@ const { count = 46, class: className = "" } = Astro.props;
             ctx!.fillRect(rectX, ly - gr, gr, gr * 2);
           }
         };
-        drawPill(LOOK.outerR, LOOK.outerAlpha); // soft, extends further
+        // Tighter outer halo in light so the pool stays a compact ink bleed rather
+        // than a broad wash across the header (dark keeps the wider, softer reach).
+        const outerR = dark ? LOOK.outerR : 200;
+        drawPill(outerR, LOOK.outerAlpha); // soft, extends further
         drawPill(LOOK.innerR, LOOK.innerAlpha); // tight, anchors the source
 
         // Particles lit by distance to the capsule SEGMENT (not a point), so the
