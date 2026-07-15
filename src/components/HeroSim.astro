@@ -503,7 +503,11 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
         sc.fillStyle = color;
         if (glow > 0) {
           sc.shadowColor = color;
-          sc.shadowBlur = glow;
+          // shadowBlur is in DEVICE pixels — it ignores setTransform(scale). Since
+          // the sprite is baked at `scale`× resolution, multiply the blur by `scale`
+          // so the neon halo keeps its intended CSS-px size (without this the glow
+          // shrinks to 1/scale and the particles look flat, not neon).
+          sc.shadowBlur = glow * scale;
           // Stack the glow so the halo is dense enough to merge with neighbours.
           for (let k = 0; k < GLOW_STACK; k++) dot();
         } else {
