@@ -18,6 +18,13 @@
 	--color-border: #dce3eb;
 	--color-header-border: rgba(0, 0, 0, 0.08);
 	--color-bg-mobile-menu: rgba(246, 248, 250, 0.95);
+	/* Subtle "raised surface" tint for icon-button hovers. A cool step ABOVE the
+	   header ground (never pure white — that reads as a bright halo on the tinted
+	   header). In dark this is a faint lift off the slate. */
+	--color-surface-hover: #dfe6ee;
+	/* Hero grid line color — stronger than --color-border so the blueprint grid
+	   reads on the light ground (dark falls back to --color-border). */
+	--sim-grid-line: #b3c0d0;
 	/* Scarce "hot" mark (logo spark, jr particles, Essays register, text
 	   selection). Kept non-interactive so it stays a signature, not a theme color. */
 	--color-hot: #d1268f;
@@ -61,6 +68,10 @@
 	--color-header-border: rgba(255, 255, 255, 0.1);
 	--color-bg-mobile-menu: rgba(15, 23, 42, 0.95);
 	--color-hot: #f472b6;
+	/* Faint lift off the slate for icon-button hovers (matches old offset look). */
+	--color-surface-hover: #1e293b;
+	/* Dark grid keeps the border color (light overrides this in :root above). */
+	--sim-grid-line: #334155;
 
 	/* Diagrams */
 	--fig-red: #f87171;

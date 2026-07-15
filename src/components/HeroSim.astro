@@ -484,16 +484,22 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       if (sc) {
         sc.setTransform(DPR, 0, 0, DPR, 0, 0);
         const cx = cssSize / 2;
-        const s = r * 2;
+        // Round dot: baked ONCE per sprite (only on theme/resize), so drawing an
+        // arc instead of a rect adds no per-frame cost. Squares were only obvious
+        // once the glow was removed in light mode — a disc reads as a particle.
+        const dot = () => {
+          sc.beginPath();
+          sc.arc(cx, cx, r, 0, Math.PI * 2);
+          sc.fill();
+        };
         sc.fillStyle = color;
         if (glow > 0) {
           sc.shadowColor = color;
           sc.shadowBlur = glow;
           // Stack the glow so the halo is dense enough to merge with neighbours.
-          for (let k = 0; k < GLOW_STACK; k++)
-            sc.fillRect(cx - r, cx - r, s, s);
+          for (let k = 0; k < GLOW_STACK; k++) dot();
         } else {
-          sc.fillRect(cx - r, cx - r, s, s);
+          dot();
         }
       }
       return c;
@@ -511,21 +517,20 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       spriteSizes[0] = gasCss;
       spriteSizes[1] = spriteCssSize;
       spriteSizes[2] = spriteCssSize;
-      // Light mode = "daylight": the name reads as crisp INK, no neon halo (glows
-      // wash out on the light ground and read as a smudge). Dark keeps its neon
-      // glow. The JR hot-mark keeps a small halo in both — a single glyph, and the
-      // hot pink stays legible on white.
+      // Light mode = "daylight": the name AND the JR mark read as crisp INK, no
+      // neon halo (glows wash out on the light ground and read as a smudge). Dark
+      // keeps its neon glow. Both use a LARGER solid dot in light so neighbouring
+      // particles overlap into dense strokes (dark relies on the glow halo to merge
+      // them; in light we merge with real ink). Dots still fit the glow-sized box.
       const isDark =
         document.documentElement.getAttribute("data-theme") === "dark";
       sprites[0] = bakeSprite(dotColor, 0, gasCss); // gas — dot, no glow
-      // Light name: no glow, but a LARGER solid dot so neighbouring particles
-      // overlap into dense INK strokes (dark relies on the glow halo to merge them;
-      // in light we merge with real ink instead of a smudge). Dot still fits the
-      // glow-sized sprite box.
       sprites[1] = isDark
         ? bakeSprite(insideColor, GLOW, spriteCssSize)
         : bakeSprite(insideColor, 0, spriteCssSize, 1.7);
-      sprites[2] = bakeSprite(jrColor, GLOW, spriteCssSize); // JR + glow
+      sprites[2] = isDark
+        ? bakeSprite(jrColor, GLOW, spriteCssSize)
+        : bakeSprite(jrColor, 0, spriteCssSize, 1.7);
       if (useGL) uploadTextures();
     }
 
@@ -1556,9 +1561,19 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     inset: -22% -12%;
     z-index: 0;
     pointer-events: none;
+    /* Grid line color is a dedicated var so light mode can use a stronger cool
+       blue-gray than --color-border (which is too pale on the #f6f8fa ground to
+       read). Dark falls back to --color-border, unchanged. */
     background-image:
-      linear-gradient(var(--color-border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
+      linear-gradient(
+        var(--sim-grid-line, var(--color-border)) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        var(--sim-grid-line, var(--color-border)) 1px,
+        transparent 1px
+      );
     background-size: 46px 46px;
     background-position: center;
     opacity: 0.28; /* grid visibility — lower = fainter */

@@ -369,7 +369,9 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
 
 <style>
   .site-footer {
-    background-color: var(--color-bg-offset);
+    /* Page ground (off-white in light), not the white panel color — the footer is
+       a base surface, not a lifted card. No-op in dark (bg == offset there). */
+    background-color: var(--color-bg);
     color: var(--color-text-main);
     padding: 4rem 1rem;
     margin-top: auto;
