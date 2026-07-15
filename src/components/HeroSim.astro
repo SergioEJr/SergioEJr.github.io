@@ -246,7 +246,10 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     // Outside-gas color per theme. Light mode: a mid gray (darker than before so
     // it's visible, lighter than the navy letters so the name still pops).
     const DARK_GAS = ""; // "" → use --color-text-muted
-    const LIGHT_GAS = "#999999";
+    // Light mode: a cool blue-gray ink wash. Reads as an ambient "gas" against the
+    // daylight ground (#f6f8fa) without competing with the navy letters — and
+    // reads as ink, not white sensor-noise (the old neutral #999 problem).
+    const LIGHT_GAS = "#a3b2c2";
 
     // ---- State ----------------------------------------------------------
     // Particles are stored in parallel typed arrays (Structure-of-Arrays) rather
