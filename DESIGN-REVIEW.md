@@ -7,14 +7,19 @@ light mode, hero card, and section headings haven't adopted it yet).
 
 ## Working through
 
-- [ ] **1. Light mode is a second-class citizen** ← IN PROGRESS
-  - Hero gas reads as gray static on pure white; name emerges from noise, not glow.
-  - Palette is generic: pure `#fff` bg, `#eaeaea` borders, Oxford Blue accent;
-    `--color-bg-offset` == `--color-bg` in both themes → no surface hierarchy.
-  - Logo magenta appears nowhere else in light mode.
-  - Journal glow-field light treatment reads as a gray smudge rather than a light source.
-  - Direction constraints (Sergio): NO dark plate behind the hero sim in light
-    mode — retune light mode itself to feel intentional instead.
+- [x] **1. Light mode is a second-class citizen** ✅ DONE (2026-07-15)
+  - Shipped the "daylight lab" retune. Spec:
+    `docs/superpowers/specs/2026-07-15-light-mode-daylight-lab-design.md`;
+    plan: `docs/superpowers/plans/2026-07-15-light-mode-daylight-lab.md`.
+  - Palette → cool `#f6f8fa` ground, white `--color-bg-offset` lifts (real surface
+    hierarchy), cool borders, ink-navy text, cool-cast shadows.
+  - New `--color-hot` token (light `#d1268f`, dark `#f472b6`) → text selection +
+    the sim's jr spark; kept scarce/non-interactive.
+  - Hero: cool ink-wash gas; name condenses as dense INK (no glow, larger dots)
+    in light; dark neon untouched.
+  - Journal glow: compact tinted pool (glowK 1.6→1.1, outerR 260→200 light only).
+  - Figure card sits on page ground so theme-aware SVG faces stay invisible.
+  - Verified light+dark across all pages + production build; dark = zero change.
 
 - [ ] **2. Copy-rendering bugs**
   - Space before commas in author lists (JSX whitespace):
