@@ -509,7 +509,14 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       // JR_COLOR) — no color logic of its own, so light & dark stay correct. Must
       // be called AFTER readColors() and after resize() (depends on DPR/dotRadius).
       const r = dotRadius();
-      spriteCssSize = Math.ceil((r + GLOW) * 2); // dot + glow halo on all sides
+      // Sprite box = dot + glow halo on all sides, PLUS padding so the shadowBlur
+      // Gaussian tail fades to zero before the canvas edge. Without this pad the
+      // blur is hard-clipped at the square bounds and every glowing particle reads
+      // as a SQUARE (the disc's own shape is lost under the clipped halo). A pad of
+      // ~GLOW again gives the tail room to vanish. Baked once (theme/resize) → no
+      // per-frame cost.
+      const GLOW_PAD = GLOW;
+      spriteCssSize = Math.ceil((r + GLOW + GLOW_PAD) * 2);
       spriteHalf = spriteCssSize / 2;
       // Gas sprite is small (just the dot, no glow); pad by 1px so the point
       // sprite's edges aren't clipped by texture filtering.
