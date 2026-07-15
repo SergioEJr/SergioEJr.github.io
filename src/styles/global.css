@@ -155,15 +155,16 @@ body {
 	transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Branded text selection. --color-accent-light + --color-text-main both flip
-   with [data-theme="dark"], so selected text stays readable in either theme. */
+/* Branded text selection. Uses the scarce "hot" mark — it can appear anywhere on
+   the site yet stays rare by nature (only visible while text is highlighted).
+   --color-hot flips with [data-theme="dark"]; white text reads on both hues. */
 ::selection {
-	background: var(--color-accent-light);
-	color: var(--color-text-main);
+	background: var(--color-hot);
+	color: #fff;
 }
 ::-moz-selection {
-	background: var(--color-accent-light);
-	color: var(--color-text-main);
+	background: var(--color-hot);
+	color: #fff;
 }
 
 /* Consistent, branded keyboard-focus ring. :focus-visible keeps it keyboard-only
