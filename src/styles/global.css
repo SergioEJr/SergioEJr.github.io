@@ -1,23 +1,26 @@
-/* Academic Portfolio Theme */
+/* Sergio Eraso — site theme */
 
 :root {
 	/* Typography */
 	--font-sans: 'Atkinson', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 	--font-serif: "Georgia", "Times New Roman", Times, serif;
 
-	/* --- LIGHT THEME (Default) --- */
-	--color-bg: #ffffff;
+	/* --- LIGHT THEME (Default) — "daylight lab": cool near-white ground, ink-navy
+	   text, white panels lift off the tinted bg for surface hierarchy. --- */
+	--color-bg: #f6f8fa;
 	--color-bg-offset: #ffffff;
-	/* Clean white for premium feel */
-	--color-bg-header: rgba(255, 255, 255, 0.85);
-	--color-text-main: #1a1a1a;
-	--color-text-muted: #555555;
+	--color-bg-header: rgba(246, 248, 250, 0.85);
+	--color-text-main: #18222e;
+	--color-text-muted: #49586a;
 	--color-accent: #003366;
 	/* Oxford Blue */
-	--color-accent-light: #e6f0fa;
-	--color-border: #eaeaea;
+	--color-accent-light: #e2ecf7;
+	--color-border: #dce3eb;
 	--color-header-border: rgba(0, 0, 0, 0.08);
-	--color-bg-mobile-menu: rgba(255, 255, 255, 0.95);
+	--color-bg-mobile-menu: rgba(246, 248, 250, 0.95);
+	/* Scarce "hot" mark (logo spark, jr particles, Essays register, text
+	   selection). Kept non-interactive so it stays a signature, not a theme color. */
+	--color-hot: #d1268f;
 
 	/* Diagrams (figure-only accent; see src/assets/blog/README.md) */
 	--fig-red: #b91c1c;
@@ -37,9 +40,9 @@
 	/* Spacing & UI */
 	--max-width: 960px;
 	--radius: 8px;
-	--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
-	--shadow-md: 0 4px 6px rgba(0, 0, 0, 0.08);
-	--shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+	--shadow-sm: 0 1px 3px rgba(23, 42, 72, 0.05);
+	--shadow-md: 0 4px 6px rgba(23, 42, 72, 0.08);
+	--shadow-lg: 0 10px 15px rgba(23, 42, 72, 0.1);
 }
 
 /* --- DARK THEME --- */
@@ -57,6 +60,7 @@
 	--color-border: #334155;
 	--color-header-border: rgba(255, 255, 255, 0.1);
 	--color-bg-mobile-menu: rgba(15, 23, 42, 0.95);
+	--color-hot: #f472b6;
 
 	/* Diagrams */
 	--fig-red: #f87171;
