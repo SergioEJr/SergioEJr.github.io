@@ -13,21 +13,21 @@ text.f1 {font-family:cmr9;font-size:8.966376px}
 <g fill='var(--color-text-main, currentColor)' stroke='var(--color-text-main, currentColor)'>
 <g stroke-width='0.4'>
 <g stroke-linejoin='round'>
-<g fill='var(--color-bg, #ffffff)'>
+<g fill='var(--color-bg, #f6f8fa)'>
 <g stroke='var(--color-text-main, currentColor)'>
 <g stroke-width='1.0'>
 <path d='M0 0H113.81042V113.81042H0Z'/>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
+<g fill='var(--color-bg, #f6f8fa)'>
 <g stroke='var(--color-text-main, currentColor)'>
 <g stroke-width='1.0'>
 <path d='M0 113.81042H113.81042L170.71564 153.64476H56.90521Z'/>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
+<g fill='var(--color-bg, #f6f8fa)'>
 <g stroke='var(--color-text-main, currentColor)'>
 <g stroke-width='1.0'>
 <path d='M113.81042 0V113.81042L170.71564 153.64476V39.83434Z'/>
@@ -44,22 +44,22 @@ text.f1 {font-family:cmr9;font-size:8.966376px}
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
-<g stroke='var(--fig-red, #b91c1c)'>
+<g fill='var(--color-bg, #f6f8fa)'>
+<g stroke='var(--fig-red, #c02748)'>
 <g stroke-width='1.0'>
 <path d='M0 133.72725H113.81042V147.95355H0Z'/>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
-<g stroke='var(--fig-red, #b91c1c)'>
+<g fill='var(--color-bg, #f6f8fa)'>
+<g stroke='var(--fig-red, #c02748)'>
 <g stroke-width='1.0'>
 <path d='M0 147.95355H113.81042L170.71564 187.78789H56.90521Z'/>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
-<g stroke='var(--fig-red, #b91c1c)'>
+<g fill='var(--color-bg, #f6f8fa)'>
+<g stroke='var(--fig-red, #c02748)'>
 <g stroke-width='1.0'>
 <path d='M113.81042 133.72725V147.95355L170.71564 187.78789V173.56158Z'/>
 </g>
@@ -67,31 +67,31 @@ text.f1 {font-family:cmr9;font-size:8.966376px}
 </g>
 <g transform='translate(69.91963,162.35791)'>
 <g stroke='none' transform='scale(-1.00375,1.00375)translate(-51.505311,118.573234)scale(-1,-1)'>
-<g fill='var(--fig-red, #b91c1c)'>
+<g fill='var(--fig-red, #c02748)'>
 <g stroke='none'>
-<text class='f0' x='-51.505311' y='118.573234'><tspan fill='var(--fig-red, #b91c1c)'>x</tspan></text>
-<text class='f1' x='-43.52281' y='113.367125'><tspan fill='var(--fig-red, #b91c1c)'>2</tspan></text>
-<text class='f0' x='-36.02599' y='118.573234'><tspan fill='var(--fig-red, #b91c1c)'>dx</tspan></text>
+<text class='f0' x='-51.505311' y='118.573234'><tspan fill='var(--fig-red, #c02748)'>x</tspan></text>
+<text class='f1' x='-43.52281' y='113.367125'><tspan fill='var(--fig-red, #c02748)'>2</tspan></text>
+<text class='f0' x='-36.02599' y='118.573234'><tspan fill='var(--fig-red, #c02748)'>dx</tspan></text>
 </g>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
-<g stroke='var(--fig-blue, #173f7a)'>
+<g fill='var(--color-bg, #f6f8fa)'>
+<g stroke='var(--fig-blue, #1d4ed8)'>
 <g stroke-width='1.0'>
 <path d='M133.72725 0H147.95355V113.81042H133.72725Z'/>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
-<g stroke='var(--fig-blue, #173f7a)'>
+<g fill='var(--color-bg, #f6f8fa)'>
+<g stroke='var(--fig-blue, #1d4ed8)'>
 <g stroke-width='1.0'>
 <path d='M133.72725 113.81042H147.95355L204.85876 153.64476H190.63246Z'/>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
-<g stroke='var(--fig-blue, #173f7a)'>
+<g fill='var(--color-bg, #f6f8fa)'>
+<g stroke='var(--fig-blue, #1d4ed8)'>
 <g stroke-width='1.0'>
 <path d='M147.95355 0V113.81042L204.85876 153.64476V39.83434Z'/>
 </g>
@@ -99,31 +99,31 @@ text.f1 {font-family:cmr9;font-size:8.966376px}
 </g>
 <g transform='matrix(0.0,-1.0,1.0,0.0,170.89336,92.26056)'>
 <g stroke='none' transform='scale(-1.00375,1.00375)translate(-51.505311,118.573234)scale(-1,-1)'>
-<g fill='var(--fig-blue, #173f7a)'>
+<g fill='var(--fig-blue, #1d4ed8)'>
 <g stroke='none'>
-<text class='f0' x='-51.505311' y='118.573234'><tspan fill='var(--fig-blue, #173f7a)'>x</tspan></text>
-<text class='f1' x='-43.52281' y='113.367125'><tspan fill='var(--fig-blue, #173f7a)'>2</tspan></text>
-<text class='f0' x='-36.02599' y='118.573234'><tspan fill='var(--fig-blue, #173f7a)'>dx</tspan></text>
+<text class='f0' x='-51.505311' y='118.573234'><tspan fill='var(--fig-blue, #1d4ed8)'>x</tspan></text>
+<text class='f1' x='-43.52281' y='113.367125'><tspan fill='var(--fig-blue, #1d4ed8)'>2</tspan></text>
+<text class='f0' x='-36.02599' y='118.573234'><tspan fill='var(--fig-blue, #1d4ed8)'>dx</tspan></text>
 </g>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
-<g stroke='var(--fig-orange, #c2410c)'>
+<g fill='var(--color-bg, #f6f8fa)'>
+<g stroke='var(--fig-orange, #b45309)'>
 <g stroke-width='1.0'>
 <path d='M-17.07155-11.95029H96.73886V101.86012H-17.07155Z'/>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
-<g stroke='var(--fig-orange, #c2410c)'>
+<g fill='var(--color-bg, #f6f8fa)'>
+<g stroke='var(--fig-orange, #b45309)'>
 <g stroke-width='1.0'>
 <path d='M-17.07155 101.86012H96.73886L103.85202 106.83942H-9.9584Z'/>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
-<g stroke='var(--fig-orange, #c2410c)'>
+<g fill='var(--color-bg, #f6f8fa)'>
+<g stroke='var(--fig-orange, #b45309)'>
 <g stroke-width='1.0'>
 <path d='M96.73886-11.95029V101.86012L103.85202 106.83942V-6.97101Z'/>
 </g>
@@ -131,93 +131,93 @@ text.f1 {font-family:cmr9;font-size:8.966376px}
 </g>
 <g transform='translate(24.39546,39.44211)'>
 <g stroke='none' transform='scale(-1.00375,1.00375)translate(-51.505311,118.573234)scale(-1,-1)'>
-<g fill='var(--fig-orange, #c2410c)'>
+<g fill='var(--fig-orange, #b45309)'>
 <g stroke='none'>
-<text class='f0' x='-51.505311' y='118.573234'><tspan fill='var(--fig-orange, #c2410c)'>x</tspan></text>
-<text class='f1' x='-43.52281' y='113.367125'><tspan fill='var(--fig-orange, #c2410c)'>2</tspan></text>
-<text class='f0' x='-36.02599' y='118.573234'><tspan fill='var(--fig-orange, #c2410c)'>dx</tspan></text>
+<text class='f0' x='-51.505311' y='118.573234'><tspan fill='var(--fig-orange, #b45309)'>x</tspan></text>
+<text class='f1' x='-43.52281' y='113.367125'><tspan fill='var(--fig-orange, #b45309)'>2</tspan></text>
+<text class='f0' x='-36.02599' y='118.573234'><tspan fill='var(--fig-orange, #b45309)'>dx</tspan></text>
 </g>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
+<g fill='var(--color-bg, #f6f8fa)'>
 <g stroke='var(--color-text-muted, #555555)'>
 <g stroke-width='1.0'>
 <path d='M-17.07155 121.77693H96.73886V136.00323H-17.07155Z'/>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
+<g fill='var(--color-bg, #f6f8fa)'>
 <g stroke='var(--color-text-muted, #555555)'>
 <g stroke-width='1.0'>
 <path d='M-17.07155 136.00323H96.73886L103.85202 140.98253H-9.9584Z'/>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
+<g fill='var(--color-bg, #f6f8fa)'>
 <g stroke='var(--color-text-muted, #555555)'>
 <g stroke-width='1.0'>
 <path d='M96.73886 121.77693V136.00323L103.85202 140.98253V126.75623Z'/>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
+<g fill='var(--color-bg, #f6f8fa)'>
 <g stroke='var(--color-text-muted, #555555)'>
 <g stroke-width='1.0'>
 <path d='M116.65567-11.95029H130.88197V101.86012H116.65567Z'/>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
+<g fill='var(--color-bg, #f6f8fa)'>
 <g stroke='var(--color-text-muted, #555555)'>
 <g stroke-width='1.0'>
 <path d='M116.65567 101.86012H130.88197L137.99513 106.83942H123.76883Z'/>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
+<g fill='var(--color-bg, #f6f8fa)'>
 <g stroke='var(--color-text-muted, #555555)'>
 <g stroke-width='1.0'>
 <path d='M130.88197-11.95029V101.86012L137.99513 106.83942V-6.97101Z'/>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
+<g fill='var(--color-bg, #f6f8fa)'>
 <g stroke='var(--color-text-muted, #555555)'>
 <g stroke-width='1.0'>
 <path d='M133.72725 133.72725H147.95355V147.95355H133.72725Z'/>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
+<g fill='var(--color-bg, #f6f8fa)'>
 <g stroke='var(--color-text-muted, #555555)'>
 <g stroke-width='1.0'>
 <path d='M133.72725 147.95355H147.95355L204.85876 187.78789H190.63246Z'/>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
+<g fill='var(--color-bg, #f6f8fa)'>
 <g stroke='var(--color-text-muted, #555555)'>
 <g stroke-width='1.0'>
 <path d='M147.95355 133.72725V147.95355L204.85876 187.78789V173.56158Z'/>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
+<g fill='var(--color-bg, #f6f8fa)'>
 <g stroke='var(--color-text-muted, #555555)'>
 <g stroke-width='1.0'>
 <path d='M116.65567 121.77693H130.88197V136.00323H116.65567Z'/>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
+<g fill='var(--color-bg, #f6f8fa)'>
 <g stroke='var(--color-text-muted, #555555)'>
 <g stroke-width='1.0'>
 <path d='M116.65567 136.00323H130.88197L137.99513 140.98253H123.76883Z'/>
 </g>
 </g>
 </g>
-<g fill='var(--color-bg, #ffffff)'>
+<g fill='var(--color-bg, #f6f8fa)'>
 <g stroke='var(--color-text-muted, #555555)'>
 <g stroke-width='1.0'>
 <path d='M130.88197 121.77693V136.00323L137.99513 140.98253V126.75623Z'/>

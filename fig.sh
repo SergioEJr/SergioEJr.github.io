@@ -30,10 +30,12 @@ perl -pe '
   s/#000000\b|#000\b/currentColor/g;
   s/#003366\b|#036\b/var(--color-accent, #003366)/g;
   s/#555555\b|#555\b/var(--color-text-muted, #555555)/g;
-  s/#ffffff\b|#fff\b/var(--color-bg, #ffffff)/g;
-  s/#b91c1c\b/var(--fig-red, #b91c1c)/gi;
-  s/#173f7a\b/var(--fig-blue, #173f7a)/gi;
-  s/#c2410c\b/var(--fig-orange, #c2410c)/gi;
+  s/#f6f8fa\b|#ffffff\b|#fff\b/var(--color-bg, #f6f8fa)/gi;
+  s/#c02748\b/var(--fig-red, #c02748)/gi;
+  s/#1d4ed8\b/var(--fig-blue, #1d4ed8)/gi;
+  s/#b45309\b/var(--fig-orange, #b45309)/gi;
+  s/#047857\b/var(--fig-green, #047857)/gi;
+  s/#64748b\b/var(--fig-muted, #64748b)/gi;
   s/currentColor/var(--color-text-main, currentColor)/g;
 ' "build/$n.svg" > "src/assets/blog/$n.svg"
 

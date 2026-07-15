@@ -31,7 +31,7 @@ text.f2 {font-family:cmr12;font-size:14.346196px}
 </g>
 </g>
 <g stroke-width='1.0'>
-<g fill='var(--fig-red, #b91c1c)' stroke='var(--fig-red, #b91c1c)'>
+<g fill='var(--fig-red, #c02748)' stroke='var(--fig-red, #c02748)'>
 <path d='M176.40616 0V113.81042H221.93033V0ZM221.93033 113.81042' fill='none'/>
 </g>
 </g>
@@ -64,9 +64,9 @@ text.f2 {font-family:cmr12;font-size:14.346196px}
 </g>
 <g transform='translate(192.43623,-19.22346)'>
 <g stroke='none' transform='scale(-1.00375,1.00375)translate(-41.961328,84.556981)scale(-1,-1)'>
-<g fill='var(--fig-red, #b91c1c)'>
+<g fill='var(--fig-red, #c02748)'>
 <g stroke='none'>
-<text class='f0' x='-41.961328' y='84.556981'><tspan fill='var(--fig-red, #b91c1c)'>d</tspan><tspan fill='var(--fig-red, #b91c1c)' x='-37.003295'>f</tspan></text>
+<text class='f0' x='-41.961328' y='84.556981'><tspan fill='var(--fig-red, #c02748)'>d</tspan><tspan fill='var(--fig-red, #c02748)' x='-37.003295'>f</tspan></text>
 </g>
 </g>
 </g>
@@ -82,9 +82,9 @@ text.f2 {font-family:cmr12;font-size:14.346196px}
 </g>
 <g transform='matrix(0.0,-1.0,1.0,0.0,195.56825,68.47133)'>
 <g stroke='none' transform='scale(-1.00375,1.00375)translate(-41.961328,84.556981)scale(-1,-1)'>
-<g fill='var(--fig-red, #b91c1c)'>
+<g fill='var(--fig-red, #c02748)'>
 <g stroke='none'>
-<text class='f0' x='-41.961328' y='84.556981'><tspan fill='var(--fig-red, #b91c1c)'>g</tspan><tspan fill='var(--fig-red, #b91c1c)' x='-32.329232'>d</tspan><tspan fill='var(--fig-red, #b91c1c)' x='-27.3712'>f</tspan></text>
+<text class='f0' x='-41.961328' y='84.556981'><tspan fill='var(--fig-red, #c02748)'>g</tspan><tspan fill='var(--fig-red, #c02748)' x='-32.329232'>d</tspan><tspan fill='var(--fig-red, #c02748)' x='-27.3712'>f</tspan></text>
 </g>
 </g>
 </g>

@@ -15,19 +15,25 @@
 %   ink    #000000 -> var(--color-text-main, currentColor)   (also all black strokes)
 %   accent #003366 -> var(--color-accent, #003366)
 %   muted  #555555 -> var(--color-text-muted, #555555)
-%   figred #b91c1c -> var(--fig-red, #b91c1c)
-%   figblue   #173f7a -> var(--fig-blue, #173f7a)
-%   figorange #c2410c -> var(--fig-orange, #c2410c)
-%   figbg     #ffffff -> var(--color-bg, #ffffff)   (opaque page-color fill)
+%   figred    #c02748 -> var(--fig-red, #c02748)
+%   figblue   #1d4ed8 -> var(--fig-blue, #1d4ed8)
+%   figorange #b45309 -> var(--fig-orange, #b45309)
+%   figgreen  #047857 -> var(--fig-green, #047857)
+%   figmuted  #64748b -> var(--fig-muted, #64748b)
+%   figbg     #f6f8fa -> var(--color-bg, #f6f8fa)   (opaque page-color fill)
 \definecolor{ink}{HTML}{000000}
 \definecolor{accent}{HTML}{003366}
 \definecolor{muted}{HTML}{555555}
-\definecolor{figred}{HTML}{B91C1C}
-\definecolor{figblue}{HTML}{173F7A}
-\definecolor{figorange}{HTML}{C2410C}
+% Diagram palette — tuned for the light ground; each hue legible + distinguishable
+% and harmonic with the cool accent. fig.sh rewrites each to its themed CSS var.
+\definecolor{figred}{HTML}{C02748}
+\definecolor{figblue}{HTML}{1D4ED8}
+\definecolor{figorange}{HTML}{B45309}
+\definecolor{figgreen}{HTML}{047857}
+\definecolor{figmuted}{HTML}{64748B}
 % figbg = the page background, for OPAQUE fills that occlude (solid slabs whose
 % interior is the canvas color). Maps to var(--color-bg) so it flips with theme.
-\definecolor{figbg}{HTML}{FFFFFF}
+\definecolor{figbg}{HTML}{F6F8FA}
 
 % --- Figure body font size = site body text. ---------------------------------
 % The site renders body text at 18px ≈ 13.5pt. dvisvgm emits the SVG at its

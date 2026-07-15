@@ -29,10 +29,16 @@
 	   selection). Kept non-interactive so it stays a signature, not a theme color. */
 	--color-hot: #d1268f;
 
-	/* Diagrams (figure-only accent; see src/assets/blog/README.md) */
-	--fig-red: #b91c1c;
-	--fig-blue: #173f7a;
-	--fig-orange: #c2410c;
+	/* Diagram palette (figure-only; see src/assets/blog/README.md). Tuned for the
+	   #f6f8fa light ground: each hue is legible, mutually distinguishable, and
+	   harmonic with the cool navy accent + magenta hot mark. fig-blue is a TRUE
+	   blue (not the old navy that collided with --color-accent); fig-red leans cool
+	   crimson toward the hot family; fig-green/fig-muted are new. */
+	--fig-red: #c02748;
+	--fig-blue: #1d4ed8;
+	--fig-orange: #b45309;
+	--fig-green: #047857;
+	--fig-muted: #64748b;
 
 	/* Journal register colors (header + filter pill) and Essays subject accents
 	   (dot + title underline). Render-time source of truth; keep in sync with the
@@ -73,10 +79,13 @@
 	/* Dark grid keeps the border color (light overrides this in :root above). */
 	--sim-grid-line: #334155;
 
-	/* Diagrams */
+	/* Diagrams (dark). fig-red/blue/orange unchanged; green/muted added so figures
+	   that use the new roles render in dark too. */
 	--fig-red: #f87171;
 	--fig-blue: #60a5fa;
 	--fig-orange: #fb923c;
+	--fig-green: #34d399;
+	--fig-muted: #94a3b8;
 
 	/* Journal registers + Essays subjects (dark). Keep in sync with categories.ts. */
 	--cat-updates: #60a5fa;
