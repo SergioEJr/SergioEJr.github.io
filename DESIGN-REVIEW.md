@@ -20,6 +20,14 @@ light mode, hero card, and section headings haven't adopted it yet).
   - Journal glow: compact tinted pool (glowK 1.6→1.1, outerR 260→200 light only).
   - Figure card sits on page ground so theme-aware SVG faces stay invisible.
   - Verified light+dark across all pages + production build; dark = zero change.
+  - **Follow-up polish round (2026-07-15):** hero particles now drawn as circles
+    (baked in sprite, no per-frame cost); hero grid line uses `--sim-grid-line`
+    (stronger on the light ground); JR spark glow removed in light (matches name);
+    navbar icon-hover uses new `--color-surface-hover` (no white halo); footer on
+    `--color-bg` (off-white, not pure white); figure palette reworked for the light
+    ground (`--fig-red/blue/orange` retuned + new `--fig-green`/`--fig-muted`),
+    SVGs regenerated and `_preamble.tex`/`fig.sh` synced; logo hot glyphs + glow
+    use `--color-hot` per theme; favicon regenerated to match.
 
 - [ ] **2. Copy-rendering bugs**
   - Space before commas in author lists (JSX whitespace):
