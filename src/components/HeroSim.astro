@@ -476,13 +476,21 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       // more opaque halo that merges with its neighbours when blitted. Cost is
       // paid ONCE here, not per frame.
       const r = dotRadius() * radiusScale;
-      const dev = Math.max(1, Math.round(cssSize * DPR));
+      // Supersample the sprite's INTERNAL resolution. The dot radius is only ~1px,
+      // so rasterizing at CSS/device px makes the disc a 2px block — a circle and a
+      // square are the same handful of pixels at that size (this was the real cause
+      // of "square particles"). Baking at SS× resolution draws the disc with many
+      // pixels so its round silhouette is real; the GPU's LINEAR filter then
+      // downsamples it to a smooth round dot on screen. Baked once → no frame cost.
+      const SS = 8;
+      const scale = Math.max(1, Math.round(DPR)) * SS;
+      const dev = Math.max(1, Math.round(cssSize * scale));
       const c = document.createElement("canvas");
       c.width = dev;
       c.height = dev;
       const sc = c.getContext("2d");
       if (sc) {
-        sc.setTransform(DPR, 0, 0, DPR, 0, 0);
+        sc.setTransform(scale, 0, 0, scale, 0, 0);
         const cx = cssSize / 2;
         // Round dot: baked ONCE per sprite (only on theme/resize), so drawing an
         // arc instead of a rect adds no per-frame cost. Squares were only obvious
