@@ -517,6 +517,10 @@ for (const p of projects)
                         : url(`/projects/${project.id}.png`)
                     }
                     alt={project.data.title}
+                    width="900"
+                    height="506"
+                    loading="lazy"
+                    decoding="async"
                   />
                   {/* Custom thumbnails get the category pills overlaid; the generated
 							    hero card already has them baked in. */}
