@@ -103,6 +103,19 @@ const topics = [...topicCounts.entries()].sort((a, b) =>
 // Non-notebook posts (Updates + Essays) keep their reverse-chronological order.
 const blogPosts = posts.filter((p) => p.data.category !== "notebook");
 
+// "All"-view ordering (via CSS `order`, scoped to [data-view="all"] so the grouped
+// Notebook view is untouched). The list flows: timeline posts first, in their
+// existing reverse-chronological order, THEN notebook posts as a flat continuation
+// sorted newest-first — so the whole "All" stream reads newest→oldest throughout.
+// `posts` is already newest-first. Timeline posts get low order values (their rank);
+// notes get NOTE_ORDER_BASE + their newest-first rank so they always follow.
+const NOTE_ORDER_BASE = 1000;
+const allOrder = new Map<string, number>();
+blogPosts.forEach((p, i) => allOrder.set(p.id, i));
+posts
+  .filter((p) => p.data.category === "notebook")
+  .forEach((p, i) => allOrder.set(p.id, NOTE_ORDER_BASE + i));
+
 // Notebook posts grouped by topic. `posts` is newest-first, so the first time a
 // topic appears is its newest post — that order is also the group order
 // (newest-group-first). Posts within a group stay newest-first.
@@ -225,6 +238,7 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
                 number={postNumber.get(post.id) ?? 0}
                 catColor={rowColor(post)}
                 catLabel={rowLabel(post)}
+                allOrder={allOrder.get(post.id) ?? 0}
               />
             ))
           }
@@ -246,6 +260,7 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
                     number={postNumber.get(post.id) ?? 0}
                     catColor={rowColor(post)}
                     catLabel={rowLabel(post)}
+                    allOrder={allOrder.get(post.id) ?? 0}
                   />
                 ))}
               </Fragment>

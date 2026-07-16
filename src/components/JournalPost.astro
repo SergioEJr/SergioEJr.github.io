@@ -8,8 +8,9 @@ interface Props {
 	number: number;
 	catColor: string;
 	catLabel: string;
+	allOrder?: number;
 }
-const { post, number, catColor, catLabel } = Astro.props;
+const { post, number, catColor, catLabel, allOrder = 0 } = Astro.props;
 
 function postLink(data: any, id: string): { href: string; external: boolean } {
 	if (data.externalUrl) return { href: data.externalUrl, external: true };
@@ -23,7 +24,7 @@ const isNote = post.data.category === 'notebook';
 	class:list={['j-post', { 'is-note': isNote }]}
 	data-category={post.data.category}
 	data-topic={post.data.topic ?? ''}
-	style={`--cat-color:${catColor}`}
+	style={`--cat-color:${catColor};--all-order:${allOrder}`}
 >
 	{!isNote && <div class="j-index">{String(number).padStart(2, '0')}</div>}
 	{isNote && (
@@ -78,6 +79,13 @@ const isNote = post.data.category === 'notebook';
 		/* Containing block for the title link's stretched ::after overlay, which
 		   makes the whole row (index, category, title, desc, meta) clickable. */
 		position: relative;
+	}
+	/* "All" view flow order (.j-list is a flex column): timeline posts first in
+	   reverse-chronological order, then notes as a flat newest-first continuation.
+	   --all-order is set per post in the frontmatter. Scoped to [data-view="all"]
+	   so the dedicated Notebook view keeps its grouped DOM order (order: 0). */
+	:global(#journal[data-view="all"]) .j-post {
+		order: var(--all-order, 0);
 	}
 	/* DEDICATED Notebook view: notes are a single content column, borderless (topic
 	   headers do the grouping). The note icon element is present in the DOM but takes
