@@ -73,11 +73,17 @@ const isNote = post.data.category === 'notebook';
 	}
 	/* Notebook entries aren't part of the blog's chronological sequence: no
 	   running index, and no per-entry separator (the topic header rule groups
-	   them instead). */
+	   them instead). Keep the SAME 3rem index gutter so their content aligns with
+	   the numbered timeline rows above — the gutter is just empty (no number). */
 	.j-post.is-note {
-		grid-template-columns: 1fr;
 		border-bottom: none;
 		padding: 1.25rem 0;
+	}
+	/* Notes have no .j-index child, so their .j-main must be placed into the SECOND
+	   (content) column explicitly — otherwise it lands in the empty 3rem index
+	   column and gets crushed to a sliver. */
+	.j-post.is-note .j-main {
+		grid-column: 2;
 	}
 	.j-index { font-variant-numeric: tabular-nums; color: var(--color-text-muted); opacity: 0.5; font-size: 0.9rem; padding-top: 0.3rem; }
 	.j-cat { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
