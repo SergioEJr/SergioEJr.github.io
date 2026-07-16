@@ -1208,8 +1208,18 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       const introActive = isFinite(introT);
       const ambientAlpha = ambientIntroAlpha(introT);
       const activatedAlpha = activatedIntroAlpha(introT);
-      // Light-mode intro flare strength (0 in dark — glow sprites 3/4 are null).
-      const glowFade = introGlowFade(introT);
+      // Intro glow flare strength (0 in dark for slots 3/4; dark uses 5/6). The
+      // glow fade (GLOW_FADE_MS) runs LONGER than data-home-intro lives on <html>:
+      // once the attribute is removed introElapsed() jumps to Infinity, which would
+      // snap the glow to 0 mid-fade (the abrupt jump). So we drive the glow off a
+      // clock latched to the sim-intro start (introStart) that keeps ticking after
+      // the attribute clears, letting the fade finish smoothly on its own timeline.
+      // introGlowFade's clamp caps it at 0 once the fade completes.
+      let glowT = introT;
+      if (!isFinite(glowT) && introStart !== null) {
+        glowT = performance.now() - introStart;
+      }
+      const glowFade = introGlowFade(glowT);
       classify();
       if (gl) renderGL(introActive, ambientAlpha, activatedAlpha, glowFade);
       else if (ctx) render2D(introActive, ambientAlpha, activatedAlpha, glowFade);
