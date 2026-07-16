@@ -79,36 +79,29 @@ const isNote = post.data.category === 'notebook';
 		   makes the whole row (index, category, title, desc, meta) clickable. */
 		position: relative;
 	}
-	/* Notebook entries aren't part of the blog's chronological sequence: no
-	   running index, and no per-entry separator (the topic header rule groups
-	   them instead). This is the DEDICATED Notebook view's layout — single column,
-	   borderless. The "All" view overrides these below (scoped to [data-view="all"])
-	   to give notes the timeline's gutter, borders, and a note icon. */
+	/* DEDICATED Notebook view: notes are a single content column, borderless (topic
+	   headers do the grouping). The note icon element is present in the DOM but takes
+	   NO grid track here — it's collapsed with `display:none`, and .j-main auto-flows
+	   into the single column. */
 	.j-post.is-note {
 		grid-template-columns: 1fr;
 		border-bottom: none;
 		padding: 1.25rem 0;
 	}
+	.j-note-icon { display: none; }
 
-	/* ---- "All" view only: notes read as a flat continuation of the timeline ----
-	   Restore the 3rem index gutter (so content aligns with the numbered rows), a
-	   row separator, and a note icon in the gutter. Scoped to [data-view="all"] on
-	   #journal so the dedicated Notebook view keeps its original borderless layout. */
+	/* ---- "All" view: notes read as a flat continuation of the timeline ----
+	   Mirror the timeline row EXACTLY — same `3rem 1fr` grid, same border/padding —
+	   with the icon occupying col 1 (like the index number) and .j-main auto-flowing
+	   into col 2. No `grid-column` forcing: placement is automatic and identical to
+	   the numbered rows, so alignment holds at every width. */
 	:global(#journal[data-view="all"]) .j-post.is-note {
 		grid-template-columns: 3rem 1fr;
 		border-bottom: 1px solid var(--color-border);
 		padding: 1.75rem 0;
 	}
-	:global(#journal[data-view="all"]) .j-post.is-note .j-main {
-		grid-column: 2;
-	}
-	/* Note icon: sits in the gutter (col 1) where timeline rows show their number.
-	   Hidden by default (dedicated Notebook view is single-column); shown only in
-	   "All", aligned with the .j-index number's baseline. */
-	.j-note-icon { display: none; }
 	:global(#journal[data-view="all"]) .j-post.is-note .j-note-icon {
 		display: block;
-		grid-column: 1;
 		/* Same muted treatment as the timeline's index numbers so the icon recedes
 		   into the gutter instead of pulling the eye. */
 		color: var(--color-text-muted);
