@@ -211,7 +211,7 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     // the ambient gas (multiplies dotRadius when baking those sprites). >1 makes the
     // activated particles read as chunkier than the gas; 1 = same size as gas.
     // Light mode uses its own value below (dense ink, no glow to add heft).
-    const NAME_DOT_SCALE = 1.6;
+    const NAME_DOT_SCALE = 1.2;
     const NAME_DOT_SCALE_LIGHT = 1.7;
     // GLOW SIZE knob — the shadowBlur radius (px) baked into the name/JR sprites.
     // Larger = bigger, softer halo around the activated letters. The sprite canvas
@@ -430,6 +430,23 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       if (t < 1255) return 0.45; // final little stutter
       return 1; // settled, fully lit
     }
+    // LIGHT-MODE intro glow envelope: a temporary neon flare that sells the "ink
+    // neon" theme during ignition, then fades to the flat ink dots. 1 while the
+    // name is igniting (through the flicker), then eases to 0 over GLOW_FADE_MS so
+    // the resting state is the flat (glow-free) light sprite. Dark ignores this.
+    const GLOW_HOLD_MS = 1255; // matches activatedIntroAlpha settling point
+    const GLOW_FADE_MS = 900; // fade-out duration after settle (longer = gentler)
+    const GLOW_PEAK = 0.7; // max flare strength (<1 = subtler neon)
+    function introGlowFade(t: number) {
+      if (!isFinite(t)) return 0; // no intro / already over → no flare
+      if (t <= GLOW_HOLD_MS) return GLOW_PEAK;
+      const p = clamp01((t - GLOW_HOLD_MS) / GLOW_FADE_MS); // 0→1 across the fade
+      // Ease-out: (1-p)^3 drops quickly at first, then flattens as it approaches
+      // zero — so the glow's tail lingers and softly vanishes instead of cutting
+      // off. (Derivative → 0 as p → 1, unlike a linear ramp's hard stop.)
+      const eased = Math.pow(1 - p, 3);
+      return GLOW_PEAK * eased;
+    }
     function readColors() {
       const cs = getComputedStyle(document.documentElement);
       // Inside-text color = the color used for headings in this theme.
@@ -459,10 +476,20 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     // 2=JR (glow). The gas sprite is new for the WebGL path — every group goes
     // through the same point-sprite pipeline. (The Canvas2D fallback still draws
     // the gas as a crisp rect-path; the gas sprite is only used by WebGL.)
-    const sprites: (HTMLCanvasElement | null)[] = [null, null, null];
+    // Groups 0=gas, 1=name, 2=JR. Slots 3=light name-GLOW, 4=light JR-glow: only
+    // baked in LIGHT mode, used to give the intro a temporary neon flare that
+    // crossfades to the flat ink dots as the name settles (glowFade below). Null
+    // in dark (where the resting name already glows).
+    const sprites: (HTMLCanvasElement | null)[] = [
+      null,
+      null,
+      null,
+      null,
+      null,
+    ];
     // Per-group CSS point size (square sprite edge). Gas is small; glow groups
     // are dot+halo. Used as gl_PointSize per group AND as the 2D blit dest size.
-    const spriteSizes: number[] = [0, 0, 0];
+    const spriteSizes: number[] = [0, 0, 0, 0, 0];
     let spriteCssSize = 0; // glow sprite edge (name/JR) — also 2D blit size
     let spriteHalf = 0; // half of spriteCssSize (center offset, 2D path)
     function bakeSprite(
@@ -542,6 +569,8 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       spriteSizes[0] = gasCss;
       spriteSizes[1] = spriteCssSize;
       spriteSizes[2] = spriteCssSize;
+      spriteSizes[3] = spriteCssSize; // light name-glow (intro flare)
+      spriteSizes[4] = spriteCssSize; // light JR-glow (intro flare)
       // Light mode = "daylight": the name AND the JR mark read as crisp INK, no
       // neon halo (glows wash out on the light ground and read as a smudge). Dark
       // keeps its neon glow. Both use a LARGER solid dot in light so neighbouring
@@ -560,6 +589,16 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       sprites[2] = isDark
         ? bakeSprite(jrColor, GLOW, spriteCssSize, nameScale)
         : bakeSprite(jrColor, 0, spriteCssSize, nameScale);
+      // Light-only intro flare: a GLOWING version of the name/JR dots, crossfaded
+      // out as the intro settles (see glowFade + renderGL). Skipped in dark, where
+      // the resting sprites already glow.
+      if (!isDark) {
+        sprites[3] = bakeSprite(insideColor, GLOW, spriteCssSize, nameScale);
+        sprites[4] = bakeSprite(jrColor, GLOW, spriteCssSize, nameScale);
+      } else {
+        sprites[3] = null;
+        sprites[4] = null;
+      }
       if (useGL) uploadTextures();
     }
 
@@ -578,7 +617,13 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     let glUAlpha: WebGLUniformLocation | null = null;
     let glUTex: WebGLUniformLocation | null = null;
     let glUDpr: WebGLUniformLocation | null = null;
-    const glTextures: (WebGLTexture | null)[] = [null, null, null];
+    const glTextures: (WebGLTexture | null)[] = [
+      null,
+      null,
+      null,
+      null,
+      null,
+    ];
     // Scratch buffer of (x,y) pairs, packed sorted-by-group each frame so every
     // group is a contiguous vertex range drawable in one call. Sized to the cap.
     let glPacked = new Float32Array(0);
@@ -674,11 +719,12 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
 
     function uploadTextures() {
       if (!gl) return;
-      for (let g = 0; g < 3; g++) {
+      for (let g = 0; g < sprites.length; g++) {
         const src = sprites[g];
-        if (!src) continue;
         if (glTextures[g]) gl.deleteTexture(glTextures[g]);
-        glTextures[g] = makeTexture(src);
+        // A null slot (e.g. the light-only glow sprites 3/4 in dark) clears its
+        // texture so a stale one from the other theme isn't drawn.
+        glTextures[g] = src ? makeTexture(src) : null;
       }
     }
 
@@ -734,16 +780,19 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       }
     }
 
-    function drawGroup(g: number, alpha: number) {
+    // Draw group `g`'s particles. `texSlot`/`sizeSlot` default to `g` but can point
+    // at another sprite (e.g. the light glow sprites 3/4) to render a different
+    // texture over the SAME group's positions — used for the intro glow overlay.
+    function drawGroup(g: number, alpha: number, texSlot = g, sizeSlot = g) {
       if (!gl || alpha <= 0 || glGroupLen[g] === 0) return;
-      const tex = glTextures[g];
+      const tex = glTextures[texSlot];
       if (!tex) return;
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, tex);
       gl.uniform1i(glUTex, 0);
       gl.uniform1f(
         glUPointSize,
-        Math.min(spriteSizes[g], glMaxPointSize / DPR),
+        Math.min(spriteSizes[sizeSlot], glMaxPointSize / DPR),
       );
       gl.uniform1f(glUAlpha, alpha);
       gl.drawArrays(gl.POINTS, glGroupStart[g], glGroupLen[g]);
@@ -1139,9 +1188,11 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       const introActive = isFinite(introT);
       const ambientAlpha = ambientIntroAlpha(introT);
       const activatedAlpha = activatedIntroAlpha(introT);
+      // Light-mode intro flare strength (0 in dark — glow sprites 3/4 are null).
+      const glowFade = introGlowFade(introT);
       classify();
-      if (gl) renderGL(introActive, ambientAlpha, activatedAlpha);
-      else if (ctx) render2D(introActive, ambientAlpha, activatedAlpha);
+      if (gl) renderGL(introActive, ambientAlpha, activatedAlpha, glowFade);
+      else if (ctx) render2D(introActive, ambientAlpha, activatedAlpha, glowFade);
     }
 
     // WebGL draw: pack positions sorted-by-group, upload once, then ≤3 draw calls
@@ -1151,6 +1202,7 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       introActive: boolean,
       ambientAlpha: number,
       activatedAlpha: number,
+      glowFade: number,
     ) {
       if (!gl || !glProgram) return;
       gl.clearColor(0, 0, 0, 0);
@@ -1177,8 +1229,19 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       // per-particle alpha because GL gas overlaps accumulate (see GL_ALPHA_OUT).
       drawGroup(0, GL_ALPHA_OUT * ambientAlpha);
       if (!preLight) {
+        // Flat ink dots (also the resting state in light).
         if (classAnyInside) drawGroup(1, ALPHA_IN * activatedAlpha);
         if (classAnyJR) drawGroup(2, ALPHA_IN * activatedAlpha);
+        // Light-mode intro flare: layer the GLOW sprites (slots 3/4) over the same
+        // name/JR positions, fading out as the intro settles. Null in dark → the
+        // drawGroup texture guard skips it. Additive-ish over the flat dots via the
+        // premultiplied over-blend, so it reads as the ink "lighting up" then cooling.
+        if (glowFade > 0) {
+          if (classAnyInside && glTextures[3])
+            drawGroup(1, ALPHA_IN * activatedAlpha * glowFade, 3, 3);
+          if (classAnyJR && glTextures[4])
+            drawGroup(2, ALPHA_IN * activatedAlpha * glowFade, 4, 4);
+        }
       }
     }
 
@@ -1189,11 +1252,14 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       introActive: boolean,
       ambientAlpha: number,
       activatedAlpha: number,
+      glowFade: number,
     ) {
       if (!ctx) return;
       ctx.clearRect(0, 0, W, H);
       const sName = sprites[1];
       const sJR = sprites[2];
+      const sNameGlow = sprites[3]; // light-only intro flare (null in dark)
+      const sJRGlow = sprites[4];
       const ssz = spriteCssSize;
       const soff = spriteHalf;
       const half = dotRadius();
@@ -1220,6 +1286,24 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
         for (let i = 0; i < count; i++) {
           if (pgroup[i] === 2)
             ctx.drawImage(sJR, px[i] - soff, py[i] - soff, ssz, ssz);
+        }
+      }
+      // Light-mode intro flare: layer the glow sprites over the same positions,
+      // fading with glowFade. Null in dark, so this whole block is skipped there.
+      if (glowFade > 0 && activatedAlpha > 0) {
+        if (classAnyInside && sNameGlow) {
+          ctx.globalAlpha = ALPHA_IN * activatedAlpha * glowFade;
+          for (let i = 0; i < count; i++) {
+            if (pgroup[i] === 1)
+              ctx.drawImage(sNameGlow, px[i] - soff, py[i] - soff, ssz, ssz);
+          }
+        }
+        if (classAnyJR && sJRGlow) {
+          ctx.globalAlpha = ALPHA_IN * activatedAlpha * glowFade;
+          for (let i = 0; i < count; i++) {
+            if (pgroup[i] === 2)
+              ctx.drawImage(sJRGlow, px[i] - soff, py[i] - soff, ssz, ssz);
+          }
         }
       }
 
