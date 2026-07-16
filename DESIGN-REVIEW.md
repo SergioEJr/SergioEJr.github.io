@@ -60,22 +60,11 @@ light mode, hero card, and section headings haven't adopted it yet).
     `grid-column:2` hack on `.j-main`; notes now auto-flow like timeline rows, so
     alignment holds across all widths (verified 1440→390 + the 600px breakpoint).
 
-- [x] **3. Section headings still template-branded** ✅ DONE (2026-07-15)
-  - Replaced astro-scholar's `border-bottom: 2px accent; display:inline-block`
-    underline with a clean serif + short left accent tick (`border-left: 3px
-    solid var(--color-accent); padding-left: 0.9rem`), full-width block.
-    Compared 5 treatments (underline / eyebrow+serif / left tick / hairline
-    above / plain) via artifact before picking the tick.
-  - Global rule in `src/styles/global.css` h2. Verified it cascades cleanly to
-    About (Background/Toolkit/Beyond research/Get in touch), Home below-fold
-    (Selected Research/Latest Posts), and in-essay blog prose h2s (e.g. "Phase
-    Transitions"), in both themes.
-  - Added explicit `border-left: none; padding-left: 0` resets to the 3
-    pre-existing h2 overrides that only reset `border-bottom`/`display` for
-    the old treatment: Journal post titles (`.j-post-title` in
-    JournalPost.astro), the header logo (`h2` in Header.astro), and the TOC
-    title (`.toc-title` in TableOfContents.astro) — all confirmed via
-    computed-style checks on the prod preview build to have zero border-left.
+- [ ] **3. Section headings still template-branded**
+  - `h2 { border-bottom: 2px accent; display:inline-block }` in
+    `src/styles/global.css:223-229` is astro-scholar's signature.
+  - Replace with the Journal's eyebrow language (uppercase letter-spaced label
+    + big serif) site-wide: Home below-fold, About (Background/Toolkit), etc.
 
 - [ ] **4. De-template the hero card (scroll destination)**
   - Circular headshot + role line + two default buttons = stock academic hero.

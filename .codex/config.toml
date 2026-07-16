@@ -1,0 +1,11 @@
+[mcp_servers.chrome-devtools]
+command = "npx"
+args = [
+    "-y",
+    "chrome-devtools-mcp@latest",
+    "--executablePath",
+    "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+    "--isolated",
+    "--viewport",
+    "1280x800",
+]

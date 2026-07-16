@@ -31,13 +31,14 @@ const CATS: Record<
     color: "var(--cat-essays)",
     title: "Ideas worth sharing",
     subtitle:
-      "Big-picture ideas in science, math, and life — written to be read by anyone.",
+      "Big-picture ideas in life, science, and math to be read by anyone.",
   },
   notebook: {
     label: BLOG_CATEGORY_LABELS.notebook,
     color: "var(--cat-notebook)",
     title: "Things I’m learning",
-    subtitle: "A growing notebook of guides and notes, technical to plain.",
+    subtitle:
+      "A growing notebook of guides and notes spanning from technical to plain.",
   },
   // "All" is not a register — give it a neutral ink color (not the accent blue,
   // which collides with the Updates blue in dark mode) since it renders as the
@@ -136,9 +137,7 @@ const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
 // Per-row dot/underline color. Essays rows take their `subject` color; Updates
 // and Notebook take the register color. Returns a theme-flipping CSS var (the
 // --cat-* / --subj-* vars live in global.css).
-const rowColor = (post: {
-  data: { category: string; subject?: string };
-}) => {
+const rowColor = (post: { data: { category: string; subject?: string } }) => {
   if (
     post.data.category === "essays" &&
     post.data.subject &&
@@ -242,11 +241,13 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
               />
             ))
           }
-          {/* In "All", notebook posts continue after the timeline as a flat list
+          {
+            /* In "All", notebook posts continue after the timeline as a flat list
               (no section title, no topic-group headers — the JS hides those below).
               Each renders as a normal bordered row with a note icon in the gutter,
               so they read as a continuation of the timeline. The topic-group headers
-              stay in the DOM for the dedicated Notebook filter view. */}
+              stay in the DOM for the dedicated Notebook filter view. */
+          }
           {
             noteGroups.map((g) => (
               <Fragment>
@@ -491,18 +492,26 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         if (!countEl || (countEl as any).__odoBound) return;
         (countEl as any).__odoBound = true;
 
-        const initial = parseInt(countEl.getAttribute("data-count") || countEl.textContent || "0", 10) || 0;
+        const initial =
+          parseInt(
+            countEl.getAttribute("data-count") || countEl.textContent || "0",
+            10,
+          ) || 0;
         const odo = createOdometer(countEl);
         let last = initial;
         odo.to(initial); // roll 0 -> initial on first paint
 
         const obs = new MutationObserver(() => {
-          const v = parseInt(countEl.getAttribute("data-count") || "0", 10) || 0;
+          const v =
+            parseInt(countEl.getAttribute("data-count") || "0", 10) || 0;
           if (v === last) return; // skip no-op re-sets (e.g. apply() on init)
           last = v;
           odo.to(v);
         });
-        obs.observe(countEl, { attributes: true, attributeFilter: ["data-count"] });
+        obs.observe(countEl, {
+          attributes: true,
+          attributeFilter: ["data-count"],
+        });
       }
 
       initCountUp();
@@ -532,7 +541,9 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         border-bottom: 1px solid var(--color-border);
         /* Match the navbar/body theme transition so the frosted bg eases in sync
            (it was snapping instantly because only border-color transitioned). */
-        transition: border-color 0.3s ease, background-color 0.3s ease;
+        transition:
+          border-color 0.3s ease,
+          background-color 0.3s ease;
       }
       .j-eyebrow {
         display: inline-block;
