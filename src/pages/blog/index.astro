@@ -46,7 +46,7 @@ const CATS: Record<
     label: "All",
     color: "var(--color-text-main)",
     title: "The Journal",
-    subtitle: "Updates, essays & notebook — all in one place.",
+    subtitle: "Updates, essays, and a living notebook.",
   },
 };
 // The three registers render as pills; "All" renders separately as the text-style
@@ -83,7 +83,10 @@ const counts: Record<string, number> = {
 };
 for (const p of posts) {
   counts[p.data.category] = (counts[p.data.category] || 0) + 1;
-  if (p.data.category !== "notebook") counts.all++;
+  // "All" now genuinely includes every post (timeline + notebook), so it counts
+  // all of them. Notebook still renders in its own section within All (below the
+  // Updates/Essays timeline), not interleaved into it.
+  counts.all++;
 }
 
 // Topics for the Notebook view
@@ -224,6 +227,24 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
               />
             ))
           }
+          {/* Notebook section header — shown ONLY in the "All" view, where it
+              introduces the notebook block below the Updates/Essays timeline (the
+              notes are living docs, so they sit in their own section, not woven into
+              the dated timeline). Hidden in single-filter views (the Notebook filter
+              shows its own dedicated topic-grouped layout). */}
+          {
+            noteGroups.length > 0 && (
+              <div class="j-notebook-head" data-notebook-section hidden>
+                <span
+                  class="j-notebook-eyebrow"
+                  style={`color:${CATS.notebook.color}`}
+                >
+                  {CATS.notebook.label}
+                </span>
+                <span class="j-notebook-sub">{CATS.notebook.subtitle}</span>
+              </div>
+            )
+          }
           {
             noteGroups.map((g) => (
               <Fragment>
@@ -262,6 +283,7 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         const groupHeaders = Array.from(
           document.querySelectorAll(".j-group-header"),
         );
+        const notebookHead = document.querySelector("[data-notebook-section]");
         const filters = Array.from(document.querySelectorAll(".j-filter"));
         const topicBtns = Array.from(document.querySelectorAll(".j-topic"));
         const list = document.querySelector(".j-list");
@@ -340,8 +362,9 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
           posts.forEach((el) => {
             const cat = el.getAttribute("data-category");
             const topic = el.getAttribute("data-topic");
-            let show =
-              activeCat === "all" ? cat !== "notebook" : cat === activeCat;
+            // "All" shows everything (timeline + notebook); a single filter shows
+            // only that category.
+            let show = activeCat === "all" ? true : cat === activeCat;
             if (show && activeCat === "notebook" && activeTopic !== "all") {
               show = topic === activeTopic;
             }
@@ -349,13 +372,19 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
             if (show) visible++;
           });
 
+          // Topic group headers appear in the Notebook view AND in "All" (where they
+          // structure the notebook section below the timeline).
           groupHeaders.forEach((h) => {
             const t = h.getAttribute("data-group-topic");
+            const inScope = activeCat === "notebook" || activeCat === "all";
             const show =
-              activeCat === "notebook" &&
-              (activeTopic === "all" || t === activeTopic);
+              inScope && (activeTopic === "all" || t === activeTopic);
             h.style.display = show ? "" : "none";
           });
+
+          // The "Notebook" section heading introduces the notes block — only in All
+          // (single-filter views don't need it: Notebook has its own header/sidebar).
+          if (notebookHead) notebookHead.hidden = activeCat !== "all";
 
           // Publish the count via data-count; the count-up module script
           // observes this attribute and rolls the odometer to the new value.
@@ -662,6 +691,29 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         font-size: 0.8rem;
         color: var(--color-text-muted);
         opacity: 0.6;
+      }
+      /* "Notebook" section divider — shown only in the "All" view to introduce the
+         notebook block below the timeline. More prominent than a topic group-header
+         (it opens a section, not a group): a stronger top rule, the notebook
+         register color on the eyebrow, and its subtitle beneath. */
+      .j-notebook-head {
+        margin-top: 3.5rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--color-border);
+      }
+      .j-notebook-eyebrow {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 0.4rem;
+      }
+      .j-notebook-sub {
+        display: block;
+        color: var(--color-text-muted);
+        font-size: 1.05rem;
+        max-width: 560px;
       }
       /* MEDIUM screens (below the sidebar breakpoint, above mobile): topics are a
          WRAPPING row above the list, in the same rounded-rectangle style they had
