@@ -49,6 +49,16 @@ light mode, hero card, and section headings haven't adopted it yet).
     were numbered past the count (5 pieces, rows to 6/11). Fixed: number over the
     non-notebook set only (blog/index.astro). Verified on prod build: "5 PIECES",
     rows 05/04/03… no skip/overflow.
+  - **Journal "All" now includes Notebook (2026-07-15):** "All" was excluding
+    notebook posts while the copy said "all in one place". Reworked so "All" = the
+    Updates/Essays timeline followed by notebook posts as a FLAT continuation (row
+    separators + a muted pencil icon in the gutter where timeline rows show a
+    number; no section title, no topic groups). All 11 posts counted. Subtitle →
+    "Updates, essays, and a living notebook." Scoped to `#journal[data-view="all"]`
+    so the dedicated Notebook filter view is unchanged (header/sidebar/topic groups,
+    borderless, no icons). Fixed a note-row alignment stagger: removed a
+    `grid-column:2` hack on `.j-main`; notes now auto-flow like timeline rows, so
+    alignment holds across all widths (verified 1440→390 + the 600px breakpoint).
 
 - [ ] **3. Section headings still template-branded**
   - `h2 { border-bottom: 2px accent; display:inline-block }` in
