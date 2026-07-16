@@ -1,17 +1,19 @@
+import { createRequire } from 'node:module';
+import { readFileSync } from 'node:fs';
 import satori from 'satori';
 import { html } from 'satori-html';
 import { Resvg } from '@resvg/resvg-js';
 
-async function loadGoogleFont(font: string, text: string) {
-    const API = `https://fonts.googleapis.com/css2?family=${font}&text=${encodeURIComponent(text)}`;
-    const css = await (await fetch(API, {
-        headers: { "User-Agent": "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_8; de-at) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1" }
-    })).text();
-    const resource = css.match(/src: url\((.+)\) format\('(opentype|truetype)'\)/);
-    if (!resource) throw new Error("Failed to download dynamic font");
-    const res = await fetch(resource[1]);
-    return res.arrayBuffer();
-}
+// Vendored Inter (latin) from @fontsource/inter — read once at module load, not
+// per image. Previously each OG image fetched Inter from Google Fonts twice
+// (~112 network requests across a full build, and the build hard-failed offline
+// or if Google's CSS format changed). Satori accepts woff, and the latin subset
+// covers every glyph these cards render (ASCII + the punctuation below).
+const require = createRequire(import.meta.url);
+const readFont = (file: string) =>
+    readFileSync(require.resolve(`@fontsource/inter/files/${file}`));
+const fontDataRegular = readFont('inter-latin-400-normal.woff');
+const fontDataBold = readFont('inter-latin-700-normal.woff');
 
 // A pill badge shown at the top-left of the OG card.
 export type OgBadge = { label: string; color?: string };
@@ -44,17 +46,6 @@ export async function generateOgImage(
                 </div>`;
         })
         .join('');
-
-    // Include the byline/URL and a punctuation set so the dynamic font subset
-    // covers every glyph we render (e.g. the "." in "sejr.me").
-    const textToLoad =
-        title +
-        badges.map((b) => b.label).join('') +
-        'sejr.me Sergio Eraso' +
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' +
-        " .·,:;!?&'’\"()[]–—-/@#";
-    const fontDataRegular = await loadGoogleFont("Inter", textToLoad);
-    const fontDataBold = await loadGoogleFont("Inter:wght@700", textToLoad);
 
     // Build the full markup as a single string. We call html() with a string
     // (not as a tagged template) so the pill markup isn't HTML-escaped.
