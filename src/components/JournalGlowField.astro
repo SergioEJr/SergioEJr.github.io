@@ -37,6 +37,25 @@ const { count = 46, class: className = "" } = Astro.props;
   const MIN_N = 18;
   const MAX_N = 60;
 
+  // Per-nav teardown. Under ClientRouter a fresh canvas is swapped in on each
+  // visit to /blog; without cleanup every visit leaked two window listeners
+  // (resize, hashchange), an IntersectionObserver, and a MutationObserver — all
+  // closing over the detached canvas — plus a rAF loop kept alive only by the IO
+  // happening to report the removal. Track everything and release on
+  // astro:before-swap.
+  let glowAbort: AbortController | null = null;
+  const glowObservers = new Set<IntersectionObserver | MutationObserver>();
+  const glowRafs = new Set<number>();
+
+  function teardownJournalGlowField() {
+    glowAbort?.abort();
+    glowAbort = null;
+    for (const obs of glowObservers) obs.disconnect();
+    glowObservers.clear();
+    for (const raf of glowRafs) cancelAnimationFrame(raf);
+    glowRafs.clear();
+  }
+
   function initJournalGlowField() {
     const canvases = Array.from(
       document.querySelectorAll<HTMLCanvasElement>(".journal-glow-field"),
@@ -44,6 +63,9 @@ const { count = 46, class: className = "" } = Astro.props;
     const reduce = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
+
+    if (!glowAbort) glowAbort = new AbortController();
+    const { signal } = glowAbort;
 
     for (const canvas of canvases) {
       if ((canvas as any).__glowBound) continue;
@@ -363,7 +385,9 @@ const { count = 46, class: className = "" } = Astro.props;
         lightRGB[1] += (targetRGB[1] - lightRGB[1]) * cEase;
         lightRGB[2] += (targetRGB[2] - lightRGB[2]) * cEase;
         draw(time);
+        glowRafs.delete(raf);
         raf = requestAnimationFrame(tick);
+        glowRafs.add(raf);
       }
 
       let raf = 0;
@@ -384,25 +408,34 @@ const { count = 46, class: className = "" } = Astro.props;
             if (e.isIntersecting) {
               canvas.style.opacity = "1";
               recomputeTarget(); // re-measure in case layout shifted while away
-              if (!raf) raf = requestAnimationFrame(tick);
+              if (!raf) {
+                raf = requestAnimationFrame(tick);
+                glowRafs.add(raf);
+              }
             } else {
               canvas.style.opacity = "0";
               cancelAnimationFrame(raf);
+              glowRafs.delete(raf);
               raf = 0;
             }
           }
         });
         io.observe(parent); // parent is .j-head
+        glowObservers.add(io);
       }
-      window.addEventListener("resize", () => {
-        resize();
-        seed();
-        recomputeTarget();
-        if (reduce) {
-          light.x = targetX;
-          draw();
-        }
-      });
+      window.addEventListener(
+        "resize",
+        () => {
+          resize();
+          seed();
+          recomputeTarget();
+          if (reduce) {
+            light.x = targetX;
+            draw();
+          }
+        },
+        { signal },
+      );
 
       // Re-measure the light target whenever the EYEBROW actually changes, rather
       // than guessing a delay after a click. The filter script swaps the eyebrow
@@ -421,15 +454,21 @@ const { count = 46, class: className = "" } = Astro.props;
           attributes: true,
           attributeFilter: ["data-count"],
         });
+        glowObservers.add(ebObserver);
       }
       // Hash changes (Back, manual edit) can swap the filter without a DOM-settle
       // we observe above, so re-measure on the next frame too.
-      window.addEventListener("hashchange", () =>
-        requestAnimationFrame(recomputeTarget),
+      window.addEventListener(
+        "hashchange",
+        () => requestAnimationFrame(recomputeTarget),
+        { signal },
       );
+      // Remove the color-probe span from <body> when this canvas is torn down.
+      signal.addEventListener("abort", () => probe.remove());
     }
   }
 
   initJournalGlowField();
   document.addEventListener("astro:page-load", initJournalGlowField);
+  document.addEventListener("astro:before-swap", teardownJournalGlowField);
 </script>

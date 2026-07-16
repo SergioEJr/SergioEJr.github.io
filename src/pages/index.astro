@@ -895,7 +895,11 @@ const selectedResearch = (
       function initHeroScroll() {
         const section = document.querySelector("[data-hero-scroll]");
         if (!section) return;
+        // Tear down any prior instance — either this section's own handle, or a
+        // window-scoped one left by a previous home visit whose section node was
+        // swapped away (its DOM handle went with it).
         if (section._heroScrollCleanup) section._heroScrollCleanup();
+        else window.__heroScrollCleanup?.();
 
         const stage = section.querySelector(".hero-stage");
         const docEl = document.documentElement;
@@ -1069,7 +1073,7 @@ const selectedResearch = (
         applyGuard();
         update();
 
-        section._heroScrollCleanup = () => {
+        const cleanup = () => {
           window.removeEventListener("scroll", onScroll);
           window.removeEventListener("resize", onScroll);
           window.removeEventListener("wheel", cancelSettle);
@@ -1084,7 +1088,15 @@ const selectedResearch = (
           // pull-to-refresh normally.
           enableGuard(false);
           delete section._heroScrollCleanup;
+          window.__heroScrollCleanup = null;
         };
+        section._heroScrollCleanup = cleanup;
+        // Also expose on window so astro:before-swap can tear this down when
+        // navigating AWAY from home — the section node (and its
+        // _heroScrollCleanup) is discarded on swap, so a DOM-stored handle alone
+        // would leak all the window listeners above (whose onScroll then keeps
+        // running layout reads on every subsequent page). Mirrors HeroSim.
+        window.__heroScrollCleanup = cleanup;
       }
 
       initHeroScroll();
@@ -1225,6 +1237,10 @@ const selectedResearch = (
       document.addEventListener("astro:page-load", initHomeIntro);
       document.addEventListener("astro:before-swap", () => {
         window.__homeIntroReleaseScroll?.();
+        // Tear down the hero-scroll controller before its section is swapped
+        // away, so its window listeners (scroll/resize/wheel/…) don't leak onto
+        // the next page.
+        window.__heroScrollCleanup?.();
       });
 
       // Scroll reveal for below-hero content. Reveal once when each [data-reveal]

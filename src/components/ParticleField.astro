@@ -25,6 +25,25 @@ const { count = 36, opacity = 0.5, class: className = "" } = Astro.props;
 </style>
 
 <script>
+  // Per-nav teardown. ParticleField renders in the Footer (every page) and on
+  // 404, so under ClientRouter a fresh canvas is swapped in on each navigation.
+  // Without cleanup, every visit leaked a window "resize" listener and an
+  // IntersectionObserver closing over the now-detached canvas. We track both and
+  // release them on astro:before-swap, mirroring the AbortController pattern in
+  // Header/Search/Footer.
+  let pfAbort: AbortController | null = null;
+  const pfObservers = new Set<IntersectionObserver>();
+  const pfRafs = new Set<number>();
+
+  function teardownParticleFields() {
+    pfAbort?.abort();
+    pfAbort = null;
+    for (const io of pfObservers) io.disconnect();
+    pfObservers.clear();
+    for (const raf of pfRafs) cancelAnimationFrame(raf);
+    pfRafs.clear();
+  }
+
   function initParticleFields() {
     const canvases = Array.from(
       document.querySelectorAll<HTMLCanvasElement>(".particle-field"),
@@ -32,6 +51,9 @@ const { count = 36, opacity = 0.5, class: className = "" } = Astro.props;
     const reduce = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
+
+    if (!pfAbort) pfAbort = new AbortController();
+    const { signal } = pfAbort;
 
     for (const canvas of canvases) {
       if ((canvas as any).__pfBound) continue;
@@ -98,7 +120,9 @@ const { count = 36, opacity = 0.5, class: className = "" } = Astro.props;
           if (p.y > H) p.y -= H;
         }
         draw();
+        pfRafs.delete(raf);
         raf = requestAnimationFrame(tick);
+        pfRafs.add(raf);
       }
 
       let raf = 0;
@@ -110,22 +134,32 @@ const { count = 36, opacity = 0.5, class: className = "" } = Astro.props;
         const io = new IntersectionObserver((entries) => {
           for (const e of entries) {
             if (e.isIntersecting) {
-              if (!raf) raf = requestAnimationFrame(tick);
+              if (!raf) {
+                raf = requestAnimationFrame(tick);
+                pfRafs.add(raf);
+              }
             } else {
               cancelAnimationFrame(raf);
+              pfRafs.delete(raf);
               raf = 0;
             }
           }
         });
         io.observe(canvas);
+        pfObservers.add(io);
       }
-      window.addEventListener("resize", () => {
-        resize();
-        seed();
-        if (reduce) draw();
-      });
+      window.addEventListener(
+        "resize",
+        () => {
+          resize();
+          seed();
+          if (reduce) draw();
+        },
+        { signal },
+      );
     }
   }
   initParticleFields();
   document.addEventListener("astro:page-load", initParticleFields);
+  document.addEventListener("astro:before-swap", teardownParticleFields);
 </script>

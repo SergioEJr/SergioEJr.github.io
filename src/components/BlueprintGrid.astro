@@ -36,10 +36,26 @@ const { class: className = "" } = Astro.props;
   const GRID = 26; // cell size (px)
   const NAVBAR_BOTTOM = 72; // navbar height (4.5rem) — grid bleeds up to here
 
+  // Per-nav teardown. Under ClientRouter a fresh canvas is swapped in on each
+  // visit to /projects; without cleanup every visit leaked a window "resize"
+  // listener and a MutationObserver on <html>, both closing over the detached
+  // canvas. Track them and release on astro:before-swap.
+  let bpAbort: AbortController | null = null;
+  const bpObservers = new Set<MutationObserver>();
+
+  function teardownBlueprintGrid() {
+    bpAbort?.abort();
+    bpAbort = null;
+    for (const obs of bpObservers) obs.disconnect();
+    bpObservers.clear();
+  }
+
   function initBlueprintGrid() {
     const canvases = Array.from(
       document.querySelectorAll<HTMLCanvasElement>(".blueprint-grid"),
     );
+    if (!bpAbort) bpAbort = new AbortController();
+    const { signal } = bpAbort;
     for (const canvas of canvases) {
       if ((canvas as any).__bpBound) continue;
       (canvas as any).__bpBound = true;
@@ -153,16 +169,20 @@ const { class: className = "" } = Astro.props;
       }
 
       render();
-      window.addEventListener("resize", render);
+      window.addEventListener("resize", render, { signal });
       // Redraw on theme change so the line color follows light/dark.
       const themeObs = new MutationObserver(() => draw());
       themeObs.observe(document.documentElement, {
         attributes: true,
         attributeFilter: ["data-theme"],
       });
+      bpObservers.add(themeObs);
+      // Remove the color-probe span from <body> when this canvas is torn down.
+      signal.addEventListener("abort", () => probe.remove());
     }
   }
 
   initBlueprintGrid();
   document.addEventListener("astro:page-load", initBlueprintGrid);
+  document.addEventListener("astro:before-swap", teardownBlueprintGrid);
 </script>
