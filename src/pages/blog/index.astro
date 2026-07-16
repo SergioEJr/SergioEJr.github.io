@@ -61,9 +61,15 @@ const byDate = (await getPublishedPosts()).sort(
     a.id.localeCompare(b.id),
 );
 
-// Chronological post number: the oldest post is #1, counting up.
+// Chronological post number for the NUMBERED rows only. Numbers show on Updates +
+// Essays rows (notebook rows render without one), and the "All" view counts only
+// those same non-notebook posts. So number over that SAME set — otherwise notebook
+// posts occupy indices and the visible numbers skip past / exceed the piece count
+// (e.g. 5 pieces but rows numbered up to 11). Oldest non-notebook post is #1.
 const postNumber = new Map<string, number>();
-byDate.forEach((p, i) => postNumber.set(p.id, i + 1));
+byDate
+  .filter((p) => p.data.category !== "notebook")
+  .forEach((p, i) => postNumber.set(p.id, i + 1));
 
 // Display newest-first, which is exactly the chronological order reversed — so the
 // numbering and the display order always agree, even on shared dates.

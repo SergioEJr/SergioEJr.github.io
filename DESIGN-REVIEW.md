@@ -39,12 +39,16 @@ light mode, hero card, and section headings haven't adopted it yet).
     when `data-home-intro` is removed mid-fade. All intro-only → zero resting cost.
   - Light mode revamp CLOSED. Branch: design-review.
 
-- [ ] **2. Copy-rendering bugs**
-  - Space before commas in author lists (JSX whitespace):
-    `src/pages/publications.astro:56-59`, `src/pages/index.astro:826-829`.
-  - Journal piece numbers ("ALL · 9 PIECES" but rows numbered to 15) —
-    numbering counts filtered-out entries: `src/pages/blog/index.astro:64-69`.
-    Verify against production build before changing.
+- [x] **2. Copy-rendering bugs** ✅ DONE (2026-07-15)
+  - Space-before-comma in author lists: JSX inserted a whitespace text node
+    between `<AuthorLink>`/venue span and the `, ` separator. Fixed by keeping the
+    separator flush (publications.astro authors; index.astro pub-meta venue+year).
+    Now renders "Sergio Eraso, Mehran Kardar" / "In preparation, 2026".
+  - Journal numbering: `postNumber` indexed ALL published posts, but numbered rows
+    (Updates+Essays) + the "N pieces" count are the non-notebook subset — so rows
+    were numbered past the count (5 pieces, rows to 6/11). Fixed: number over the
+    non-notebook set only (blog/index.astro). Verified on prod build: "5 PIECES",
+    rows 05/04/03… no skip/overflow.
 
 - [ ] **3. Section headings still template-branded**
   - `h2 { border-bottom: 2px accent; display:inline-block }` in

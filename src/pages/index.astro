@@ -823,10 +823,10 @@ const selectedResearch = (
                       {entry.data.title}
                     </a>
                     <div class="pub-meta">
-                      <span style="font-style: italic; color: var(--color-accent);">
-                        {entry.data.venue || "In preparation"}
-                      </span>
-                      <span>, {entry.data.date.getUTCFullYear()}</span>
+                      <span
+                        style="font-style: italic; color: var(--color-accent);"
+                      >{entry.data.venue || "In preparation"}</span
+                      ><span>, {entry.data.date.getUTCFullYear()}</span>
                     </div>
                   </div>
                 ))
