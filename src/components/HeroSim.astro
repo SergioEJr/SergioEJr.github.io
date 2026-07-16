@@ -439,7 +439,7 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     // name is igniting (through the flicker), then eases to 0 over GLOW_FADE_MS so
     // the resting state is the flat (glow-free) light sprite. Dark ignores this.
     const GLOW_HOLD_MS = 1255; // matches activatedIntroAlpha settling point
-    const GLOW_FADE_MS = 1260; // fade-out duration after settle (longer = gentler)
+    const GLOW_FADE_MS = 2520; // fade-out duration after settle (longer = gentler)
     const GLOW_PEAK = 0.7; // max flare strength (<1 = subtler neon)
     function introGlowFade(t: number) {
       if (!isFinite(t)) return 0; // no intro / already over → no flare
