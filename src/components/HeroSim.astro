@@ -207,6 +207,12 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     const DOT_R = 1.0; // particle radius (px) — small for crisp, dense letters
     const MOBILE_DOT_R = 0.8;
     const dotRadius = () => (isMobileSim() ? MOBILE_DOT_R : DOT_R);
+    // NAME DOT SIZE knob — how much LARGER the dot core is INSIDE the name/JR than
+    // the ambient gas (multiplies dotRadius when baking those sprites). >1 makes the
+    // activated particles read as chunkier than the gas; 1 = same size as gas.
+    // Light mode uses its own value below (dense ink, no glow to add heft).
+    const NAME_DOT_SCALE = 1.6;
+    const NAME_DOT_SCALE_LIGHT = 1.7;
     // GLOW SIZE knob — the shadowBlur radius (px) baked into the name/JR sprites.
     // Larger = bigger, softer halo around the activated letters. The sprite canvas
     // auto-sizes to (dotRadius + GLOW) so the halo is never clipped.
@@ -543,13 +549,17 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       // them; in light we merge with real ink). Dots still fit the glow-sized box.
       const isDark =
         document.documentElement.getAttribute("data-theme") === "dark";
+      // Name/JR dots are baked LARGER than the gas (NAME_DOT_SCALE) so the
+      // activated particles read as chunkier — in dark this rides under the glow;
+      // in light the bigger solid dots merge into dense ink.
+      const nameScale = isDark ? NAME_DOT_SCALE : NAME_DOT_SCALE_LIGHT;
       sprites[0] = bakeSprite(dotColor, 0, gasCss); // gas — dot, no glow
       sprites[1] = isDark
-        ? bakeSprite(insideColor, GLOW, spriteCssSize)
-        : bakeSprite(insideColor, 0, spriteCssSize, 1.7);
+        ? bakeSprite(insideColor, GLOW, spriteCssSize, nameScale)
+        : bakeSprite(insideColor, 0, spriteCssSize, nameScale);
       sprites[2] = isDark
-        ? bakeSprite(jrColor, GLOW, spriteCssSize)
-        : bakeSprite(jrColor, 0, spriteCssSize, 1.7);
+        ? bakeSprite(jrColor, GLOW, spriteCssSize, nameScale)
+        : bakeSprite(jrColor, 0, spriteCssSize, nameScale);
       if (useGL) uploadTextures();
     }
 
