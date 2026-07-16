@@ -220,10 +220,7 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     // DARK intro flare: a WIDER halo at ignition that fades down to the resting
     // GLOW as the intro settles (see introGlowFade + the slot-5/6 overlay). Only
     // used in dark, where the resting name already glows.
-    // Ignition halo radius (px) — much wider than the resting GLOW so the flare
-    // spills PAST the letters into the ambient gas, then contracts back to GLOW.
-    const GLOW_BIG = 28;
-    const GLOW_BIG_STACK = 1; // low stack → the wide halo is a SOFT wash, not bright
+    const GLOW_BIG = 11; // ignition halo radius (px) — bigger neon flare
     // GLOW DENSITY knob — how many times the shadow is stacked into the sprite.
     // This controls the HALO FALLOFF near the dot, which is what makes activated
     // particles read as "fuzzy" (glow hugs the dot, opaque near the core) vs.
@@ -508,7 +505,6 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       glow: number,
       cssSize: number,
       radiusScale = 1,
-      stack = GLOW_STACK,
     ): HTMLCanvasElement {
       // Sprite holds the dot plus room for the glow halo on every side. Drawn at
       // device resolution (DPR) so the dot stays crisp, blit back to CSS px.
@@ -554,9 +550,7 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
           // shrinks to 1/scale and the particles look flat, not neon).
           sc.shadowBlur = glow * scale;
           // Stack the glow so the halo is dense enough to merge with neighbours.
-          // A LOWER stack keeps a wide halo faint (a soft far-reaching wash rather
-          // than a dense bright blob) — used for the dark ignition bloom.
-          for (let k = 0; k < stack; k++) dot();
+          for (let k = 0; k < GLOW_STACK; k++) dot();
         } else {
           dot();
         }
@@ -620,20 +614,8 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
         const bigCss = Math.ceil((r * nameScale + GLOW_BIG * 2) * 2);
         spriteSizes[5] = bigCss;
         spriteSizes[6] = bigCss;
-        sprites[5] = bakeSprite(
-          insideColor,
-          GLOW_BIG,
-          bigCss,
-          nameScale,
-          GLOW_BIG_STACK,
-        );
-        sprites[6] = bakeSprite(
-          jrColor,
-          GLOW_BIG,
-          bigCss,
-          nameScale,
-          GLOW_BIG_STACK,
-        );
+        sprites[5] = bakeSprite(insideColor, GLOW_BIG, bigCss, nameScale);
+        sprites[6] = bakeSprite(jrColor, GLOW_BIG, bigCss, nameScale);
       }
       if (useGL) uploadTextures();
     }
