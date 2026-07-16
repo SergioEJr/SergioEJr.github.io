@@ -28,6 +28,16 @@ light mode, hero card, and section headings haven't adopted it yet).
     ground (`--fig-red/blue/orange` retuned + new `--fig-green`/`--fig-muted`),
     SVGs regenerated and `_preamble.tex`/`fig.sh` synced; logo hot glyphs + glow
     use `--color-hot` per theme; favicon regenerated to match.
+  - **Hero particle round-out + intro glow (2026-07-15):** particles supersampled
+    8× in the sprite bake so 1px dots rasterize as real circles (the "squares" were
+    a sub-pixel-rasterization + glow-clip issue, NOT arc-vs-rect); shadowBlur scaled
+    by the supersample factor so the neon survives; `NAME_DOT_SCALE` restores chunky
+    name dots vs gas. Added a temporary intro neon flare: LIGHT flat-ink dots flare
+    then ease to flat (`introGlowFade`, cubic ease-out, `GLOW_PEAK`/`GLOW_FADE_MS`);
+    DARK blooms a wider halo down to the resting glow (`GLOW_BIG`). Flare runs off a
+    persistent `introStart` clock so it finishes smoothly instead of snapping to 0
+    when `data-home-intro` is removed mid-fade. All intro-only → zero resting cost.
+  - Light mode revamp CLOSED. Branch: design-review.
 
 - [ ] **2. Copy-rendering bugs**
   - Space before commas in author lists (JSX whitespace):
