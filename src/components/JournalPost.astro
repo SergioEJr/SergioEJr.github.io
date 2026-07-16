@@ -26,6 +26,14 @@ const isNote = post.data.category === 'notebook';
 	style={`--cat-color:${catColor}`}
 >
 	{!isNote && <div class="j-index">{String(number).padStart(2, '0')}</div>}
+	{isNote && (
+		<div class="j-note-icon" aria-hidden="true">
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M12 20h9" />
+				<path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+			</svg>
+		</div>
+	)}
 	<div class="j-main">
 		<div class="j-cat" style={`color:${catColor}`}>● {catLabel}</div>
 		{post.data.noLink ? (
@@ -73,17 +81,39 @@ const isNote = post.data.category === 'notebook';
 	}
 	/* Notebook entries aren't part of the blog's chronological sequence: no
 	   running index, and no per-entry separator (the topic header rule groups
-	   them instead). Keep the SAME 3rem index gutter so their content aligns with
-	   the numbered timeline rows above — the gutter is just empty (no number). */
+	   them instead). This is the DEDICATED Notebook view's layout — single column,
+	   borderless. The "All" view overrides these below (scoped to [data-view="all"])
+	   to give notes the timeline's gutter, borders, and a note icon. */
 	.j-post.is-note {
+		grid-template-columns: 1fr;
 		border-bottom: none;
 		padding: 1.25rem 0;
 	}
-	/* Notes have no .j-index child, so their .j-main must be placed into the SECOND
-	   (content) column explicitly — otherwise it lands in the empty 3rem index
-	   column and gets crushed to a sliver. */
-	.j-post.is-note .j-main {
+
+	/* ---- "All" view only: notes read as a flat continuation of the timeline ----
+	   Restore the 3rem index gutter (so content aligns with the numbered rows), a
+	   row separator, and a note icon in the gutter. Scoped to [data-view="all"] on
+	   #journal so the dedicated Notebook view keeps its original borderless layout. */
+	:global(#journal[data-view="all"]) .j-post.is-note {
+		grid-template-columns: 3rem 1fr;
+		border-bottom: 1px solid var(--color-border);
+		padding: 1.75rem 0;
+	}
+	:global(#journal[data-view="all"]) .j-post.is-note .j-main {
 		grid-column: 2;
+	}
+	/* Note icon: sits in the gutter (col 1) where timeline rows show their number.
+	   Hidden by default (dedicated Notebook view is single-column); shown only in
+	   "All", aligned with the .j-index number's baseline. */
+	.j-note-icon { display: none; }
+	:global(#journal[data-view="all"]) .j-post.is-note .j-note-icon {
+		display: block;
+		grid-column: 1;
+		/* Same muted treatment as the timeline's index numbers so the icon recedes
+		   into the gutter instead of pulling the eye. */
+		color: var(--color-text-muted);
+		opacity: 0.5;
+		padding-top: 0.35rem;
 	}
 	.j-index { font-variant-numeric: tabular-nums; color: var(--color-text-muted); opacity: 0.5; font-size: 0.9rem; padding-top: 0.3rem; }
 	.j-cat { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
@@ -162,6 +192,16 @@ const isNote = post.data.category === 'notebook';
 	@media (max-width: 600px) {
 		.j-post { grid-template-columns: 1fr; }
 		.j-index { display: none; }
+		/* On mobile the index gutter is dropped for ALL rows, including "All"-view
+		   notes — collapse them to single column and drop the note icon so they
+		   match the timeline rows (this override must beat the [data-view="all"]
+		   desktop rule above, hence repeating the note selector inside the query). */
+		:global(#journal[data-view="all"]) .j-post.is-note {
+			grid-template-columns: 1fr;
+		}
+		:global(#journal[data-view="all"]) .j-post.is-note .j-note-icon {
+			display: none;
+		}
 	}
 </style>
 

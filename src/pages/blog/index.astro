@@ -155,6 +155,7 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
     <Header />
     <main
       id="journal"
+      data-view="all"
       style="--cat-color: var(--color-accent);"
       transition:animate={pageFade}
     >
@@ -227,18 +228,11 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
               />
             ))
           }
-          {/* Notebook section header — shown ONLY in the "All" view, where it
-              introduces the notebook block below the Updates/Essays timeline (the
-              notes are living docs, so they sit in their own section, not woven into
-              the dated timeline). Hidden in single-filter views (the Notebook filter
-              shows its own dedicated topic-grouped layout). */}
-          {
-            noteGroups.length > 0 && (
-              <div class="j-notebook-head" data-notebook-section hidden>
-                <h2 class="j-notebook-title">{CATS.notebook.title}</h2>
-              </div>
-            )
-          }
+          {/* In "All", notebook posts continue after the timeline as a flat list
+              (no section title, no topic-group headers — the JS hides those below).
+              Each renders as a normal bordered row with a note icon in the gutter,
+              so they read as a continuation of the timeline. The topic-group headers
+              stay in the DOM for the dedicated Notebook filter view. */}
           {
             noteGroups.map((g) => (
               <Fragment>
@@ -277,7 +271,6 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         const groupHeaders = Array.from(
           document.querySelectorAll(".j-group-header"),
         );
-        const notebookHead = document.querySelector("[data-notebook-section]");
         const filters = Array.from(document.querySelectorAll(".j-filter"));
         const topicBtns = Array.from(document.querySelectorAll(".j-topic"));
         const list = document.querySelector(".j-list");
@@ -349,6 +342,10 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
           titleEl.textContent = meta.title;
           subEl.textContent = meta.subtitle;
           eyeLabel.textContent = meta.label;
+          // Expose the active view so CSS can style notes differently in "All"
+          // (flat, bordered rows like the timeline) vs the dedicated Notebook view
+          // (topic-grouped, borderless).
+          root.setAttribute("data-view", activeCat);
 
           if (side) side.hidden = activeCat !== "notebook";
 
@@ -366,19 +363,16 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
             if (show) visible++;
           });
 
-          // Topic group headers appear in the Notebook view AND in "All" (where they
-          // structure the notebook section below the timeline).
+          // Topic group headers appear ONLY in the dedicated Notebook view. In "All"
+          // the notes are a flat continuation of the timeline (no grouping), so the
+          // headers stay hidden there.
           groupHeaders.forEach((h) => {
             const t = h.getAttribute("data-group-topic");
-            const inScope = activeCat === "notebook" || activeCat === "all";
             const show =
-              inScope && (activeTopic === "all" || t === activeTopic);
+              activeCat === "notebook" &&
+              (activeTopic === "all" || t === activeTopic);
             h.style.display = show ? "" : "none";
           });
-
-          // The "Notebook" section heading introduces the notes block — only in All
-          // (single-filter views don't need it: Notebook has its own header/sidebar).
-          if (notebookHead) notebookHead.hidden = activeCat !== "all";
 
           // Publish the count via data-count; the count-up module script
           // observes this attribute and rolls the odometer to the new value.
@@ -689,27 +683,6 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         color: var(--color-text-muted);
         opacity: 0.6;
       }
-      /* Content gutter — matches JournalPost's `3rem` index column + `1rem` gap, so
-         section/topic headers align with the numbered rows' CONTENT (not the row
-         edge). Collapses to 0 at the mobile breakpoint where the index column is
-         dropped. */
-      .j-list {
-        --j-gutter: 4rem;
-      }
-      /* "Notebook" section header — shown only in "All" to open the notebook block
-         below the timeline. Just the serif section title, aligned to the left edge,
-         sitting a level above the full-width topic group-headers. */
-      .j-notebook-head {
-        margin-top: 3rem;
-        padding: 2.25rem 0 0.5rem;
-      }
-      .j-notebook-title {
-        font-family: var(--font-serif);
-        font-size: 1.9rem;
-        line-height: 1.15;
-        margin: 0;
-        border-bottom: none;
-      }
       /* MEDIUM screens (below the sidebar breakpoint, above mobile): topics are a
          WRAPPING row above the list, in the same rounded-rectangle style they had
          as sidebar rows. `:not([hidden])` so this doesn't override the `hidden`
@@ -739,11 +712,6 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
       @media (max-width: 600px) {
         #j-title {
           font-size: 2.2rem;
-        }
-        /* Index column is dropped on mobile (JournalPost), so headers align to the
-           edge too — no gutter. */
-        .j-list {
-          --j-gutter: 0rem;
         }
         /* No bottom rule on mobile, and a tighter gap below the bar. Extend the
            blurred bar edge-to-edge past main's 1rem gutter so scrolling content
