@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { generateOgImage, type OgBadge } from "../utils/generateOgImage";
 import { stripInline } from "../utils/inlineText";
-import { getPublishedPosts, getPublishedProjects, getPublishedResearch } from "../utils/posts";
+import { getPublishedPosts, getPublishedProjects, getPublishedResearch, postHasDetailPage } from "../utils/posts";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
 
 // Project category colors — match the Projects page filters / Journal categories.
@@ -25,9 +25,11 @@ export async function getStaticPaths() {
         { params: { route: 'blog' }, props: { title: 'Blog', subtitle: SITE_TITLE } },
     ];
 
-    // Dynamic blog posts — skip pointer posts, which have no detail page.
+    // Dynamic blog posts — only those with a real detail page. Skips pointer
+    // posts (externalUrl/linkTo) AND link-less update posts (noLink), matching
+    // the blog detail route so we never emit an OG image for a page that 404s.
     const blogPages = posts
-        .filter((post) => !post.data.externalUrl && !post.data.linkTo)
+        .filter(postHasDetailPage)
         .map((post) => ({
             params: { route: `blog/${post.id}` },
             props: { title: stripInline(post.data.title), subtitle: 'Blog Post' },

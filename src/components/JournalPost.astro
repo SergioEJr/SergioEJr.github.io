@@ -1,10 +1,12 @@
 ---
+import type { CollectionEntry } from 'astro:content';
 import FormattedDate from './FormattedDate.astro';
 import { renderInline } from '../utils/inlineText';
 import { url } from '../utils/paths';
+import { postLink } from '../utils/posts';
 
 interface Props {
-	post: any;
+	post: CollectionEntry<'blog'>;
 	number: number;
 	catColor: string;
 	catLabel: string;
@@ -12,12 +14,9 @@ interface Props {
 }
 const { post, number, catColor, catLabel, allOrder = 0 } = Astro.props;
 
-function postLink(data: any, id: string): { href: string; external: boolean } {
-	if (data.externalUrl) return { href: data.externalUrl, external: true };
-	if (data.linkTo) return { href: url(data.linkTo), external: false };
-	return { href: url(`/blog/${id}/`), external: false };
-}
-const link = postLink(post.data, post.id);
+// Shared link resolution (posts.ts). noLink posts get href:null and are rendered
+// as static text in the branch below, so we only read link.href when it's set.
+const link = postLink(post);
 const isNote = post.data.category === 'notebook';
 ---
 <article

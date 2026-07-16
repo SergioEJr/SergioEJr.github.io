@@ -1,5 +1,10 @@
 ---
 import "../styles/global.css";
+// Self-hosted KaTeX CSS (fonts ship from the package automatically). Bundled and
+// hashed by Astro so it always matches the installed katex renderer — no CDN,
+// no SRI concern, no version drift. Global so frontmatter math (renderInline)
+// works on any page, not just blog posts.
+import "katex/dist/katex.min.css";
 import type { ImageMetadata } from "astro";
 import { ClientRouter } from "astro:transitions";
 import { SITE_TITLE, UMAMI_SRC, UMAMI_WEBSITE_ID } from "../consts";
@@ -89,15 +94,19 @@ const imageUrl =
   })();
 </script>
 <style is:inline>
-  /* CSS variables inline — available immediately in all modes (dev + prod), before any external CSS */
+  /* CSS variables inline — available immediately in all modes (dev + prod),
+     before any external CSS. LIGHT-THEME VALUES MUST MATCH the :root block in
+     global.css ("daylight lab" palette); if they drift, the first paint flashes
+     the wrong ground before the external sheet loads — the exact FOUC this block
+     exists to prevent. */
   :root {
-    --color-bg: #ffffff;
+    --color-bg: #f6f8fa;
     --color-bg-offset: #ffffff;
-    --color-bg-header: rgba(255, 255, 255, 0.85);
-    --color-text-main: #1a1a1a;
-    --color-text-muted: #555555;
+    --color-bg-header: rgba(246, 248, 250, 0.85);
+    --color-text-main: #18222e;
+    --color-text-muted: #49586a;
     --color-accent: #003366;
-    --color-border: #eaeaea;
+    --color-border: #dce3eb;
   }
   [data-theme="dark"] {
     --color-bg: #0f172a;
@@ -244,10 +253,6 @@ const imageUrl =
 ></style>
 
 <link rel="canonical" href={canonicalURL} />
-<link
-  rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css"
-/>
 
 <title>{title}</title>
 <meta name="title" content={title} />

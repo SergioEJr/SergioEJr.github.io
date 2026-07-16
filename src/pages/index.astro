@@ -6,7 +6,7 @@ import HeroSim from "../components/HeroSim.astro";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
 import { url } from "../utils/paths";
 import { pageFade } from "../utils/pageTransition";
-import { getPublishedPosts, getPublishedResearch } from "../utils/posts";
+import { getPublishedPosts, getPublishedResearch, postLink } from "../utils/posts";
 
 const posts = (await getPublishedPosts())
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
@@ -846,24 +846,37 @@ const selectedResearch = (
           <h2 style="margin-top: 0;">Latest Posts</h2>
           <ul style="list-style: none; padding: 0;">
             {
-              posts.map((post) => (
-                <li style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px dashed var(--color-border);">
-                  <a
-                    href={url(`/blog/${post.id}/`)}
-                    style="display: block; font-family: var(--font-serif); font-size: 1.1rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.25rem;"
-                  >
-                    {post.data.title}
-                  </a>
-                  <small style="color: var(--color-text-muted); text-transform: uppercase; font-size: 0.8rem;">
-                    {post.data.pubDate.toLocaleDateString("en-us", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                      timeZone: "UTC",
-                    })}
-                  </small>
-                </li>
-              ))
+              posts.map((post) => {
+                const link = postLink(post);
+                const titleStyle =
+                  "display: block; font-family: var(--font-serif); font-size: 1.1rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.25rem;";
+                return (
+                  <li style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px dashed var(--color-border);">
+                    {link.href ? (
+                      <a
+                        href={link.href}
+                        {...(link.external
+                          ? { target: "_blank", rel: "noopener noreferrer" }
+                          : {})}
+                        style={titleStyle}
+                      >
+                        {post.data.title}
+                      </a>
+                    ) : (
+                      /* noLink pointer/update post — no destination, render as text */
+                      <span style={titleStyle}>{post.data.title}</span>
+                    )}
+                    <small style="color: var(--color-text-muted); text-transform: uppercase; font-size: 0.8rem;">
+                      {post.data.pubDate.toLocaleDateString("en-us", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        timeZone: "UTC",
+                      })}
+                    </small>
+                  </li>
+                );
+              })
             }
           </ul>
           <a href={url("/blog")} style="font-weight: 600;">View Blog &rarr;</a>
