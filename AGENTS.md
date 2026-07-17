@@ -33,9 +33,13 @@ Always finish a change with `npm run build` and confirm it's clean.
 ## Content collections (`src/content.config.ts`)
 
 - **blog** (`src/content/blog/`, `.md`/`.mdx`) — Journal posts. Key fields:
-  `category` (news/math/physics/notes), `draft` (excludes from everything),
-  `externalUrl`/`linkTo`/`noLink` (pointer/update posts with no detail page),
-  `heroImage` (off by default; lives in `src/assets/blog/`).
+  `category` (`updates`/`essays`/`notebook` — the reader's *register*, not the
+  subject), `topic` (groups Notebook posts: Math, Physics, Git, …), `subject`
+  (`Science`/`Math`/`Ideas` — Essays dot/underline color), `draft` (excludes
+  from everything), `externalUrl`/`linkTo`/`noLink` (pointer/update posts with
+  no detail page — link resolution + the has-detail-page rule live in
+  `postLink()`/`postHasDetailPage()` in `posts.ts`), `heroImage` (off by
+  default; lives in `src/assets/blog/`).
 - **projects** (`src/content/projects/`) — `categories` (Technical/Teaching),
   `image` (card thumbnail in `public/projects/`, gets pill overlay),
   `articleImage` (in-article, no overlay), `order` (optional manual override;
@@ -55,9 +59,14 @@ Always finish a change with `npm run build` and confirm it's clean.
   - `stripInline(s)` → plain text for metadata (`<title>`, OG image, RSS).
   - `escapeHtml(s)`.
     KaTeX CSS is loaded globally in `BaseHead.astro`, so math works on any page.
-- **`src/utils/posts.ts`** — `getPublishedPosts()` (filters drafts in prod, keeps
-  them in dev). Use instead of `getCollection('blog')` for anything user-facing.
-- **`src/utils/categories.ts`** — shared category colors (Journal + Projects + OG).
+- **`src/utils/posts.ts`** — `getPublishedPosts()` / `getPublishedProjects()` /
+  `getPublishedResearch()` (filter drafts in prod, keep them in dev). Use instead
+  of `getCollection(...)` for anything user-facing. Also `postLink(post)` and
+  `postHasDetailPage(post)` — the single source of truth for where a Journal post
+  links and whether it has a generated detail page.
+- **`src/utils/categories.ts`** — canonical Project category colors + labels for
+  the Projects page and OG image route. (Journal register/subject colors are CSS
+  vars in `global.css` — `--cat-*` / `--subj-*` — not this file.)
 - **`src/components/SideNote.astro`** — margin notes (`.mdx` only); inline math
   works, display math doesn't (MDX limitation).
 - **`src/components/Figure.astro`** — diagrams that adapt to light/dark

@@ -327,125 +327,6 @@ a:hover {
 	text-underline-offset: 2px;
 }
 
-.author-link:hover .author-tooltip {
-	opacity: 1;
-	visibility: visible;
-	transform: translateX(-50%) translateY(-10px);
-}
-
-.author-tooltip {
-	position: absolute;
-	bottom: 100%;
-	left: 50%;
-	transform: translateX(-50%) translateY(0);
-	background-color: var(--color-bg);
-	color: var(--color-text-main);
-	border: 1px solid var(--color-border);
-	box-shadow: var(--shadow-lg);
-	padding: 1rem;
-	width: max-content;
-	max-width: 320px;
-	border-radius: 8px;
-	opacity: 0;
-	visibility: hidden;
-	transition: all 0.2s ease-in-out;
-	z-index: 1000;
-	text-align: left;
-	pointer-events: none;
-}
-
-.author-tooltip img {
-	width: 50px;
-	height: 50px;
-	border-radius: 50%;
-	float: left;
-	margin-right: 1rem;
-	object-fit: cover;
-}
-
-.author-tooltip h4 {
-	margin: 0;
-	font-size: 1rem;
-	font-family: var(--font-sans);
-	color: var(--color-text-main);
-}
-
-.author-tooltip p {
-	margin: 0;
-	font-size: 0.85rem;
-	line-height: 1.4;
-	color: var(--color-text-muted);
-}
-
-.author-tooltip .role {
-	font-size: 0.8rem;
-	color: var(--color-accent);
-	display: block;
-	margin-bottom: 0.25rem;
-}
-
-/* Minimal Scrollbar for BibTeX panel */
-.bibtex-panel::-webkit-scrollbar {
-	height: 6px;
-}
-
-.bibtex-panel::-webkit-scrollbar-track {
-	background: transparent;
-}
-
-.bibtex-panel::-webkit-scrollbar-thumb {
-	background-color: var(--color-border);
-	border-radius: 10px;
-}
-
-/* Blog Row Listing */
-.blog-row {
-	display: flex;
-	gap: 1.5rem;
-	border-bottom: 1px solid var(--color-border);
-	padding: 1.5rem 0;
-	align-items: flex-start;
-}
-
-.blog-row:first-child {
-	padding-top: 0;
-}
-
-.blog-row:last-child {
-	border-bottom: none;
-}
-
-.blog-row img {
-	width: 200px;
-	height: 120px;
-	object-fit: cover;
-	border-radius: 6px;
-	flex-shrink: 0;
-}
-
-.blog-content {
-	flex: 1;
-}
-
-.blog-title {
-	margin: 0 0 0.5rem 0;
-	font-size: 1.4rem;
-	font-family: var(--font-serif);
-	color: var(--color-text-main);
-}
-
-.blog-meta {
-	font-size: 0.9rem;
-	color: var(--color-text-muted);
-	margin-bottom: 0.5rem;
-}
-
-.blog-desc {
-	margin: 0;
-	font-size: 1rem;
-	color: var(--color-text-muted);
-}
-
 /* Publication List */
 .publication-item {
 	margin-bottom: 1.5rem;
@@ -574,34 +455,6 @@ a:hover {
 	border-color: var(--color-accent);
 }
 
-/* Team Card */
-.team-card {
-	text-align: center;
-}
-
-.team-avatar {
-	width: 140px;
-	height: 140px;
-	border-radius: 50%;
-	object-fit: cover;
-	margin-bottom: 1rem;
-	border: 3px solid var(--color-accent-light);
-}
-
-.team-name {
-	font-weight: 700;
-	font-size: 1.1rem;
-	display: block;
-	color: var(--color-text-main);
-}
-
-.team-role {
-	font-size: 0.9rem;
-	color: var(--color-accent);
-	display: block;
-	margin-bottom: 0.5rem;
-}
-
 /* Project Card Override */
 .project-card {
 	background-color: var(--color-bg-offset);
@@ -612,17 +465,6 @@ a:hover {
 /* Dark mode optimization for images */
 [data-theme="dark"] img {
 	filter: brightness(0.9);
-}
-
-@media (max-width: 720px) {
-	.blog-row {
-		flex-direction: column;
-	}
-
-	.blog-row img {
-		width: 100%;
-		height: auto;
-	}
 }
 
 /* --- Equation references (src/plugins/rehype-eqref.mjs) ---------------------

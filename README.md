@@ -17,11 +17,14 @@ GitHub Pages via GitHub Actions.
 | Home page hero | `src/pages/index.astro` |
 | About page | `src/pages/about.astro` |
 | Author profile(s) | `src/data/authors.json` |
-| Projects | `src/data/projects.json` |
-| Publications | `src/data/publications.bib` |
-| Blog posts (one file per post) | `src/content/blog/*.md` |
+| Projects (one file per project) | `src/content/projects/*.mdx` |
+| Publications / research (one file per entry) | `src/content/research/*.mdx` |
+| Journal posts (one file per post) | `src/content/blog/*.{md,mdx}` |
 | Navigation | `src/components/Header.astro` |
-| Profile image | `public/profile.svg` (replace with a headshot) |
+| Home hero portrait | `public/about/profile.jpeg` |
+
+Content collections (projects, research, blog) are defined in
+`src/content.config.ts`; see `AGENTS.md` for the field reference.
 
 ## Develop locally
 
