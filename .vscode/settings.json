@@ -8,5 +8,45 @@
   // no granular setting to disable just that diagnostic in this version, so we
   // turn off the MDX language server entirely. Syntax highlighting still works;
   // we lose MDX IntelliSense, and Astro validates everything at build time anyway.
-  "mdx.server.enable": false
+  "mdx.server.enable": false,
+
+  // --- figures/*.tex + LaTeX Workshop ---------------------------------------
+  // Every figure starts with \input{_preamble}, which lives in figures/. fig.sh
+  // resolves it by exporting TEXINPUTS="figures:" before running latex. LaTeX
+  // Workshop doesn't use fig.sh, so without the same hint it fails on line 1 with
+  //   ! LaTeX Error: File `_preamble.tex' not found.
+  // and then reports every preamble-defined macro (ink, edge, figred,
+  // \figfontsize, ...) as undefined — a cascade of false errors in a file that
+  // builds cleanly via ./fig.sh.
+  //
+  // Give the extension the same TEXINPUTS. The trailing ':' keeps the default
+  // search path (drop it and the standard classes/packages stop resolving).
+  "latex-workshop.latex.texDirs": ["%DIR%/../figures"],
+  "latex-workshop.latex.build.forceRecipeUsage": false,
+  "latex-workshop.latex.tools": [
+    {
+      "name": "figlatex",
+      "command": "pdflatex",
+      "args": [
+        "-synctex=1",
+        "-interaction=nonstopmode",
+        "-file-line-error",
+        "%DOC%"
+      ],
+      "env": {
+        // Mirrors fig.sh. %DIR% is the .tex file's own directory (figures/), so
+        // this works no matter which figure is open.
+        "TEXINPUTS": "%DIR%:"
+      }
+    }
+  ],
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "figure (pdflatex)",
+      "tools": ["figlatex"]
+    }
+  ],
+  // Build artifacts go to build/ via fig.sh; keep the editor's output out of the
+  // repo root too, so a stray editor build doesn't scatter .aux/.log files.
+  "latex-workshop.latex.outDir": "%DIR%/../build"
 }
