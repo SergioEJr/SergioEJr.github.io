@@ -1,10 +1,17 @@
 ---
-import authorsData from '../data/authors.json';
+import authorsRaw from '../data/authors.json';
 import { normalizeAuthorAvatar } from '../utils/authors';
 
 interface Props {
   nameOrSlug: string;
 }
+
+// authors.json is heterogeneous — some entries have `avatar`, some don't — so
+// the inferred JSON type makes `avatar` structurally `undefined` on the entries
+// that omit it. Widen to a common record shape so the avatar normalization below
+// type-checks. Extra per-author fields are read dynamically (JSON.stringify).
+type Author = { id: string; name: string; avatar?: string; [key: string]: unknown };
+const authorsData = authorsRaw as Author[];
 
 const { nameOrSlug } = Astro.props;
 

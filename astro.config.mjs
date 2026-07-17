@@ -16,6 +16,10 @@ import rehypeFootnoteHistory from './src/plugins/rehype-footnote-history.mjs';
 // - rehypeEqref must run AFTER rehypeKatex — it reads the rendered KaTeX output.
 // - rehypeFootnoteHistory is independent of math; it keeps GFM footnote jumps
 //   from pushing history entries under ClientRouter (see the plugin's header).
+// Typed as any[]: the local .mjs plugins ship no unified type declarations, so
+// the inferred element type doesn't satisfy Pluggable[]/RehypePlugin[] even
+// though they run correctly. The cast keeps `astro check` green.
+/** @type {any[]} */
 const contentPlugins = [[rehypeKatex, { trust: true }], rehypeEqref, rehypeFootnoteHistory];
 
 // https://astro.build/config

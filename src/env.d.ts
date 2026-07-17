@@ -10,3 +10,17 @@ interface ImportMetaEnv {
 interface ImportMeta {
 	readonly env: ImportMetaEnv;
 }
+
+// @pagefind/default-ui ships no type declarations; declare the one export we use.
+declare module "@pagefind/default-ui" {
+	export class PagefindUI {
+		constructor(opts: {
+			element: string;
+			baseUrl?: string;
+			bundlePath?: string;
+			showImages?: boolean;
+			showSubResults?: boolean;
+			[key: string]: unknown;
+		});
+	}
+}

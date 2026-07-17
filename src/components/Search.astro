@@ -39,19 +39,22 @@ import "@pagefind/default-ui/css/ui.css";
 </div>
 
 <script>
-  let searchAbort;
+  let searchAbort: AbortController | null = null;
 
   function setupSearch() {
     if (searchAbort) searchAbort.abort();
     searchAbort = new AbortController();
     const { signal } = searchAbort;
 
-    const overlay = document.getElementById("search-overlay");
+    const overlayEl = document.getElementById("search-overlay");
     const backdrop = document.getElementById("search-backdrop");
     const closeBtn = document.getElementById("search-close-btn");
     const panel = document.getElementById("search-panel");
 
-    if (!overlay) return;
+    if (!overlayEl) return;
+    // Non-null local so the closures below (openSearch/closeSearch/trapFocus)
+    // don't re-trigger the possibly-null check on every access.
+    const overlay = overlayEl;
 
     // The element focused before the dialog opened, so we can restore focus to
     // it on close (a11y: focus must not be dropped on the body).
@@ -96,14 +99,14 @@ import "@pagefind/default-ui/css/ui.css";
             showImages: false,
             showSubResults: true,
           });
-          const searchInput = overlay.querySelector(".pagefind-ui__search-input");
+          const searchInput = overlay.querySelector<HTMLElement>(".pagefind-ui__search-input");
           if (searchInput) {
             searchInput.focus();
           }
         });
       } else {
         requestAnimationFrame(() => {
-          const searchInput = overlay.querySelector(".pagefind-ui__search-input");
+          const searchInput = overlay.querySelector<HTMLElement>(".pagefind-ui__search-input");
           if (searchInput) {
             searchInput.focus();
           }

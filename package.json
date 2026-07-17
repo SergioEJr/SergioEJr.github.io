@@ -7,6 +7,7 @@
     "watch:figures": "node scripts/watch-figures.mjs",
     "check:figures": "node scripts/check-figures.mjs",
     "prebuild": "npm run check:figures",
+    "check": "astro check",
     "build": "astro build",
     "postbuild": "pagefind --site dist",
     "preview": "astro preview",
@@ -26,9 +27,11 @@
     "sharp": "^0.34.3"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.9",
     "@fontsource/inter": "^5.2.8",
     "@pagefind/default-ui": "^1.5.0",
     "pagefind": "^1.4.0",
-    "playwright": "^1.61.0"
+    "playwright": "^1.61.0",
+    "typescript": "^6.0.3"
   }
 }
