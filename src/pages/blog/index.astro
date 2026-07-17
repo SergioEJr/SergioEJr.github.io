@@ -598,8 +598,11 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
       }
       /* In dark mode the register colors (--f-color) are 400-series pastels, on
          which white text fails WCAG AA (~2:1). Use the dark ground as ink on the
-         pastel pill instead — high contrast on all three registers. */
-      :global(html[data-theme="dark"]) .j-filter.active {
+         pastel pill instead — high contrast on all three registers. Pill
+         variants ONLY: the "All" text variant (.j-filter--text) has a
+         transparent background and colors its own text with --f-color, so dark
+         ink there would be invisible on the dark page. */
+      :global(html[data-theme="dark"]) .j-filter.active:not(.j-filter--text) {
         color: var(--color-bg);
       }
 
