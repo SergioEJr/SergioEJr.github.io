@@ -1,0 +1,23 @@
+# Keeps dependencies current. Important now that the deploy workflow pins
+# actions to commit SHAs: without this, pinned actions would silently go stale.
+# Dependabot opens PRs that bump the SHA and update the version comment.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      # One PR for all routine action bumps instead of one per action.
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      # Group non-major updates so routine bumps land together; majors (which
+      # may be breaking, e.g. an Astro 7 upgrade) still get their own PRs.
+      minor-and-patch:
+        update-types: ["minor", "patch"]
