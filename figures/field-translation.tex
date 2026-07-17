@@ -1,0 +1,117 @@
+% Translation of a scalar field: the temperature field phi of a coffee cup,
+% displaced by a vector a, becomes a new field phi'. The cup at position x
+% carries phi; the same cup displaced to x+a carries phi'. See _template.tex /
+% _preamble.tex for the shared setup; this file keeps the driver switch + drawing.
+\ifnum\pdfoutput>0
+  \documentclass[tikz,border=3pt]{standalone}         % pdflatex → PDF proof
+\else
+  \documentclass[tikz,border=3pt,dvisvgm]{standalone} % latex   → web SVG
+\fi
+\input{_preamble}
+% Required for the Stealth arrow tip below. Without it the build dies with
+% "Unknown arrow tip kind 'Stealth'" and fig.sh (set -e) aborts, silently
+% leaving the previously generated SVG in place.
+\usetikzlibrary{arrows.meta}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+  % --- Cup geometry -----------------------------------------------------------
+  % A cup is a cylinder seen slightly from above: an ellipse rim (rx x ry) and a
+  % body of height \ch closed by a front-only bottom arc. Filled with figbg so it
+  % is opaque: the cups are drawn BEFORE the vectors and the vector tips land in
+  % their bulk (see the painter's-order note below).
+  \def\rx{9}    % rim semi-axis, horizontal
+  \def\ry{3}    % rim semi-axis, vertical (foreshortening -> 3/4 view)
+  \def\ch{16}   % cup body height
+
+  % \cupat{x}{y} draws a cup whose RIM CENTER is at (x,y).
+  \newcommand{\cupat}[2]{%
+    % body: left wall down, front bottom arc, right wall up, then the rim ellipse.
+    \filldraw[edge, ink, fill=figbg]
+      ({#1-\rx},{#2}) -- ({#1-\rx},{#2-\ch})
+      arc[start angle=180, end angle=360, x radius=\rx, y radius=\ry]
+      -- ({#1+\rx},{#2}) arc[start angle=0, end angle=360, x radius=\rx, y radius=\ry];
+  }
+
+  % \steam{x}{y} draws two wisps rising from a rim center at (x,y).
+  % Each wisp is an S-curve; the pair is offset so they read as a loose plume.
+  % \gap lifts the wisps clear of the rim: measured from the rim CENTER, anything
+  % below \ry (=3) sits on the lip ellipse itself and reads as attached to the cup
+  % rather than as steam floating above it. \gap > \ry buys visible daylight.
+  \def\gap{7}
+  \newcommand{\steam}[2]{%
+    \foreach \dxs/\hs in {-3/1, 3/0.85}{
+      \draw[hair, ink, line cap=round]
+        ({#1+\dxs},{#2+\gap})
+          .. controls ({#1+\dxs-2.4},{#2+\gap+4*\hs}) and ({#1+\dxs+2.4},{#2+\gap+5*\hs})
+          .. ({#1+\dxs},{#2+\gap+9*\hs});
+    }
+  }
+
+  % --- Layout ----------------------------------------------------------------
+  % Cup rim centers, and the origin of x.
+  \def\rimax{6}\def\rimay{14}    % cup 1 rim center
+  \def\rimbx{56}\def\rimby{34}   % cup 2 rim center
+  \def\ox{-22}\def\oy{-24}       % origin point (tail of x)
+
+  % The vectors point into the BULK of each cup, not at the rim center (which sits
+  % on the cup's top face). Drop the target \bulk mm below each rim center so the
+  % head lands in the middle of the visible body. Cup body spans rim y down to
+  % y-\ch (=16), so ~8mm is its mid-height.
+  \def\bulk{8}
+  \def\ax{\rimax}\def\ay{\rimay-\bulk}
+  \def\bx{\rimbx}\def\by{\rimby-\bulk}
+
+  % --- Cups first, vectors on top ---------------------------------------------
+  % Painter's order matters: the cups carry an OPAQUE figbg fill, so anything
+  % drawn before them that lands inside a rim gets painted over. The vector tips
+  % are meant to sit in the BULK of each cup, so the cups must go down FIRST and
+  % the arrows on top of them.
+  \cupat{\rimax}{\rimay}
+  \steam{\rimax}{\rimay}
+  \cupat{\rimbx}{\rimby}
+  \steam{\rimbx}{\rimby}
+
+  % --- Vectors: tip-to-tail addition x + a = x' -------------------------------
+  % x's head lands in the bulk of cup 1; a starts at exactly that point ({\ax},{\ay})
+  % and its head lands in the bulk of cup 2. Sharing the point is what makes the
+  % tip-to-tail composition read, so neither arrow is shortened at that junction.
+  % `round` on the tip softens the arrowhead's corners (it otherwise inherits a
+  % miter join and renders with sharp points).
+  \tikzset{vec/.style = {edge, ink, line cap=round,
+                         -{Stealth[length=2.6mm, width=2mm, round]}}}
+
+  % x: origin -> bulk of cup 1 (shorten < just clears the origin dot).
+  % NB: `shorten` takes an ABSOLUTE length and ignores the x=1mm/y=1mm scaling,
+  % so it must carry an explicit `mm` unit — a bare number means points.
+  \draw[vec, shorten <=1.2mm] (\ox,\oy) -- ({\ax},{\ay});
+  % a: tip of x -> bulk of cup 2.
+  \draw[vec] ({\ax},{\ay}) -- ({\bx},{\by});
+  % origin dot.
+  \fill[ink] (\ox,\oy) circle[radius=0.9];
+
+  % --- Vector labels ----------------------------------------------------------
+  % Both x and a are diagonal segments: place each label at the segment's true
+  % midpoint pushed out along the segment's own perpendicular normal, so the
+  % label clears the stroke and the two read as a balanced pair (see the skill's
+  % note on diagonal labels).
+  % Endpoints are written out numerically here: \ay/\by expand to expressions
+  % (e.g. `14-8`), so bare arithmetic like (\oy+\ay)/2 would mis-parse.
+  % Symbols are set at an ABSOLUTE 17pt: the preamble's `every picture` style
+  % fixes an absolute \figfontsize (13.5pt), which overrides a relative \large.
+  % x: (-22,-24) -> (6,6). Midpoint (-8,-9); direction (28,30), |d| = 41.0;
+  % unit normal (up-left) = (-30,28)/41.0.
+  \node[text=ink, font=\fontsize{17}{20}\selectfont] at ({-8 - 5.5*30/41.0}, {-9 + 5.5*28/41.0})
+    {$\boldsymbol{x}$};
+  % a: (6,6) -> (56,26). Midpoint (31,16); direction (50,20), |d| = 53.9;
+  % unit normal (up-left) = (-20,50)/53.9.
+  \node[text=ink, font=\fontsize{17}{20}\selectfont] at ({31 - 5.5*20/53.9}, {16 + 5.5*50/53.9})
+    {$\boldsymbol{a}$};
+
+  % --- Field labels: the emphasis, mapped to figred. --------------------------
+  % Placed to the outside of each cup (left of cup 1, right of cup 2) so they sit
+  % clear of the steam and of the arrow between the cups.
+  \node[text=figred, font=\fontsize{17}{20}\selectfont] at ({\rimax-\rx-7},{\rimay-4}) {$\phi$};
+  \node[text=figred, font=\fontsize{17}{20}\selectfont] at ({\rimbx+\rx+7},{\rimby-4}) {$\phi'$};
+\end{tikzpicture}
+\end{document}

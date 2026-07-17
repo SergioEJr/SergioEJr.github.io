@@ -1,0 +1,76 @@
+---
+title: "Symmetry transformations of fields"
+description: "Draft."
+pubDate: "2026-07-16"
+category: notebook
+topic: Physics
+authors:
+  - sergio-eraso
+tags:
+  - field theory
+  - group theory
+  - symmetry
+draft: true # set to false to publish
+---
+
+import Figure from '../../components/Figure.astro';
+import fieldTranslation from '../../assets/blog/field-translation.svg?raw';
+
+## Scalar Fields
+
+Suppose I have a hot cup of coffee described by a temperature field $\phi(\boldsymbol{x})$, and I slide the cup by a displacement $\boldsymbol{a}$ on my desk. If physics is going to be of any use in this world, then the total heat content of the coffee better have not changed. Why?
+
+Because space is *homogeneous* -- there is no preferred position. In other words, the energy $F$ of the coffee cup is invariant under the translation group. How do we describe the transformed temperature field of this displaced coffee? 
+<Figure
+  svg={fieldTranslation}
+  width={420}
+  alt="A coffee cup at position r, and the same cup displaced by a vector a to a new position, with temperature fields labeled phi and phi-prime"
+  caption="Displacing the cup by $\boldsymbol{a}$ carries the field $\phi$ to a new field $\phi'$."
+/>
+
+Evidently, the transformed temperature field $\phi'$ now has support in a different region of space. This is a whole new function, it is an entirely different configuration of the coffee cup. In other words, $\phi$ is *not* invariant under translations, unlike the energy. This new function is defined by
+
+$$
+\begin{align*}
+    \phi'(\boldsymbol{x} + \boldsymbol{a}) = \phi(\boldsymbol{x}).
+\end{align*}
+$$
+This is the most straightforward way to describe the transformation, however, it is customary (and also useful) to describe the transformed field from *its* perspective. Letting $\boldsymbol{x}' = \boldsymbol{x} + \boldsymbol{a}$, we get
+
+$$
+\begin{align}
+    \htmlId{eq:inverse-transform}{
+      \phi'(\boldsymbol{x}') = \phi(\boldsymbol{x}) 
+      = \phi(\boldsymbol{x}' - \boldsymbol{a}).
+    }
+\end{align}
+$$
+In general, if $g$ is an element of a group $G$, then the transformed scalar field $g \cdot \phi$ is 
+$$
+\begin{align*}
+(g \cdot \phi)(\boldsymbol{x}) = \phi(g^{-1} \boldsymbol{x}).
+\end{align*}
+$$
+If the inverse group element is ever confusing, just remember that it comes from expressing the field and points in terms of the new reference frame as in Eq. [](#eq:inverse-transform).
+
+## Vector Fields
+
+Now, let's consider a bar magnet whose local magnetization is described by a vector field $\boldsymbol{m}(\boldsymbol{x})$. In the absence of any external field, I can rotate this magnet by some transformation matrix $R$, and the magnetic field better not change. Why?
+
+Because space is *isotropic* -- there is no preferred direction. That means the bar magnet is invariant under elements of the 
+how do I describe this new field?
+
+
+
+## Tensor Fields
+
+$$
+\begin{align}
+(g \cdot Q)(\boldsymbol{x}) = \rho(g) Q(g^{-1} \boldsymbol{x})
+\end{align}
+$$
+
+
+## Spinor Fields
+
+
