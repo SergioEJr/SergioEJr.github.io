@@ -5,10 +5,20 @@ import "@pagefind/default-ui/css/ui.css";
 <div id="search-overlay" class="search-overlay hidden">
   <div id="search-backdrop" class="search-backdrop"></div>
   <div class="search-panel-wrapper">
-    <div id="search-panel" class="search-panel">
+    <div
+      id="search-panel"
+      class="search-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Search"
+    >
       <div class="search-panel-header">
         <span class="search-title">Search</span>
-        <button id="search-close-btn" class="search-close-btn">Esc</button>
+        <button
+          id="search-close-btn"
+          class="search-close-btn"
+          aria-label="Close search"
+        >Esc</button>
       </div>
       <div class="search-panel-content">
         {
@@ -39,10 +49,36 @@ import "@pagefind/default-ui/css/ui.css";
     const overlay = document.getElementById("search-overlay");
     const backdrop = document.getElementById("search-backdrop");
     const closeBtn = document.getElementById("search-close-btn");
-    
+    const panel = document.getElementById("search-panel");
+
     if (!overlay) return;
 
+    // The element focused before the dialog opened, so we can restore focus to
+    // it on close (a11y: focus must not be dropped on the body).
+    let lastFocused: Element | null = null;
+
+    // Keep Tab focus inside the open dialog. Query the panel fresh each Tab
+    // because PagefindUI injects its input/buttons lazily.
+    function trapFocus(e: KeyboardEvent) {
+      if (e.key !== "Tab" || !panel) return;
+      const focusables = panel.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusables.length) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || !panel.contains(active))) {
+        last.focus();
+        e.preventDefault();
+      } else if (!e.shiftKey && active === last) {
+        first.focus();
+        e.preventDefault();
+      }
+    }
+
     function openSearch() {
+      lastFocused = document.activeElement;
       overlay.classList.remove("hidden");
       document.body.style.overflow = "hidden";
 
@@ -78,12 +114,16 @@ import "@pagefind/default-ui/css/ui.css";
     function closeSearch() {
       overlay.classList.add("hidden");
       document.body.style.overflow = "";
+      // Restore focus to whatever opened the dialog (the search toggle button).
+      if (lastFocused instanceof HTMLElement) lastFocused.focus();
+      lastFocused = null;
     }
 
     document.addEventListener("open-search", openSearch, { signal });
 
     backdrop?.addEventListener("click", closeSearch, { signal });
     closeBtn?.addEventListener("click", closeSearch, { signal });
+    overlay.addEventListener("keydown", trapFocus, { signal });
 
     window.addEventListener(
       "keydown",

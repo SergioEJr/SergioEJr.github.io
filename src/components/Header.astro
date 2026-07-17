@@ -37,7 +37,7 @@ const brandLayerSecondary = layerFor("cls-2");
 
 <header class="site-header">
   <nav>
-    <h2>
+    <div class="brand-heading">
       <a href={url("/")} class="brand" aria-label={`${SITE_TITLE} — home`}>
         <span class="brand-logo" aria-hidden="true">
           <span class="brand-layer brand-layer-primary">
@@ -48,7 +48,7 @@ const brandLayerSecondary = layerFor("cls-2");
           </span>
         </span>
       </a>
-    </h2>
+    </div>
 
     <div class="internal-links" transition:persist="internal-links">
       <HeaderLink href={url("/")}>Home</HeaderLink>
@@ -98,6 +98,7 @@ const brandLayerSecondary = layerFor("cls-2");
         id="search-toggle-desktop"
         class="search-toggle"
         aria-label="Search site"
+        aria-haspopup="dialog"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -116,7 +117,11 @@ const brandLayerSecondary = layerFor("cls-2");
             y2="16.65"></line></svg
         >
       </button>
-      <button id="theme-toggle" aria-label="Toggle Dark Mode">
+      <button
+        id="theme-toggle"
+        aria-label="Toggle dark mode"
+        aria-pressed="false"
+      >
         <svg
           class="sun-icon"
           xmlns="http://www.w3.org/2000/svg"
@@ -160,7 +165,12 @@ const brandLayerSecondary = layerFor("cls-2");
         >
       </button>
 
-      <button id="menu-toggle" aria-label="Toggle Menu">
+      <button
+        id="menu-toggle"
+        aria-label="Toggle menu"
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
@@ -188,6 +198,7 @@ const brandLayerSecondary = layerFor("cls-2");
         id="search-toggle-mobile"
         class="search-toggle"
         aria-label="Search site"
+        aria-haspopup="dialog"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -235,7 +246,16 @@ const brandLayerSecondary = layerFor("cls-2");
     headerControlsAbort = new AbortController();
     const { signal } = headerControlsAbort;
 
-    document.getElementById("theme-toggle")?.addEventListener(
+    const themeToggle = document.getElementById("theme-toggle");
+    // Reflect the current theme in aria-pressed ("dark" = pressed) on setup, so
+    // it's correct after the FOUC script / system preference resolves it.
+    const syncThemePressed = () => {
+      const isDark =
+        document.documentElement.getAttribute("data-theme") === "dark";
+      themeToggle?.setAttribute("aria-pressed", String(isDark));
+    };
+    syncThemePressed();
+    themeToggle?.addEventListener(
       "click",
       () => {
         const isDark =
@@ -243,14 +263,19 @@ const brandLayerSecondary = layerFor("cls-2");
         const newTheme = isDark ? "light" : "dark";
         (window as any).__setPreferredTheme?.(newTheme);
         localStorage.setItem("theme", newTheme);
+        themeToggle.setAttribute("aria-pressed", String(!isDark));
       },
       { signal },
     );
 
-    document.getElementById("menu-toggle")?.addEventListener(
+    const menuToggle = document.getElementById("menu-toggle");
+    menuToggle?.addEventListener(
       "click",
       () => {
-        document.getElementById("mobile-menu")?.classList.toggle("hidden");
+        const menu = document.getElementById("mobile-menu");
+        const nowHidden = menu?.classList.toggle("hidden");
+        // aria-expanded is the inverse of hidden.
+        menuToggle.setAttribute("aria-expanded", String(!nowHidden));
       },
       { signal },
     );
@@ -428,7 +453,9 @@ const brandLayerSecondary = layerFor("cls-2");
     /* Anchor for the absolutely-centered nav menu. */
     position: relative;
   }
-  h2 {
+  /* Site brand — a link, not a document heading (keeps the page heading outline
+     starting at the page's own <h1>). Styled to look like the former <h2>. */
+  .brand-heading {
     margin: 0;
     font-size: 1.3em;
     font-family: var(--font-sans);
@@ -439,7 +466,7 @@ const brandLayerSecondary = layerFor("cls-2");
     display: flex;
     align-items: center;
   }
-  h2 a {
+  .brand-heading a {
     text-decoration: none;
     color: var(--color-text-main);
     border: none;

@@ -195,6 +195,7 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
                 class="j-filter"
                 data-filter={c}
                 style={`--f-color:${CATS[c].color}`}
+                aria-pressed="false"
               >
                 {CATS[c].label}
               </button>
@@ -205,6 +206,7 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
             class="j-filter j-filter--text active"
             data-filter="all"
             style={`--f-color:${CATS.all.color}`}
+            aria-pressed="true"
           >
             {CATS.all.label}
           </button>
@@ -217,11 +219,11 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
           topics.length > 0 && (
             <aside id="j-notes-side" class="j-notes-side" hidden>
               <div class="j-side-label">Topics</div>
-              <button class="j-topic active" data-topic="all">
+              <button class="j-topic active" data-topic="all" aria-pressed="true">
                 All <span>{counts.notebook}</span>
               </button>
               {topics.map(([t, n]) => (
-                <button class="j-topic" data-topic={t}>
+                <button class="j-topic" data-topic={t} aria-pressed="false">
                   {t} <span>{n}</span>
                 </button>
               ))}
@@ -294,6 +296,13 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         const validCats = filters.map((b) => b.getAttribute("data-filter"));
         const validTopics = topicBtns.map((b) => b.getAttribute("data-topic"));
 
+        // Toggle a filter pill's visual + a11y active state together, so
+        // aria-pressed never drifts from the .active class.
+        const setActive = (btn, on) => {
+          btn.classList.toggle("active", on);
+          btn.setAttribute("aria-pressed", String(on));
+        };
+
         let activeCat = "all";
         let activeTopic = "all";
 
@@ -312,18 +321,12 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
             activeCat === "notebook" && topic && validTopics.includes(topic)
               ? topic
               : "all";
-          // Reflect the parsed state on the controls.
+          // Reflect the parsed state on the controls (class + aria-pressed).
           filters.forEach((b) =>
-            b.classList.toggle(
-              "active",
-              b.getAttribute("data-filter") === activeCat,
-            ),
+            setActive(b, b.getAttribute("data-filter") === activeCat),
           );
           topicBtns.forEach((b) =>
-            b.classList.toggle(
-              "active",
-              b.getAttribute("data-topic") === activeTopic,
-            ),
+            setActive(b, b.getAttribute("data-topic") === activeTopic),
           );
         }
 
@@ -429,17 +432,11 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
               clicked !== "all" && clicked === activeCat ? "all" : clicked;
             activeCat = next;
             filters.forEach((b) =>
-              b.classList.toggle(
-                "active",
-                b.getAttribute("data-filter") === activeCat,
-              ),
+              setActive(b, b.getAttribute("data-filter") === activeCat),
             );
             activeTopic = "all";
             topicBtns.forEach((b) =>
-              b.classList.toggle(
-                "active",
-                b.getAttribute("data-topic") === "all",
-              ),
+              setActive(b, b.getAttribute("data-topic") === "all"),
             );
             writeHash();
             fadeApply();
@@ -448,8 +445,7 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
 
         topicBtns.forEach((btn) => {
           btn.addEventListener("click", () => {
-            topicBtns.forEach((b) => b.classList.remove("active"));
-            btn.classList.add("active");
+            topicBtns.forEach((b) => setActive(b, b === btn));
             activeTopic = btn.getAttribute("data-topic");
             writeHash();
             fadeApply();
@@ -599,6 +595,12 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         color: #fff;
         background: var(--f-color);
         border-color: var(--f-color);
+      }
+      /* In dark mode the register colors (--f-color) are 400-series pastels, on
+         which white text fails WCAG AA (~2:1). Use the dark ground as ink on the
+         pastel pill instead — high contrast on all three registers. */
+      :global(html[data-theme="dark"]) .j-filter.active {
+        color: var(--color-bg);
       }
 
       .j-filter-divider {

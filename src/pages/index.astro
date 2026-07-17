@@ -572,10 +572,13 @@ const selectedResearch = (
       .hero-copy {
         flex: 1 1 auto;
       }
-      .hero-copy h1 {
+      .hero-copy .hero-name {
+        font-family: var(--font-serif);
+        font-weight: 700;
         font-size: 3rem;
         margin: 0 0 0.4rem;
         line-height: 1.05;
+        color: var(--color-text-main);
       }
       .hero-role {
         color: var(--color-accent);
@@ -683,7 +686,7 @@ const selectedResearch = (
         .hero-buttons {
           justify-content: center;
         }
-        .hero-copy h1 {
+        .hero-copy .hero-name {
           font-size: 2.25rem;
         }
       }
@@ -786,7 +789,11 @@ const selectedResearch = (
                 />
               </div>
               <div class="hero-copy">
-                <h1>Sergio Eraso</h1>
+                {/* Not an <h1>: the page's single <h1> is the crawlable name in
+                    HeroSim (shown in the default sim view). This card-layer name
+                    is the same text revealed by the scroll crossfade, styled to
+                    look like a heading. */}
+                <p class="hero-name">Sergio Eraso</p>
                 <p class="hero-role">PhD Candidate in Physics · MIT</p>
                 <p class="hero-bio">
                   I work on <strong
