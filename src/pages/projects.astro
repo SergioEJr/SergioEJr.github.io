@@ -7,7 +7,10 @@ import { url } from "../utils/paths";
 import { pageFade } from "../utils/pageTransition";
 import BlueprintGrid from "../components/BlueprintGrid.astro";
 import { getPublishedProjects } from "../utils/posts";
-import { PROJECT_CATEGORY_COLORS } from "../utils/categories";
+import {
+  PROJECT_CATEGORY_VARS,
+  PROJECT_CATEGORY_BADGE_VARS,
+} from "../utils/categories";
 
 // Default: reverse chronological (newest first). `order` is an optional manual
 // override — projects with one are pinned to the front in ascending order.
@@ -23,9 +26,9 @@ const projects = (await getPublishedProjects()).sort((a, b) => {
   );
 });
 
-// Filter config. Category colors come from the shared map in utils/categories.ts
-// (single source of truth, also used by the OG image route).
-const CAT_COLORS = PROJECT_CATEGORY_COLORS;
+// Filter config. Pill colors are theme-flipping CSS vars (defined in global.css,
+// mapped in utils/categories.ts) so they adapt to light/dark and meet WCAG AA.
+const CAT_COLORS = PROJECT_CATEGORY_VARS;
 const FILTERS = ["Technical", "Teaching"] as const;
 const filterCounts: Record<string, number> = { Technical: 0, Teaching: 0 };
 for (const p of projects)
@@ -106,6 +109,12 @@ for (const p of projects)
         color: #fff;
         background: var(--f-color);
         border-color: var(--f-color);
+      }
+      /* In dark mode --f-color is a pastel, on which white text fails WCAG AA;
+         use the dark ground as ink on the pill instead (matches the Journal
+         filter pills). Light mode keeps white on the dark pill. */
+      :global(html[data-theme="dark"]) .proj-filter.active {
+        color: var(--color-bg);
       }
       .proj-filter.active .proj-filter-count {
         opacity: 0.85;
@@ -529,7 +538,7 @@ for (const p of projects)
                       {project.data.categories.map((c) => (
                         <span
                           class="project-image-badge"
-                          style={`--badge-color:${CAT_COLORS[c]}`}
+                          style={`--badge-color:${PROJECT_CATEGORY_BADGE_VARS[c]}`}
                         >
                           {c}
                         </span>

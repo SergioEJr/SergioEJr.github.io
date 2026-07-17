@@ -1,7 +1,7 @@
 ---
 import { type CollectionEntry, render } from 'astro:content';
 import BlogPost from '../../layouts/BlogPost.astro';
-import { PROJECT_CATEGORY_COLORS } from '../../utils/categories';
+import { PROJECT_CATEGORY_VARS } from '../../utils/categories';
 import { url } from '../../utils/paths';
 import { getPublishedProjects } from '../../utils/posts';
 
@@ -20,7 +20,7 @@ const { title, description, date, repo, link, categories, articleImage } = proje
 
 const categoryBadges = categories.map((c) => ({
 	label: c,
-	color: PROJECT_CATEGORY_COLORS[c] ?? 'var(--color-accent)',
+	color: PROJECT_CATEGORY_VARS[c] ?? 'var(--color-accent)',
 }));
 ---
 

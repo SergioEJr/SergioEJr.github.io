@@ -52,6 +52,20 @@
   --subj-Math: #7c3aed;
   --subj-Ideas: #c2410c;
 
+  /* Project categories (Technical / Teaching), used by the Projects filter pills
+	   and card badges. Technical echoes the Math purple, Teaching the Science teal,
+	   so they read as part of the same palette. These are theme-flipping (dark,
+	   saturated in light; pastel in dark) and chosen to meet WCAG AA in every
+	   context — white text on the active pill, the color as text on the page bg,
+	   and (via the *-badge value) on the dark card-image overlay. Keep in sync with
+	   PROJECT_CATEGORY_COLORS in src/utils/categories.ts. */
+  --proj-technical: #7c3aed;
+  --proj-teaching: #0f766e;
+  /* Card badges always sit on a dark photo overlay regardless of theme, so they
+	   use the pastel variant in BOTH themes (see --proj-*-badge usage). */
+  --proj-technical-badge: #a78bfa;
+  --proj-teaching-badge: #2dd4bf;
+
   /* Spacing & UI */
   --max-width: 960px;
   --radius: 8px;
@@ -96,6 +110,14 @@
   --subj-Science: #2dd4bf;
   --subj-Math: #a78bfa;
   --subj-Ideas: #fb923c;
+
+  /* Project categories (dark): the pastel variants. Filter pill uses these as the
+	   pill color (with dark ink text); badges keep the same pastel on the dark
+	   overlay. Keep in sync with categories.ts. */
+  --proj-technical: #a78bfa;
+  --proj-teaching: #2dd4bf;
+  --proj-technical-badge: #a78bfa;
+  --proj-teaching-badge: #2dd4bf;
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);

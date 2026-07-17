@@ -31,9 +31,29 @@ export const ESSAY_SUBJECT_COLORS: Record<
   Ideas: { light: "#c2410c", dark: "#fb923c" },
 };
 
-// Project categories. Technical reuses the Journal "Math" purple; Teaching reuses
-// the "Physics" green.
+// Project categories (Technical / Teaching). Technical echoes the Math purple,
+// Teaching the Science teal, so they read as part of the site palette.
+//
+// The Projects PAGE uses theme-flipping CSS vars (defined in global.css) so the
+// pill/hover colors adapt to light/dark and meet WCAG AA in every context. Use
+// PROJECT_CATEGORY_VARS there (a `var(--proj-*)` reference).
+export const PROJECT_CATEGORY_VARS: Record<string, string> = {
+  Technical: "var(--proj-technical)",
+  Teaching: "var(--proj-teaching)",
+};
+
+// Card badges sit on a dark photo overlay in both themes, so they always use the
+// pastel variant (legible on dark) rather than the theme-flipping pill color.
+export const PROJECT_CATEGORY_BADGE_VARS: Record<string, string> = {
+  Technical: "var(--proj-technical-badge)",
+  Teaching: "var(--proj-teaching-badge)",
+};
+
+// The OG image route can't resolve CSS vars (satori renders to a static PNG on a
+// fixed dark card), so it needs concrete hexes. The OG card ground is dark, so we
+// use the PASTEL variants — the same ones the card badges use — which are legible
+// on it. Keep both maps in sync with the --proj-* vars in global.css.
 export const PROJECT_CATEGORY_COLORS: Record<string, string> = {
-  Technical: "#8b5cf6",
-  Teaching: "#10b981",
+  Technical: "#a78bfa",
+  Teaching: "#2dd4bf",
 };
