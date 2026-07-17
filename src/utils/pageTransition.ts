@@ -6,11 +6,11 @@
 // view-transition naming/scoping is preserved — it just doesn't animate.
 // (global.css also forces ::view-transition-* { animation: none } as a backstop.)
 const instant = {
-	old: { name: 'none', duration: 0, easing: 'linear', fillMode: 'both' },
-	new: { name: 'none', duration: 0, easing: 'linear', fillMode: 'both' },
+  old: { name: "none", duration: 0, easing: "linear", fillMode: "both" },
+  new: { name: "none", duration: 0, easing: "linear", fillMode: "both" },
 };
 
 export const pageFade = {
-	forwards: instant,
-	backwards: instant,
+  forwards: instant,
+  backwards: instant,
 };

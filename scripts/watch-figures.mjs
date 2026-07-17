@@ -10,11 +10,11 @@
 //
 // Uses only Node built-ins; no fswatch/entr/nodemon needed.
 
-import { watch, readdirSync } from 'node:fs';
-import { spawn } from 'node:child_process';
-import { basename } from 'node:path';
+import { watch, readdirSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { basename } from "node:path";
 
-const DIR = 'figures';
+const DIR = "figures";
 const DEBOUNCE_MS = 150; // coalesce editor "save" bursts (many editors write twice)
 
 // name -> timer, so concurrent edits to different figures don't clobber each other
@@ -31,19 +31,21 @@ function build(name) {
   const t0 = Date.now();
   process.stdout.write(`\n⟳ ${name}.tex → building…\n`);
 
-  const proc = spawn('./fig.sh', [name], { stdio: ['ignore', 'pipe', 'pipe'] });
-  let out = '';
-  proc.stdout.on('data', (d) => (out += d));
-  proc.stderr.on('data', (d) => (out += d));
+  const proc = spawn("./fig.sh", [name], { stdio: ["ignore", "pipe", "pipe"] });
+  let out = "";
+  proc.stdout.on("data", (d) => (out += d));
+  proc.stderr.on("data", (d) => (out += d));
 
-  proc.on('close', (code) => {
+  proc.on("close", (code) => {
     building.delete(name);
     if (code === 0) {
-      console.log(`✓ ${name}.svg updated (${Date.now() - t0}ms) — HMR should refresh the page`);
+      console.log(
+        `✓ ${name}.svg updated (${Date.now() - t0}ms) — HMR should refresh the page`,
+      );
     } else {
       // Keep the watcher alive on a LaTeX error; show the tail so you can fix the .tex.
       console.error(`✗ ${name}: fig.sh exited ${code}`);
-      const tail = out.trim().split('\n').slice(-8).join('\n');
+      const tail = out.trim().split("\n").slice(-8).join("\n");
       if (tail) console.error(tail);
     }
     // If edits landed mid-build, rebuild once more.
@@ -61,24 +63,26 @@ function schedule(name) {
     setTimeout(() => {
       pending.delete(name);
       build(name);
-    }, DEBOUNCE_MS)
+    }, DEBOUNCE_MS),
   );
 }
 
-const texCount = readdirSync(DIR).filter((f) => f.endsWith('.tex')).length;
-console.log(`Watching ${DIR}/*.tex (${texCount} file(s)). Edit a .tex and save to rebuild. Ctrl-C to stop.`);
+const texCount = readdirSync(DIR).filter((f) => f.endsWith(".tex")).length;
+console.log(
+  `Watching ${DIR}/*.tex (${texCount} file(s)). Edit a .tex and save to rebuild. Ctrl-C to stop.`,
+);
 
 // Real figures are figures/*.tex NOT starting with `_`. Files like _preamble.tex
 // and _template.tex are shared includes, not standalone figures.
-const isFigure = (name) => !name.startsWith('_');
+const isFigure = (name) => !name.startsWith("_");
 const figuresOf = () =>
   readdirSync(DIR)
-    .filter((f) => f.endsWith('.tex') && isFigure(f))
-    .map((f) => basename(f, '.tex'));
+    .filter((f) => f.endsWith(".tex") && isFigure(f))
+    .map((f) => basename(f, ".tex"));
 
 watch(DIR, (_event, filename) => {
-  if (!filename || !filename.endsWith('.tex')) return;
-  const name = basename(filename, '.tex');
+  if (!filename || !filename.endsWith(".tex")) return;
+  const name = basename(filename, ".tex");
   if (isFigure(name)) {
     schedule(name); // a figure changed → rebuild just it
   } else {

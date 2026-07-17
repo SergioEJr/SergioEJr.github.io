@@ -5,11 +5,11 @@
 //
 // This file does NOT affect the build — Astro uses astro.config.mjs — it only
 // teaches the editor's diagnostics about our Markdown extensions.
-import remarkMath from 'remark-math';
+import remarkMath from "remark-math";
 
 /** @type {import('@mdx-js/mdx').CompileOptions} */
 const config = {
-	remarkPlugins: [remarkMath],
+  remarkPlugins: [remarkMath],
 };
 
 export default config;

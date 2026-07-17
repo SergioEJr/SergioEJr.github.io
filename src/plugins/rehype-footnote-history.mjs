@@ -22,25 +22,25 @@
 // Same reasoning and same attribute as the equation references in
 // rehype-eqref.mjs; the two are deliberately parallel.
 
-import { visit } from 'unist-util-visit';
+import { visit } from "unist-util-visit";
 
 const isFootnoteLink = (node) => {
-	if (node.tagName !== 'a') return false;
-	const p = node.properties || {};
-	// hast normalizes the bare `data-footnote-ref` attribute to a boolean-ish
-	// property, and the backref additionally carries a class of the same name.
-	if ('dataFootnoteRef' in p || 'dataFootnoteBackref' in p) return true;
-	const cls = p.className;
-	return Array.isArray(cls) && cls.includes('data-footnote-backref');
+  if (node.tagName !== "a") return false;
+  const p = node.properties || {};
+  // hast normalizes the bare `data-footnote-ref` attribute to a boolean-ish
+  // property, and the backref additionally carries a class of the same name.
+  if ("dataFootnoteRef" in p || "dataFootnoteBackref" in p) return true;
+  const cls = p.className;
+  return Array.isArray(cls) && cls.includes("data-footnote-backref");
 };
 
 export default function rehypeFootnoteHistory() {
-	return (tree) => {
-		visit(tree, 'element', (node) => {
-			if (!isFootnoteLink(node)) return;
-			const href = node.properties?.href;
-			if (typeof href !== 'string' || !href.startsWith('#')) return;
-			node.properties['data-astro-history'] = 'replace';
-		});
-	};
+  return (tree) => {
+    visit(tree, "element", (node) => {
+      if (!isFootnoteLink(node)) return;
+      const href = node.properties?.href;
+      if (typeof href !== "string" || !href.startsWith("#")) return;
+      node.properties["data-astro-history"] = "replace";
+    });
+  };
 }

@@ -19,13 +19,15 @@
 //   node scripts/shot.mjs / --width 390 --out /tmp/home-mobile.png
 //   node scripts/shot.mjs /blog/foo/ --scroll 1600   # check navbar stays stuck
 
-import { chromium } from 'playwright';
+import { chromium } from "playwright";
 
 const args = process.argv.slice(2);
-const path = args[0] && !args[0].startsWith('--') ? args[0] : '/';
+const path = args[0] && !args[0].startsWith("--") ? args[0] : "/";
 const opt = (name, def) => {
   const i = args.indexOf(`--${name}`);
-  return i !== -1 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : def;
+  return i !== -1 && args[i + 1] && !args[i + 1].startsWith("--")
+    ? args[i + 1]
+    : def;
 };
 const has = (name) => args.includes(`--${name}`);
 
@@ -46,25 +48,31 @@ async function detectBase() {
       /* not listening on this port */
     }
   }
-  return 'http://localhost:4321'; // fall back; will error clearly if nothing is up
+  return "http://localhost:4321"; // fall back; will error clearly if nothing is up
 }
 
 const base = await detectBase();
-const url = path.startsWith('http') ? path : base + path;
-const out = opt('out', '/tmp/shot.png');
-const width = parseInt(opt('width', '1280'), 10);
-const height = parseInt(opt('height', '900'), 10);
-const theme = opt('theme', 'd').startsWith('l') ? 'light' : 'dark';
-const sel = opt('sel', null);
-const openSel = opt('open', null);
-const scrollY = parseInt(opt('scroll', '0'), 10);
+const url = path.startsWith("http") ? path : base + path;
+const out = opt("out", "/tmp/shot.png");
+const width = parseInt(opt("width", "1280"), 10);
+const height = parseInt(opt("height", "900"), 10);
+const theme = opt("theme", "d").startsWith("l") ? "light" : "dark";
+const sel = opt("sel", null);
+const openSel = opt("open", null);
+const scrollY = parseInt(opt("scroll", "0"), 10);
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width, height } });
-await page.goto(url, { waitUntil: 'networkidle' });
-await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
+await page.goto(url, { waitUntil: "networkidle" });
+await page.evaluate(
+  (t) => document.documentElement.setAttribute("data-theme", t),
+  theme,
+);
 if (openSel) {
-  await page.evaluate((s) => document.querySelector(s)?.setAttribute('open', ''), openSel);
+  await page.evaluate(
+    (s) => document.querySelector(s)?.setAttribute("open", ""),
+    openSel,
+  );
 }
 if (scrollY) await page.evaluate((y) => window.scrollTo(0, y), scrollY);
 await page.waitForTimeout(300);
@@ -72,13 +80,13 @@ await page.waitForTimeout(300);
 if (sel) {
   await page.locator(sel).first().screenshot({ path: out });
 } else {
-  await page.screenshot({ path: out, fullPage: has('full') });
+  await page.screenshot({ path: out, fullPage: has("full") });
 }
 
 // Quick layout sanity checks printed alongside the shot.
 const checks = await page.evaluate(() => {
   const doc = document.documentElement;
-  const header = document.querySelector('header');
+  const header = document.querySelector("header");
   return {
     overflowX: doc.scrollWidth - doc.clientWidth,
     headerTop: header ? Math.round(header.getBoundingClientRect().top) : null,

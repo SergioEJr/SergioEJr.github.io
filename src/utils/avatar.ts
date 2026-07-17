@@ -20,7 +20,10 @@ export function getInitials(name: string) {
 }
 
 function getPalette(name: string) {
-  const seed = Array.from(name).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const seed = Array.from(name).reduce(
+    (sum, char) => sum + char.charCodeAt(0),
+    0,
+  );
   return AVATAR_PALETTE[seed % AVATAR_PALETTE.length];
 }
 

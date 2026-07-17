@@ -1,110 +1,112 @@
 /* Sergio Eraso — site theme */
 
 :root {
-	/* Typography */
-	--font-sans: 'Atkinson', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-	--font-serif: "Georgia", "Times New Roman", Times, serif;
+  /* Typography */
+  --font-sans:
+    "Atkinson", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  --font-serif: "Georgia", "Times New Roman", Times, serif;
 
-	/* --- LIGHT THEME (Default) — "daylight lab": cool near-white ground, ink-navy
+  /* --- LIGHT THEME (Default) — "daylight lab": cool near-white ground, ink-navy
 	   text, white panels lift off the tinted bg for surface hierarchy. --- */
-	--color-bg: #f6f8fa;
-	--color-bg-offset: #ffffff;
-	--color-bg-header: rgba(246, 248, 250, 0.85);
-	--color-text-main: #18222e;
-	--color-text-muted: #49586a;
-	--color-accent: #003366;
-	/* Oxford Blue */
-	--color-accent-light: #e2ecf7;
-	--color-border: #dce3eb;
-	--color-header-border: rgba(0, 0, 0, 0.08);
-	--color-bg-mobile-menu: rgba(246, 248, 250, 0.95);
-	/* Subtle "raised surface" tint for icon-button hovers. A cool step ABOVE the
+  --color-bg: #f6f8fa;
+  --color-bg-offset: #ffffff;
+  --color-bg-header: rgba(246, 248, 250, 0.85);
+  --color-text-main: #18222e;
+  --color-text-muted: #49586a;
+  --color-accent: #003366;
+  /* Oxford Blue */
+  --color-accent-light: #e2ecf7;
+  --color-border: #dce3eb;
+  --color-header-border: rgba(0, 0, 0, 0.08);
+  --color-bg-mobile-menu: rgba(246, 248, 250, 0.95);
+  /* Subtle "raised surface" tint for icon-button hovers. A cool step ABOVE the
 	   header ground (never pure white — that reads as a bright halo on the tinted
 	   header). In dark this is a faint lift off the slate. */
-	--color-surface-hover: #dfe6ee;
-	/* Hero grid line color — stronger than --color-border so the blueprint grid
+  --color-surface-hover: #dfe6ee;
+  /* Hero grid line color — stronger than --color-border so the blueprint grid
 	   reads on the light ground (dark falls back to --color-border). */
-	--sim-grid-line: #b3c0d0;
-	/* Scarce "hot" mark (logo spark, jr particles, Essays register, text
+  --sim-grid-line: #b3c0d0;
+  /* Scarce "hot" mark (logo spark, jr particles, Essays register, text
 	   selection). Kept non-interactive so it stays a signature, not a theme color. */
-	--color-hot: #d1268f;
+  --color-hot: #d1268f;
 
-	/* Diagram palette (figure-only; see src/assets/blog/README.md). Tuned for the
+  /* Diagram palette (figure-only; see src/assets/blog/README.md). Tuned for the
 	   #f6f8fa light ground: each hue is legible, mutually distinguishable, and
 	   harmonic with the cool navy accent + magenta hot mark. fig-blue is a TRUE
 	   blue (not the old navy that collided with --color-accent); fig-red leans cool
 	   crimson toward the hot family; fig-green/fig-muted are new. */
-	--fig-red: #c02748;
-	--fig-blue: #1d4ed8;
-	--fig-orange: #b45309;
-	--fig-green: #047857;
-	--fig-muted: #64748b;
+  --fig-red: #c02748;
+  --fig-blue: #1d4ed8;
+  --fig-orange: #b45309;
+  --fig-green: #047857;
+  --fig-muted: #64748b;
 
-	/* Journal register colors (header + filter pill) and Essays subject accents
+  /* Journal register colors (header + filter pill) and Essays subject accents
 	   (dot + title underline). Render-time source of truth; keep in sync with the
 	   BLOG_CATEGORY_COLORS / ESSAY_SUBJECT_COLORS maps in src/utils/categories.ts. */
-	--cat-updates: #2563eb;
-	--cat-essays: #db2777;
-	--cat-notebook: #d97706;
-	--subj-Science: #0d9488;
-	--subj-Math: #7c3aed;
-	--subj-Ideas: #c2410c;
+  --cat-updates: #2563eb;
+  --cat-essays: #db2777;
+  --cat-notebook: #d97706;
+  --subj-Science: #0d9488;
+  --subj-Math: #7c3aed;
+  --subj-Ideas: #c2410c;
 
-	/* Spacing & UI */
-	--max-width: 960px;
-	--radius: 8px;
-	--shadow-sm: 0 1px 3px rgba(23, 42, 72, 0.05);
-	--shadow-md: 0 4px 6px rgba(23, 42, 72, 0.08);
-	--shadow-lg: 0 10px 15px rgba(23, 42, 72, 0.1);
+  /* Spacing & UI */
+  --max-width: 960px;
+  --radius: 8px;
+  --shadow-sm: 0 1px 3px rgba(23, 42, 72, 0.05);
+  --shadow-md: 0 4px 6px rgba(23, 42, 72, 0.08);
+  --shadow-lg: 0 10px 15px rgba(23, 42, 72, 0.1);
 }
 
 /* --- DARK THEME --- */
 [data-theme="dark"] {
-	--color-bg: #0f172a;
-	/* Deep Slate (Slate-900) */
-	--color-bg-offset: #0f172a;
-	/* Seamless: Same as main BG for a unified, infinite canvas look */
-	--color-bg-header: rgba(15, 23, 42, 0.8);
-	--color-text-main: #e2e8f0;
-	--color-text-muted: #94a3b8;
-	--color-accent: #60a5fa;
-	/* Electric Blue */
-	--color-accent-light: #1e3a8a;
-	--color-border: #334155;
-	--color-header-border: rgba(255, 255, 255, 0.1);
-	--color-bg-mobile-menu: rgba(15, 23, 42, 0.95);
-	--color-hot: #f472b6;
-	/* Faint lift off the slate for icon-button hovers (matches old offset look). */
-	--color-surface-hover: #1e293b;
-	/* Dark grid keeps the border color (light overrides this in :root above). */
-	--sim-grid-line: #334155;
+  --color-bg: #0f172a;
+  /* Deep Slate (Slate-900) */
+  --color-bg-offset: #0f172a;
+  /* Seamless: Same as main BG for a unified, infinite canvas look */
+  --color-bg-header: rgba(15, 23, 42, 0.8);
+  --color-text-main: #e2e8f0;
+  --color-text-muted: #94a3b8;
+  --color-accent: #60a5fa;
+  /* Electric Blue */
+  --color-accent-light: #1e3a8a;
+  --color-border: #334155;
+  --color-header-border: rgba(255, 255, 255, 0.1);
+  --color-bg-mobile-menu: rgba(15, 23, 42, 0.95);
+  --color-hot: #f472b6;
+  /* Faint lift off the slate for icon-button hovers (matches old offset look). */
+  --color-surface-hover: #1e293b;
+  /* Dark grid keeps the border color (light overrides this in :root above). */
+  --sim-grid-line: #334155;
 
-	/* Diagrams (dark). fig-red/blue/orange unchanged; green/muted added so figures
+  /* Diagrams (dark). fig-red/blue/orange unchanged; green/muted added so figures
 	   that use the new roles render in dark too. */
-	--fig-red: #f87171;
-	--fig-blue: #60a5fa;
-	--fig-orange: #fb923c;
-	--fig-green: #34d399;
-	--fig-muted: #94a3b8;
+  --fig-red: #f87171;
+  --fig-blue: #60a5fa;
+  --fig-orange: #fb923c;
+  --fig-green: #34d399;
+  --fig-muted: #94a3b8;
 
-	/* Journal registers + Essays subjects (dark). Keep in sync with categories.ts. */
-	--cat-updates: #60a5fa;
-	--cat-essays: #f472b6;
-	--cat-notebook: #f59e0b;
-	--subj-Science: #2dd4bf;
-	--subj-Math: #a78bfa;
-	--subj-Ideas: #fb923c;
+  /* Journal registers + Essays subjects (dark). Keep in sync with categories.ts. */
+  --cat-updates: #60a5fa;
+  --cat-essays: #f472b6;
+  --cat-notebook: #f59e0b;
+  --subj-Science: #2dd4bf;
+  --subj-Math: #a78bfa;
+  --subj-Ideas: #fb923c;
 
-	--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
-	--shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);
-	--shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
 }
 
 html {
-	box-sizing: border-box;
-	scroll-behavior: smooth;
-	background-color: var(--color-bg);
-	/* Keep the vertical scrollbar GUTTER reserved on every page so the layout
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+  background-color: var(--color-bg);
+  /* Keep the vertical scrollbar GUTTER reserved on every page so the layout
 	   width never changes between routes (short vs. long pages, or the home intro
 	   un-locking scroll). `scrollbar-gutter: stable` is the real fix: it reserves
 	   the gutter even for overlay scrollbars (Safari with "show scrollbars: when
@@ -114,17 +116,17 @@ html {
 	   `html::-webkit-scrollbar` — in Safari that switches the page to legacy
 	   custom-scrollbar mode and silently disables `scrollbar-gutter: stable`,
 	   bringing the overlay gutter (and the cross-page shift) back. */
-	overflow-y: scroll;
-	scrollbar-gutter: stable;
-	/* Thin, theme-matched PAGE scrollbar via the CSS STANDARD properties
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+  /* Thin, theme-matched PAGE scrollbar via the CSS STANDARD properties
 	   (`scrollbar-width`/`scrollbar-color`), NOT `::-webkit-scrollbar`. These don't
 	   put WebKit into legacy custom-scrollbar mode, so the gutter stays stable
 	   across ClientRouter swaps (see the long note below). `scrollbar-color` is
 	   `<thumb> <track>`; the track uses the page bg so the reserved gutter blends in
 	   instead of showing a contrasting band. Supported in Firefox, Chrome 121+, and
 	   Safari 18.2+; older browsers just get the default native scrollbar. */
-	scrollbar-width: thin;
-	scrollbar-color: var(--color-border) var(--color-bg);
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) var(--color-bg);
 }
 
 /* Minimal scrollbar styling for INNER scrollers ONLY (modals, code blocks, the
@@ -141,50 +143,52 @@ html {
    scrollbar (which WebKit binds to <html>/<body> themselves, not their children),
    leaving it native and gutter-stable. DO NOT broaden this back to `*`/`html`/`body`. */
 body *::-webkit-scrollbar {
-	width: 8px;
-	height: 8px;
+  width: 8px;
+  height: 8px;
 }
 
 body *::-webkit-scrollbar-track {
-	background: var(--color-bg);
+  background: var(--color-bg);
 }
 
 body *::-webkit-scrollbar-thumb {
-	background-color: var(--color-border);
-	border-radius: 10px;
-	border: 2px solid var(--color-bg);
+  background-color: var(--color-border);
+  border-radius: 10px;
+  border: 2px solid var(--color-bg);
 }
 
 body *::-webkit-scrollbar-thumb:hover {
-	background-color: var(--color-text-muted);
+  background-color: var(--color-text-muted);
 }
 
 *,
 *:before,
 *:after {
-	box-sizing: inherit;
+  box-sizing: inherit;
 }
 
 body {
-	font-family: var(--font-sans);
-	background-color: var(--color-bg);
-	color: var(--color-text-main);
-	line-height: 1.6;
-	margin: 0;
-	font-size: 18px;
-	transition: background-color 0.3s ease, color 0.3s ease;
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-text-main);
+  line-height: 1.6;
+  margin: 0;
+  font-size: 18px;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* Branded text selection. Uses the scarce "hot" mark — it can appear anywhere on
    the site yet stays rare by nature (only visible while text is highlighted).
    --color-hot flips with [data-theme="dark"]; white text reads on both hues. */
 ::selection {
-	background: var(--color-hot);
-	color: #fff;
+  background: var(--color-hot);
+  color: #fff;
 }
 ::-moz-selection {
-	background: var(--color-hot);
-	color: #fff;
+  background: var(--color-hot);
+  color: #fff;
 }
 
 /* Consistent, branded keyboard-focus ring. :focus-visible keeps it keyboard-only
@@ -192,16 +196,16 @@ body {
    in light and dark. Components that intentionally manage their own focus (e.g.
    the Pagefind search input) override this locally. */
 :focus-visible {
-	outline: 2px solid var(--color-accent);
-	outline-offset: 2px;
-	border-radius: 2px;
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 main {
-	width: 100%;
-	max-width: var(--max-width);
-	margin: 0 auto;
-	padding: 3rem 1rem;
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 3rem 1rem;
 }
 
 /* INSTANT page swaps — no view-transition animation at all.
@@ -216,7 +220,7 @@ main {
 ::view-transition-image-pair(*),
 ::view-transition-old(*),
 ::view-transition-new(*) {
-	animation: none !important;
+  animation: none !important;
 }
 
 /* Keep the navbar's snapshot above the page-content (<main>) snapshot during a
@@ -226,7 +230,7 @@ main {
    The header group is named via `view-transition-name: site-header` in Header.astro;
    raising its z-index pins it on top so the navbar never gets covered. */
 ::view-transition-group(site-header) {
-	z-index: 2147483647;
+  z-index: 2147483647;
 }
 
 h1,
@@ -234,237 +238,242 @@ h2,
 h3,
 h4,
 h5 {
-	font-family: var(--font-serif);
-	color: var(--color-text-main);
-	line-height: 1.2;
-	margin-bottom: 0.75rem;
+  font-family: var(--font-serif);
+  color: var(--color-text-main);
+  line-height: 1.2;
+  margin-bottom: 0.75rem;
 }
 
 h1 {
-	font-size: 2.5rem;
-	margin-top: 0;
+  font-size: 2.5rem;
+  margin-top: 0;
 }
 
 h2 {
-	font-size: 2rem;
-	margin-top: 2rem;
-	border-bottom: 2px solid var(--color-accent);
-	padding-bottom: 0.5rem;
-	display: inline-block;
+  font-size: 2rem;
+  margin-top: 2rem;
+  border-bottom: 2px solid var(--color-accent);
+  padding-bottom: 0.5rem;
+  display: inline-block;
 }
 
 h3 {
-	font-size: 1.5rem;
-	color: var(--color-accent);
-	margin-top: 1.5rem;
+  font-size: 1.5rem;
+  color: var(--color-accent);
+  margin-top: 1.5rem;
 }
 
 p {
-	margin-bottom: 1.5rem;
-	color: var(--color-text-muted);
+  margin-bottom: 1.5rem;
+  color: var(--color-text-muted);
 }
 
 a {
-	color: var(--color-accent);
-	text-decoration: none;
-	transition: 0.2s;
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: 0.2s;
 }
 
 a:hover {
-	opacity: 0.8;
-	text-decoration: underline;
+  opacity: 0.8;
+  text-decoration: underline;
 }
 
 /* Buttons */
 .btn {
-	display: inline-block;
-	background-color: var(--color-accent);
-	color: var(--color-bg);
-	font-weight: 600;
-	padding: 0.5rem 1rem;
-	border-radius: 4px;
-	text-decoration: none !important;
+  display: inline-block;
+  background-color: var(--color-accent);
+  color: var(--color-bg);
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  text-decoration: none !important;
 }
 
 .btn-outline {
-	background: transparent;
-	border: 1px solid var(--color-accent);
-	color: var(--color-accent);
-	padding: 0.5rem 1rem;
-	border-radius: 4px;
+  background: transparent;
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
 }
 
 /* Grids */
 .grid-2 {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-	gap: 2rem;
-	margin-top: 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
 }
 
 .grid-3 {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-	gap: 2rem;
-	margin-top: 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
 }
 
 /* Tooltip / Author Hover */
 .author-link {
-	position: relative;
-	display: inline-block;
-	cursor: pointer;
-	/* Co-authors inherit the surrounding (muted) color so a clickable profile looks
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  /* Co-authors inherit the surrounding (muted) color so a clickable profile looks
 	   identical to a plain name. Only the owner is emphasized below. */
-	color: inherit;
-	font-weight: inherit;
+  color: inherit;
+  font-weight: inherit;
 }
 /* Only the site owner stands out: brighter, bold, underlined. */
 .author-link.author-owner {
-	color: var(--color-text-main);
-	font-weight: 700;
-	text-decoration: underline;
-	text-underline-offset: 2px;
+  color: var(--color-text-main);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 /* Publication List */
 .publication-item {
-	margin-bottom: 1.5rem;
-	padding-bottom: 1.5rem;
-	border-bottom: 1px solid var(--color-border);
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .pub-title {
-	font-weight: 700;
-	font-size: 1.1rem;
-	color: var(--color-text-main);
-	display: block;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--color-text-main);
+  display: block;
 }
 
 .pub-authors {
-	margin: 0.25rem 0;
-	font-size: 0.95rem;
-	color: var(--color-text-muted);
+  margin: 0.25rem 0;
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
 }
 
 .pub-venue {
-	font-style: italic;
-	font-size: 0.95rem;
-	color: var(--color-text-muted);
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
 }
 
 /* Research action buttons — all uniform (links and dropdown toggles alike). */
 .pub-links {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 0.4rem;
-	margin-top: 0.6rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
 }
 .pub-btn {
-	display: inline-flex;
-	align-items: center;
-	/* Strip native <button> rendering so the toggle buttons (Abstract / BibTeX)
+  display: inline-flex;
+  align-items: center;
+  /* Strip native <button> rendering so the toggle buttons (Abstract / BibTeX)
 	   style and transition identically to the <a> buttons. With appearance: auto
 	   the UA backplate doesn't honor the color transition, so those two buttons
 	   changed theme at a different speed than the rest. */
-	appearance: none;
-	-webkit-appearance: none;
-	font: inherit;
-	font-size: 0.8rem;
-	font-weight: 500;
-	letter-spacing: 0.01em;
-	line-height: 1;
-	padding: 0.38rem 0.85rem;
-	/* Outline matches the text color. Use the variable directly (not currentColor):
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  padding: 0.38rem 0.85rem;
+  /* Outline matches the text color. Use the variable directly (not currentColor):
 	   with the border-color transition + ClientRouter view transitions, a
 	   currentColor border can get stuck on its pre-navigation value. */
-	border: 1px solid var(--color-accent);
-	border-radius: 6px;
-	background: transparent;
-	color: var(--color-accent);
-	text-decoration: none;
-	cursor: pointer;
-	transition: border-color 0.2s ease, color 0.2s ease,
-		background-color 0.2s ease, transform 0.2s ease;
+  border: 1px solid var(--color-accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-accent);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s ease;
 }
 .pub-btn:hover {
-	border-color: var(--color-accent);
-	background: var(--color-accent-light);
-	/* Subtle tactile lift so the whole set feels like one designed control. */
-	transform: translateY(-1px);
-	/* The <a> buttons (Overview/Paper/Poster) otherwise inherit the global
+  border-color: var(--color-accent);
+  background: var(--color-accent-light);
+  /* Subtle tactile lift so the whole set feels like one designed control. */
+  transform: translateY(-1px);
+  /* The <a> buttons (Overview/Paper/Poster) otherwise inherit the global
 	   a:hover underline + opacity fade, which the <button> toggles don't — making
 	   the two sets look and theme-transition differently. Normalize them. */
-	text-decoration: none;
-	opacity: 1;
+  text-decoration: none;
+  opacity: 1;
 }
 .pub-btn:active {
-	transform: translateY(0);
+  transform: translateY(0);
 }
-.pub-toggle[aria-expanded='true'] {
-	border-color: var(--color-accent);
-	background: var(--color-accent-light);
+.pub-toggle[aria-expanded="true"] {
+  border-color: var(--color-accent);
+  background: var(--color-accent-light);
 }
 
 /* Inline panels (Abstract / BibTeX) — full-width delineated box that pushes the
    rest of the list down when opened. */
 .pub-panel {
-	margin-top: 0.75rem;
-	padding: 1rem 1.15rem;
-	border: 1px solid var(--color-border);
-	border-radius: 10px;
-	background: var(--color-bg-offset);
+  margin-top: 0.75rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg-offset);
 }
 .pub-panel p {
-	margin: 0;
-	color: var(--color-text-main);
-	font-style: normal;
-	line-height: 1.6;
-	font-size: 0.95rem;
+  margin: 0;
+  color: var(--color-text-main);
+  font-style: normal;
+  line-height: 1.6;
+  font-size: 0.95rem;
 }
 .pub-panel--bibtex {
-	position: relative;
+  position: relative;
 }
 .pub-panel--bibtex pre {
-	margin: 0;
-	overflow-x: auto;
-	font-size: 0.8rem;
-	line-height: 1.5;
-	white-space: pre;
-	color: var(--color-text-main);
+  margin: 0;
+  overflow-x: auto;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre;
+  color: var(--color-text-main);
 }
 .copy-bibtex-btn {
-	position: absolute;
-	top: 0.6rem;
-	right: 0.6rem;
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
-	padding: 0.25rem 0.5rem;
-	border: 1px solid var(--color-border);
-	border-radius: 6px;
-	background: var(--color-bg);
-	color: var(--color-text-muted);
-	font-size: 0.72rem;
-	cursor: pointer;
-	transition: color 0.2s ease, border-color 0.2s ease;
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 .copy-bibtex-btn:hover {
-	color: var(--color-accent);
-	border-color: var(--color-accent);
+  color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 /* Project Card Override */
 .project-card {
-	background-color: var(--color-bg-offset);
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius);
+  background-color: var(--color-bg-offset);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
 }
 
 /* Dark mode optimization for images */
 [data-theme="dark"] img {
-	filter: brightness(0.9);
+  filter: brightness(0.9);
 }
 
 /* --- Equation references (src/plugins/rehype-eqref.mjs) ---------------------
@@ -473,10 +482,10 @@ a:hover {
    linkable; the plugin hoists that id onto .katex-display and fills [](#eq:foo)
    with the matching number. */
 .katex-display[id] {
-	/* Clear the sticky navbar when jumped to via the URL hash. Clicks are
+  /* Clear the sticky navbar when jumped to via the URL hash. Clicks are
 	   intercepted and centered by BlogPost.astro, but a page loaded directly at
 	   #eq:foo scrolls with the browser's own anchor logic, which ignores that. */
-	scroll-margin-top: 6rem;
+  scroll-margin-top: 6rem;
 }
 
 /* The referenced equation flashes once so the jump lands somewhere obvious.
@@ -492,31 +501,31 @@ a:hover {
    pale wash in light mode but saturated navy in dark, which rendered as a solid
    slab behind the equation. */
 @keyframes eq-target-flash {
-	from {
-		background-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
-	}
-	to {
-		background-color: transparent;
-	}
+  from {
+    background-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+  }
+  to {
+    background-color: transparent;
+  }
 }
 
 .katex-display.eq-flash {
-	border-radius: 6px;
-	animation: eq-target-flash 1.6s ease-out 1;
+  border-radius: 6px;
+  animation: eq-target-flash 1.6s ease-out 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.katex-display.eq-flash {
-		animation: none;
-	}
+  .katex-display.eq-flash {
+    animation: none;
+  }
 }
 
 a.eqref {
-	color: var(--color-accent);
-	text-decoration: none;
-	white-space: nowrap; /* never break "(2)" across lines */
+  color: var(--color-accent);
+  text-decoration: none;
+  white-space: nowrap; /* never break "(2)" across lines */
 }
 
 a.eqref:hover {
-	text-decoration: underline;
+  text-decoration: underline;
 }

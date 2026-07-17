@@ -27,3 +27,11 @@ docs/
 # docs (README, AGENTS, DESIGN, asset READMEs) as written.
 **/*.md
 **/*.mdx
+
+# .astro templates: prettier-plugin-astro reflows whitespace around inline
+# elements, which CHANGES rendered output (e.g. adjacent <span>s in .pub-meta
+# gain a stray space: "In preparation, 2026" -> "In preparation , 2026"). Verified
+# against the built dist/. Formatting the .ts/.mjs/.css files is byte-safe; .astro
+# is not, so we leave those hand-formatted. Editor Astro formatting is still fine
+# per file — this only excludes them from the repo-wide `npm run format`.
+**/*.astro

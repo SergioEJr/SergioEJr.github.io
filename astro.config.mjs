@@ -1,13 +1,13 @@
 // @ts-check
 
-import { unified } from '@astrojs/markdown-remark';
-import mdx from '@astrojs/mdx';
-import sitemap from '@astrojs/sitemap';
-import { defineConfig } from 'astro/config';
-import rehypeKatex from 'rehype-katex';
-import remarkMath from 'remark-math';
-import rehypeEqref from './src/plugins/rehype-eqref.mjs';
-import rehypeFootnoteHistory from './src/plugins/rehype-footnote-history.mjs';
+import { unified } from "@astrojs/markdown-remark";
+import mdx from "@astrojs/mdx";
+import sitemap from "@astrojs/sitemap";
+import { defineConfig } from "astro/config";
+import rehypeKatex from "rehype-katex";
+import remarkMath from "remark-math";
+import rehypeEqref from "./src/plugins/rehype-eqref.mjs";
+import rehypeFootnoteHistory from "./src/plugins/rehype-footnote-history.mjs";
 
 // Shared by both pipelines below so Markdown and MDX behave identically.
 // - rehypeKatex: `trust` enables \htmlId, which is how an equation gets a link
@@ -20,35 +20,39 @@ import rehypeFootnoteHistory from './src/plugins/rehype-footnote-history.mjs';
 // the inferred element type doesn't satisfy Pluggable[]/RehypePlugin[] even
 // though they run correctly. The cast keeps `astro check` green.
 /** @type {any[]} */
-const contentPlugins = [[rehypeKatex, { trust: true }], rehypeEqref, rehypeFootnoteHistory];
+const contentPlugins = [
+  [rehypeKatex, { trust: true }],
+  rehypeEqref,
+  rehypeFootnoteHistory,
+];
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://sergioejr.github.io',
-	base: process.env.BASE_PATH || '/',
-	integrations: [
-		// MDX parses `{...}` as JS expressions, which collides with KaTeX math like
-		// `$2^{10,000}$`. Registering remark-math on the MDX pipeline makes the math
-		// tokenizer claim `$...$` before the expression parser sees the braces.
-		mdx({
-			remarkPlugins: [remarkMath],
-			rehypePlugins: contentPlugins,
-		}),
-		sitemap()
-	],
-	markdown: {
-		shikiConfig: {
-			themes: {
-				light: 'github-light',
-				dark: 'github-dark',
-			},
-		},
-		processor: unified({
-			remarkPlugins: [remarkMath],
-			rehypePlugins: contentPlugins,
-		}),
-	},
-	build: {
-		inlineStylesheets: 'always',
-	},
+  site: "https://sergioejr.github.io",
+  base: process.env.BASE_PATH || "/",
+  integrations: [
+    // MDX parses `{...}` as JS expressions, which collides with KaTeX math like
+    // `$2^{10,000}$`. Registering remark-math on the MDX pipeline makes the math
+    // tokenizer claim `$...$` before the expression parser sees the braces.
+    mdx({
+      remarkPlugins: [remarkMath],
+      rehypePlugins: contentPlugins,
+    }),
+    sitemap(),
+  ],
+  markdown: {
+    shikiConfig: {
+      themes: {
+        light: "github-light",
+        dark: "github-dark",
+      },
+    },
+    processor: unified({
+      remarkPlugins: [remarkMath],
+      rehypePlugins: contentPlugins,
+    }),
+  },
+  build: {
+    inlineStylesheets: "always",
+  },
 });
