@@ -309,33 +309,66 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           modalAvatar.style.display = "block";
         }
 
-        let socialHtml = "";
-        if (member.website)
-          socialHtml += `
-                    <a href="${member.website}" target="_blank" aria-label="Website" class="social-icon-btn">
-                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                    </a>`;
-        if (member.github)
-          socialHtml += `
-                    <a href="${member.github}" target="_blank" aria-label="GitHub" class="social-icon-btn">
-                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
-                    </a>`;
-        if (member.linkedin)
-          socialHtml += `
-                    <a href="${member.linkedin}" target="_blank" aria-label="LinkedIn" class="social-icon-btn">
-                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
-                    </a>`;
-        if (member.google_scholar)
-          socialHtml += `
-                    <a href="${member.google_scholar}" target="_blank" aria-label="Google Scholar" class="social-icon-btn">
-                        <svg fill="currentColor" viewBox="0 0 32 32" width="20" height="20" xmlns="http://www.w3.org/2000/svg"><path d="M14.573 2.729c-0.729 0.484-4.292 2.849-7.917 5.255s-6.589 4.396-6.589 4.422c0 0.026 0.182 0.146 0.406 0.266 0.224 0.13 3.797 2.109 7.953 4.411l7.542 4.193 0.193-0.099c0.109-0.052 2.891-1.641 6.188-3.521l5.99-3.427 0.036 10.599h3.557v-12.401l-4.615-3.094c-6.219-4.167-11.188-7.448-11.307-7.474-0.063-0.010-0.703 0.38-1.438 0.87zM7.141 22.177l0.016 2.672 8.828 5.292 8.891-5.339v-2.641c0-1.458-0.016-2.646-0.031-2.646-0.021 0-1.76 1.042-3.87 2.323l-4.406 2.661-0.578 0.339-1.755-1.052c-1.464-0.875-2.927-1.755-4.385-2.641l-2.672-1.615c-0.031-0.010-0.042 1.177-0.036 2.646z"></path></svg>
-                    </a>`;
-        if (member.email)
-          socialHtml += `
-                    <a href="mailto:${member.email}" aria-label="Email" class="social-icon-btn">
-                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                    </a>`;
-        if (modalSocials) modalSocials.innerHTML = socialHtml;
+        // Build the social links via the DOM API rather than an innerHTML
+        // string. member.* values come from authors.json today, but constructing
+        // anchors with element.href = value (a) auto-escapes and (b) lets us
+        // reject non-http(s)/mailto schemes — so a future/edited entry containing
+        // e.g. `javascript:...` or an attribute-breakout string can't inject
+        // script. The SVG icon markup is static and trusted, so it stays inline.
+        const ICONS: Record<string, string> = {
+          website: `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`,
+          github: `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>`,
+          linkedin: `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>`,
+          google_scholar: `<svg fill="currentColor" viewBox="0 0 32 32" width="20" height="20" xmlns="http://www.w3.org/2000/svg"><path d="M14.573 2.729c-0.729 0.484-4.292 2.849-7.917 5.255s-6.589 4.396-6.589 4.422c0 0.026 0.182 0.146 0.406 0.266 0.224 0.13 3.797 2.109 7.953 4.411l7.542 4.193 0.193-0.099c0.109-0.052 2.891-1.641 6.188-3.521l5.99-3.427 0.036 10.599h3.557v-12.401l-4.615-3.094c-6.219-4.167-11.188-7.448-11.307-7.474-0.063-0.010-0.703 0.38-1.438 0.87zM7.141 22.177l0.016 2.672 8.828 5.292 8.891-5.339v-2.641c0-1.458-0.016-2.646-0.031-2.646-0.021 0-1.76 1.042-3.87 2.323l-4.406 2.661-0.578 0.339-1.755-1.052c-1.464-0.875-2.927-1.755-4.385-2.641l-2.672-1.615c-0.031-0.010-0.042 1.177-0.036 2.646z"></path></svg>`,
+          email: `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`,
+        };
+
+        // Allow only web + mail links. Returns the normalized href, or null if
+        // the value doesn't parse or uses a disallowed scheme.
+        const safeHref = (raw: string, kind: "web" | "mail") => {
+          try {
+            const href = kind === "mail" ? `mailto:${raw}` : raw;
+            const proto = new URL(href).protocol;
+            const ok =
+              kind === "mail" ? proto === "mailto:" : proto === "http:" || proto === "https:";
+            return ok ? href : null;
+          } catch {
+            return null;
+          }
+        };
+
+        const makeLink = (
+          href: string,
+          label: string,
+          iconKey: string,
+        ) => {
+          const a = document.createElement("a");
+          a.href = href; // property assignment auto-escapes
+          a.setAttribute("aria-label", label);
+          a.className = "social-icon-btn";
+          if (!href.startsWith("mailto:")) {
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+          }
+          a.innerHTML = ICONS[iconKey]; // static, trusted icon markup only
+          return a;
+        };
+
+        if (modalSocials) {
+          modalSocials.replaceChildren();
+          const links: Array<[string | undefined, "web" | "mail", string, string]> = [
+            [member.website, "web", "Website", "website"],
+            [member.github, "web", "GitHub", "github"],
+            [member.linkedin, "web", "LinkedIn", "linkedin"],
+            [member.google_scholar, "web", "Google Scholar", "google_scholar"],
+            [member.email, "mail", "Email", "email"],
+          ];
+          for (const [value, kind, label, iconKey] of links) {
+            if (!value) continue;
+            const href = safeHref(value, kind);
+            if (href) modalSocials.appendChild(makeLink(href, label, iconKey));
+          }
+        }
 
         document.body.style.overflow = "hidden";
         if (modal) modal.showModal();

@@ -8,12 +8,7 @@ import {
   postHasDetailPage,
 } from "../utils/posts";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
-
-// Project category colors — match the Projects page filters / Journal categories.
-const PROJECT_CAT_COLORS: Record<string, string> = {
-  Technical: "#8b5cf6",
-  Teaching: "#10b981",
-};
+import { PROJECT_CATEGORY_COLORS } from "../utils/categories";
 
 export async function getStaticPaths() {
   const posts = await getPublishedPosts();
@@ -61,7 +56,10 @@ export async function getStaticPaths() {
       props: {
         title: project.data.title,
         // One colored pill per category.
-        badges: cats.map((c) => ({ label: c, color: PROJECT_CAT_COLORS[c] })),
+        badges: cats.map((c) => ({
+          label: c,
+          color: PROJECT_CATEGORY_COLORS[c],
+        })),
       },
     };
   });

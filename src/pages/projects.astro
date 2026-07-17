@@ -7,6 +7,7 @@ import { url } from "../utils/paths";
 import { pageFade } from "../utils/pageTransition";
 import BlueprintGrid from "../components/BlueprintGrid.astro";
 import { getPublishedProjects } from "../utils/posts";
+import { PROJECT_CATEGORY_COLORS } from "../utils/categories";
 
 // Default: reverse chronological (newest first). `order` is an optional manual
 // override — projects with one are pinned to the front in ascending order.
@@ -22,11 +23,9 @@ const projects = (await getPublishedProjects()).sort((a, b) => {
   );
 });
 
-// Filter config — colors match the Journal categories (Math purple / Physics green).
-const CAT_COLORS: Record<string, string> = {
-  Technical: "#8b5cf6",
-  Teaching: "#10b981",
-};
+// Filter config. Category colors come from the shared map in utils/categories.ts
+// (single source of truth, also used by the OG image route).
+const CAT_COLORS = PROJECT_CATEGORY_COLORS;
 const FILTERS = ["Technical", "Teaching"] as const;
 const filterCounts: Record<string, number> = { Technical: 0, Teaching: 0 };
 for (const p of projects)

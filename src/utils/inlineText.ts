@@ -13,8 +13,17 @@ import katex from "katex";
 //
 // KaTeX output needs the KaTeX stylesheet, which BaseHead.astro loads on every page.
 
+// Escape the five HTML-significant characters. Quotes are escaped too so the
+// result is safe in attribute contexts (e.g. `title="${escapeHtml(x)}"`), not
+// just element content — callers shouldn't have to know which context they're
+// in. `&` must be replaced first so the entities it introduces aren't re-escaped.
 export function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 interface InlineOptions {
