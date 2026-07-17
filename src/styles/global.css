@@ -624,3 +624,57 @@ a:hover {
 		height: auto;
 	}
 }
+
+/* --- Equation references (src/plugins/rehype-eqref.mjs) ---------------------
+   KaTeX auto-numbers unstarred environments (align/equation) from a CSS counter
+   in katex.min.css. `\htmlId{eq:foo}{...}` inside the math marks an equation as
+   linkable; the plugin hoists that id onto .katex-display and fills [](#eq:foo)
+   with the matching number. */
+.katex-display[id] {
+	/* Clear the sticky navbar when jumped to via the URL hash. Clicks are
+	   intercepted and centered by BlogPost.astro, but a page loaded directly at
+	   #eq:foo scrolls with the browser's own anchor logic, which ignores that. */
+	scroll-margin-top: 6rem;
+}
+
+/* The referenced equation flashes once so the jump lands somewhere obvious.
+   Driven by a class (added by BlogPost.astro on click, and on load when the URL
+   already carries the hash) rather than by `:target`, because in-page eqref
+   clicks update the hash with replaceState — which does NOT re-evaluate
+   `:target`, so a `:target` rule would silently never fire on the common path.
+   It is an ANIMATION rather than a `transition` on a background: a transition
+   would stay lit as long as the selector matched, and would re-run on every
+   theme toggle (switching themes changes the very background it watches — the
+   "slow theme fade" bug). This fires once and ends transparent.
+   The tint is the accent at low alpha, NOT --color-accent-light: that var is a
+   pale wash in light mode but saturated navy in dark, which rendered as a solid
+   slab behind the equation. */
+@keyframes eq-target-flash {
+	from {
+		background-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+	}
+	to {
+		background-color: transparent;
+	}
+}
+
+.katex-display.eq-flash {
+	border-radius: 6px;
+	animation: eq-target-flash 1.6s ease-out 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.katex-display.eq-flash {
+		animation: none;
+	}
+}
+
+a.eqref {
+	color: var(--color-accent);
+	text-decoration: none;
+	white-space: nowrap; /* never break "(2)" across lines */
+}
+
+a.eqref:hover {
+	text-decoration: underline;
+}

@@ -6,6 +6,17 @@ import sitemap from '@astrojs/sitemap';
 import { defineConfig } from 'astro/config';
 import rehypeKatex from 'rehype-katex';
 import remarkMath from 'remark-math';
+import rehypeEqref from './src/plugins/rehype-eqref.mjs';
+import rehypeFootnoteHistory from './src/plugins/rehype-footnote-history.mjs';
+
+// Shared by both pipelines below so Markdown and MDX behave identically.
+// - rehypeKatex: `trust` enables \htmlId, which is how an equation gets a link
+//   target. KaTeX also auto-numbers unstarred environments (align/equation) via
+//   a CSS counter.
+// - rehypeEqref must run AFTER rehypeKatex — it reads the rendered KaTeX output.
+// - rehypeFootnoteHistory is independent of math; it keeps GFM footnote jumps
+//   from pushing history entries under ClientRouter (see the plugin's header).
+const contentPlugins = [[rehypeKatex, { trust: true }], rehypeEqref, rehypeFootnoteHistory];
 
 // https://astro.build/config
 export default defineConfig({
@@ -17,7 +28,7 @@ export default defineConfig({
 		// tokenizer claim `$...$` before the expression parser sees the braces.
 		mdx({
 			remarkPlugins: [remarkMath],
-			rehypePlugins: [rehypeKatex],
+			rehypePlugins: contentPlugins,
 		}),
 		sitemap()
 	],
@@ -30,7 +41,7 @@ export default defineConfig({
 		},
 		processor: unified({
 			remarkPlugins: [remarkMath],
-			rehypePlugins: [rehypeKatex],
+			rehypePlugins: contentPlugins,
 		}),
 	},
 	build: {
