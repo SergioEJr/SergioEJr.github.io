@@ -1,0 +1,29 @@
+# Build output & generated
+dist/
+.astro/
+node_modules/
+build/
+
+# Lockfile (npm owns its formatting)
+package-lock.json
+
+# Search index
+public/pagefind/
+
+# Content prose — leave authored Markdown/MDX untouched (Prettier reflows prose
+# and can disturb KaTeX/MDX; formatting these offers little and risks churn).
+src/content/
+
+# Vendored / binary-ish
+public/
+
+# Agent tooling & design records — not site source.
+.agents/
+.claude/
+.codex/
+docs/
+
+# Markdown everywhere: prose reflow is low-value and churny; keep hand-authored
+# docs (README, AGENTS, DESIGN, asset READMEs) as written.
+**/*.md
+**/*.mdx

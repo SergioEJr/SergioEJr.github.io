@@ -11,6 +11,8 @@
     "build": "astro build",
     "postbuild": "pagefind --site dist",
     "preview": "astro preview",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "astro": "astro"
   },
   "dependencies": {
@@ -32,6 +34,8 @@
     "@pagefind/default-ui": "^1.5.0",
     "pagefind": "^1.4.0",
     "playwright": "^1.61.0",
+    "prettier": "^3.9.5",
+    "prettier-plugin-astro": "^0.14.1",
     "typescript": "^6.0.3"
   }
 }
