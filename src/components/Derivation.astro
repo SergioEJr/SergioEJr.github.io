@@ -175,3 +175,50 @@ const { label = "Derivation", open = false } = Astro.props;
     outline-offset: -2px;
   }
 </style>
+
+<script is:inline data-astro-rerun>
+  // Toggle derivation blocks open/closed. Delegated + idempotent so it survives
+  // ClientRouter navigation (astro:page-load) and multiple <Derivation> uses on a
+  // page. (Inline so it's reliably emitted even when the component is used in MDX,
+  // matching SideNote.astro.)
+  //
+  // History: the controls are <button>s and this handler only mutates the DOM
+  // (hidden, aria-expanded) plus scrollIntoView — it never calls
+  // history.pushState/replaceState or changes location.hash, so opening/closing a
+  // derivation never adds a back/forward entry.
+  (function () {
+    function setOpen(block, isOpen) {
+      var head = block.querySelector(".derivation__head");
+      var content = block.querySelector(".derivation__content");
+      if (!head || !content) return;
+      head.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      content.hidden = !isOpen;
+    }
+
+    function onClick(e) {
+      var head = e.target.closest(".derivation__head");
+      if (head) {
+        var block = head.closest("[data-derivation]");
+        if (!block) return;
+        var open = head.getAttribute("aria-expanded") === "true";
+        setOpen(block, !open);
+        return;
+      }
+      var collapse = e.target.closest(".derivation__collapse");
+      if (collapse) {
+        var b = collapse.closest("[data-derivation]");
+        if (!b) return;
+        setOpen(b, false);
+        // Bring the header back below the sticky navbar so the reader isn't left
+        // stranded mid-page after closing a long derivation. scroll-margin-top on
+        // .derivation clears the navbar. scrollIntoView does not touch history.
+        b.scrollIntoView({ block: "start", behavior: "smooth" });
+      }
+    }
+
+    if (!window.__derivationBound) {
+      document.addEventListener("click", onClick);
+      window.__derivationBound = true;
+    }
+  })();
+</script>
