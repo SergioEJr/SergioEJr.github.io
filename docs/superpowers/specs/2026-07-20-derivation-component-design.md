@@ -84,6 +84,30 @@ Both the header and the bottom bar toggle the same state. Because both controls
 are `<button>` elements (not `#hash` anchors), ClientRouter never intercepts them
 and no browser-history entries are created — no `data-astro-history` needed.
 
+## Requirement: toggling must not touch the back/forward history stack
+
+Opening or closing a derivation must **not** push (or replace) a browser-history
+entry — the reader pressing Back after expanding several derivations should not
+have to click through each toggle. This is guaranteed by construction and must be
+preserved by any implementation:
+
+- The controls are `<button type="button">`, never `<a href="#...">`. ClientRouter
+  (Astro transitions) runs a delegated click listener that calls `pushState` via
+  `moveToLocation()` only for same-page `#hash` **link** clicks; plain buttons are
+  never seen by it. This is the same mechanism that polluted history for eqrefs
+  and footnotes (fixed there with `data-astro-history="replace"`); using buttons
+  avoids the trap entirely rather than opting out of it.
+- The toggle handler mutates the DOM only (`hidden`, `aria-expanded`, and a
+  `scrollIntoView` on collapse). It must never call `history.pushState`,
+  `history.replaceState`, `location.hash = …`, or navigate. `scrollIntoView` moves
+  the viewport but does not create a history entry.
+- No `id`/hash is assigned to the block for the *purpose of* toggling. (An author
+  may still put `\htmlId` on equations *inside* the block; those are unaffected.)
+
+Verification (added to the checklist below): after expanding and collapsing
+derivations several times, the browser Back button returns to the previous page
+in one press — it does not step through toggle states.
+
 ## Interaction
 
 - A single inline `<script>` (following `SideNote`'s pattern: `is:inline`,
@@ -127,6 +151,9 @@ and no browser-history entries are created — no `data-astro-history` needed.
 - `visual-check` skill (Playwright) to confirm: collapsed by default, expands on
   header click, bottom bar collapses and scrolls header into view, dark-mode
   colors correct. Verify on `npm run preview` (dev HMR serves stale inlined CSS).
+- **History check:** expand and collapse the sample derivation several times, then
+  press the browser Back button — it must return to the previous page in a single
+  press, not walk through toggle states.
 
 ## Files
 
