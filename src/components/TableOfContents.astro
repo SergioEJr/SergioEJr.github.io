@@ -109,6 +109,11 @@ const toc = headings
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
+  /* Suppress the global h2::after rule mark — this is a small eyebrow label, not
+     a section heading, and the mark is sized for the larger h2 type scale. */
+  .toc-title::after {
+    content: none;
+  }
 
   .toc-list {
     display: flex;

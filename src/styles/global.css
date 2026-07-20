@@ -273,10 +273,19 @@ h1 {
 
 h2 {
   font-size: 2rem;
+  font-weight: 700;
   margin-top: 2rem;
-  border-bottom: 2px solid var(--color-accent);
-  padding-bottom: 0.5rem;
-  display: inline-block;
+  margin-bottom: 0.9rem;
+}
+
+h2::after {
+  content: "";
+  display: block;
+  width: 2.5rem;
+  height: 3px;
+  margin-top: 0.55rem;
+  border-radius: 2px;
+  background: var(--color-accent);
 }
 
 h3 {

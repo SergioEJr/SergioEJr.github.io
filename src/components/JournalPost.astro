@@ -120,13 +120,13 @@ const isNote = post.data.category === 'notebook';
 	.j-post-title {
 		font-family: var(--font-serif);
 		font-size: 1.6rem;
+		font-weight: 700;
 		line-height: 1.2;
 		margin: 0 0 0.5rem;
-		/* No resting underline. (Suppress the global h2 border-bottom; the only
+		/* No resting underline. (Suppress the global h2::after rule mark; the only
 		   underline is the ::after bar that draws on from the left on hover, in the
 		   category color.) padding-bottom keeps the bar clear of the descenders
 		   without a dead gap at rest. */
-		border-bottom: none;
 		padding-bottom: 0.15rem;
 		display: inline-block;
 		/* NOT position:relative — that would make it the offsetParent of the title
@@ -134,6 +134,9 @@ const isNote = post.data.category === 'notebook';
 		   title instead of stretching over the whole row. The underline bar is
 		   instead hosted on the inner .j-title-text span, which sizes to the text. */
 	}
+	/* Suppress the global h2::after rule mark — this heading uses its own hover
+	   underline (.j-title-text::after below), not the resting section-heading rule. */
+	.j-post-title::after { content: none; }
 	/* The underline bar. Lives on the inner text span (relative, inline-block) so
 	   it sizes to the title text while leaving .j-post-title unpositioned. */
 	.j-title-text { position: relative; display: inline-block; }

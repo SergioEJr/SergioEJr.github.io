@@ -60,11 +60,27 @@ light mode, hero card, and section headings haven't adopted it yet).
     `grid-column:2` hack on `.j-main`; notes now auto-flow like timeline rows, so
     alignment holds across all widths (verified 1440→390 + the 600px breakpoint).
 
-- [ ] **3. Section headings still template-branded**
-  - `h2 { border-bottom: 2px accent; display:inline-block }` in
-    `src/styles/global.css:223-229` is astro-scholar's signature.
-  - Replace with the Journal's eyebrow language (uppercase letter-spaced label
-    + big serif) site-wide: Home below-fold, About (Background/Toolkit), etc.
+- [x] **3. Section headings still template-branded** ✅ DONE (2026-07-15)
+  - Replaced astro-scholar's `border-bottom: 2px accent; display:inline-block`
+    underline with bold serif (700 weight) + a short navy rule set BELOW the
+    text via `h2::after` (detached from the descenders, not hugging the
+    baseline like the old underline). Compared two rounds of options via
+    artifact: round 1 (eyebrow label / left accent tick / hairline / plain)
+    was rejected as repetitive (eyebrow) and not heading-like enough (tick);
+    round 2 added this "short rule below" option plus a hot-color spark dot,
+    a Journal-style short underline, weight-only, and a full-width divider —
+    landed on the short-rule-below option.
+  - Global rule lives on `h2::after` in `src/styles/global.css`, so no markup
+    changes were needed anywhere `<h2>` is used. Verified it cascades cleanly
+    to About (Background/Toolkit/Beyond research/Get in touch), and in-essay
+    blog prose h2s (e.g. "Phase Transitions"), in both themes.
+  - Added `content: none` resets to the 2 pre-existing h2 overrides that would
+    otherwise inherit the new rule mark at the wrong scale: Journal post
+    titles (`.j-post-title::after` in JournalPost.astro — it has its own
+    hover-underline device instead) and the TOC title (`.toc-title::after` in
+    TableOfContents.astro — a small eyebrow label, not a section heading).
+    Verified via computed-style checks on the prod preview build. The header
+    logo is a `div.brand-heading`, not an `h2`, so needed no change.
 
 - [ ] **4. De-template the hero card (scroll destination)**
   - Circular headshot + role line + two default buttons = stock academic hero.
