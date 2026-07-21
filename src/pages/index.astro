@@ -4,7 +4,7 @@ import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import HeroSim from "../components/HeroSim.astro";
 import EquationCoda from "../components/EquationCoda.astro";
-import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
+import { SITE_TITLE, SITE_DESCRIPTION, CONTACT, CV_URL, SOCIAL_LINKS } from "../consts";
 import { url } from "../utils/paths";
 import { pageFade } from "../utils/pageTransition";
 import {
@@ -14,6 +14,7 @@ import {
   postLink,
 } from "../utils/posts";
 import { PROJECT_CATEGORY_BADGE_VARS } from "../utils/categories";
+import { CV_AVAILABLE } from "../utils/cv";
 
 const posts = (await getPublishedPosts())
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
@@ -46,6 +47,10 @@ const selectedResearch = (
     ? allResearch.filter((r) => r.data.selected)
     : allResearch
 ).slice(0, 3);
+
+const contactEmail = CONTACT.emails[0];
+const linkedin = SOCIAL_LINKS.find((l) => l.icon === "linkedin");
+const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
 ---
 
 <!doctype html>
@@ -1006,6 +1011,42 @@ const selectedResearch = (
         margin-top: 0.15rem;
       }
 
+      /* ---- Contact band: the page's final beat — ends on the ask. ---- */
+      .home-contact {
+        background: var(--color-bg-offset);
+        border-top: 1px solid var(--color-border);
+        border-bottom: 1px solid var(--color-border);
+        /* Full-bleed out of main's column (same trick as .hero-card). */
+        width: 100vw;
+        margin-left: calc(50% - 50vw);
+        /* main has padding: 3rem 1rem — without this the band's bottom
+           hairline leaves a bare stripe of main's background before the
+           footer starts. Pull the band down to close that seam. */
+        margin-bottom: -3rem;
+      }
+      .home-contact-inner {
+        max-width: var(--max-width);
+        margin: 0 auto;
+        padding: 2.75rem 1rem;
+        text-align: center;
+      }
+      .home-contact-line {
+        margin: 0 auto 1.4rem;
+        max-width: 36rem;
+        font-size: 1.05rem;
+        line-height: 1.6;
+        color: var(--color-text-main);
+      }
+      .home-contact-links {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+      }
+      .home-contact-links .home-more {
+        margin-top: 0;
+      }
+
       /* --- Mobile: drop the pinned scrub. Sticky pinning + the sim's
          overflow-x clipping fight each other on touch, and a scrub feels worse
          than a simple stack on a phone. Show the sim (one screen) then the card
@@ -1078,7 +1119,9 @@ const selectedResearch = (
       [data-reveal] h2,
       [data-reveal] .home-row,
       [data-reveal] .home-more,
-      [data-reveal] .home-proj-card {
+      [data-reveal] .home-proj-card,
+      [data-reveal] .home-contact-line,
+      [data-reveal] .home-contact-links {
         opacity: 0;
         transform: translateY(14px);
         transition:
@@ -1090,7 +1133,9 @@ const selectedResearch = (
       [data-reveal].is-revealed h2,
       [data-reveal].is-revealed .home-row,
       [data-reveal].is-revealed .home-more,
-      [data-reveal].is-revealed .home-proj-card {
+      [data-reveal].is-revealed .home-proj-card,
+      [data-reveal].is-revealed .home-contact-line,
+      [data-reveal].is-revealed .home-contact-links {
         opacity: 1;
         transform: none;
       }
@@ -1135,7 +1180,9 @@ const selectedResearch = (
         [data-reveal] h2,
         [data-reveal] .home-row,
         [data-reveal] .home-more,
-        [data-reveal] .home-proj-card {
+        [data-reveal] .home-proj-card,
+        [data-reveal] .home-contact-line,
+        [data-reveal] .home-contact-links {
           opacity: 1;
           transform: none;
           transition: none;
@@ -1382,6 +1429,48 @@ const selectedResearch = (
       }
 
       <EquationCoda />
+
+      <section class="home-contact" data-reveal>
+        <div class="home-contact-inner">
+          <p class="home-contact-line">
+            I'm finishing my PhD and open to what comes next — if your team works
+            on problems where modeling, simulation, or messy data matter, I'd like
+            to hear from you.
+          </p>
+          <div class="home-contact-links">
+            <a href={`mailto:${contactEmail}`} class="home-more" style="--i: 0">
+              Email<span class="home-more-arrow" aria-hidden="true">&rarr;</span>
+            </a>
+            {
+              cvHref && (
+                <a
+                  href={cvHref}
+                  target="_blank"
+                  class="home-more"
+                  style="--i: 1"
+                  data-umami-event="cv-download"
+                  data-umami-event-location="home-contact"
+                >
+                  CV<span class="home-more-arrow" aria-hidden="true">&rarr;</span>
+                </a>
+              )
+            }
+            {
+              linkedin && (
+                <a
+                  href={linkedin.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="home-more"
+                  style="--i: 2"
+                >
+                  LinkedIn<span class="home-more-arrow" aria-hidden="true">&rarr;</span>
+                </a>
+              )
+            }
+          </div>
+        </div>
+      </section>
     </main>
     <Footer />
 
