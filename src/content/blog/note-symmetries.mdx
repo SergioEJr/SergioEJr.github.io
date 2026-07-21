@@ -14,6 +14,7 @@ draft: true # set to false to publish
 ---
 
 import Figure from '../../components/Figure.astro';
+import Derivation from '../../components/Derivation.astro';
 import fieldTranslation from '../../assets/blog/field-translation.svg?raw';
 
 ## Scalar Fields
@@ -60,7 +61,23 @@ Now, let's consider a bar magnet whose local magnetization is described by a vec
 Because space is *isotropic* -- there is no preferred direction. That means the bar magnet is invariant under elements of the 
 how do I describe this new field?
 
+<Derivation label="Derivation: Jacobian">
+Start from the transformation rule and apply the chain rule. Referencing an
+equation *outside* this block works — see Eq [](#eq:inverse-transform). Defining a
+new relation inside the block,
 
+$$
+\begin{align}
+  \htmlId{eq:jacobian}{ J_{ij} = \frac{\partial x'_i}{\partial x_j} = R_{ij} }
+\end{align}
+$$
+
+we can refer back to Eq [](#eq:jacobian) from inside the derivation. This block
+starts collapsed; the bottom bar closes it again.
+</Derivation>
+
+The Jacobian defined in the derivation above (Eq [](#eq:jacobian)) is just the
+rotation matrix itself.
 
 ## Tensor Fields
 
