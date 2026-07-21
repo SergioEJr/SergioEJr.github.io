@@ -981,13 +981,18 @@ const numberedBody = numberCitations(renderedBody);
       // scroll to the target and update the hash with replaceState (no new
       // history entry), so footnotes never enter the back/forward stack.
       // Equation references (a.eqref → #eq:*, see src/plugins/rehype-eqref.mjs)
-      // are the same shape of jump and get the same treatment for the same reason.
+      // and citation links (a.cite-ref-link → #cite-*, a.cite-backref →
+      // #cite-ref-*, see src/utils/numberCitations.ts) are the same shape of
+      // jump and get the same treatment for the same reason. (data-astro-history
+      // on those links is inert for same-page hash jumps — ClientRouter defers
+      // to native behavior — so this handler is what actually keeps them out of
+      // the history stack.)
       // One delegated listener on `document` (survives ClientRouter swaps).
       if (!window.__footnoteScrollBound) {
         window.__footnoteScrollBound = true;
         document.addEventListener("click", (e) => {
           const a = e.target.closest(
-            "a[data-footnote-ref], a.data-footnote-backref, a.eqref",
+            "a[data-footnote-ref], a.data-footnote-backref, a.eqref, a.cite-ref-link, a.cite-backref",
           );
           if (!a) return;
           const href = a.getAttribute("href") || "";
