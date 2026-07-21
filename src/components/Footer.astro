@@ -17,178 +17,144 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
 
 <footer class="site-footer">
   <ParticleField count={30} opacity={0.18} />
-  <div class="footer-content">
-    <div class="footer-col brand-col">
-      <h3>{SITE_TITLE}</h3>
-      <p>
-        {SITE_TAGLINE}
-      </p>
-      <div class="copyright">
-        &copy; {today.getFullYear()}
-        {SITE_TITLE}.<br />All rights reserved.
-      </div>
+  <div class="footer-inner">
+    <div class="footer-id">
+      <div class="footer-name">{SITE_TITLE}</div>
+      <p class="footer-quote">{SITE_TAGLINE}</p>
     </div>
-
-    <div class="footer-col">
-      <h4>Quick Links</h4>
-      <ul>
-        <li><a href={url("/")}>Home</a></li>
-        <li><a href={url("/about")}>About</a></li>
-        <li><a href={url("/publications")}>Research</a></li>
-        <li><a href={url("/projects")}>Projects</a></li>
-        <li><a href={url("/blog")}>Journal</a></li>
+    <div class="footer-side">
+      <nav class="footer-nav" aria-label="Footer">
+        <a href={url("/")}>Home</a>
+        <a href={url("/about")}>About</a>
+        <a href={url("/publications")}>Research</a>
+        <a href={url("/projects")}>Projects</a>
+        <a href={url("/blog")}>Journal</a>
         {
           cvHref && (
-            <li>
-              <a
-                href={cvHref}
-                target="_blank"
-                data-umami-event="cv-download"
-                data-umami-event-location="footer"
-              >
-                Download CV
-              </a>
-            </li>
+            <a
+              href={cvHref}
+              target="_blank"
+              data-umami-event="cv-download"
+              data-umami-event-location="footer"
+            >
+              CV
+            </a>
           )
         }
-      </ul>
-    </div>
-
-    <div class="footer-col">
-      <h4>Contact</h4>
-      <address>
-        {CONTACT.organization}<br />
-        {
-          CONTACT.addressLines.map((line) => (
-            <>
-              {line}
-              <br />
-            </>
-          ))
-        }
-      </address>
-      <p style="margin-top: 1rem;">
-        {
-          CONTACT.emails.map((email) => (
-            <>
-              <>
-                <a href={`mailto:${email}`} style="text-decoration: underline;">
-                  {email}
-                </a>
-                <br />
-              </>
-            </>
-          ))
-        }
-      </p>
-    </div>
-
-    <div class="footer-col">
-      <h4>Connect</h4>
-      <div class="social-links">
-        {
-          SOCIAL_LINKS.map((link) => (
-            <a
-              href={link.href}
-              target={link.href.startsWith("mailto:") ? undefined : "_blank"}
-              rel={
-                link.href.startsWith("mailto:")
-                  ? undefined
-                  : "noopener noreferrer"
-              }
-              aria-label={link.label}
-            >
-              {link.icon === "scholar" && (
-                <svg
-                  fill="currentColor"
-                  viewBox="0 0 32 32"
-                  width="24"
-                  height="24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M14.573 2.729c-0.729 0.484-4.292 2.849-7.917 5.255s-6.589 4.396-6.589 4.422c0 0.026 0.182 0.146 0.406 0.266 0.224 0.13 3.797 2.109 7.953 4.411l7.542 4.193 0.193-0.099c0.109-0.052 2.891-1.641 6.188-3.521l5.99-3.427 0.036 10.599h3.557v-12.401l-4.615-3.094c-6.219-4.167-11.188-7.448-11.307-7.474-0.063-0.010-0.703 0.38-1.438 0.87zM7.141 22.177l0.016 2.672 8.828 5.292 8.891-5.339v-2.641c0-1.458-0.016-2.646-0.031-2.646-0.021 0-1.76 1.042-3.87 2.323l-4.406 2.661-0.578 0.339-1.755-1.052c-1.464-0.875-2.927-1.755-4.385-2.641l-2.672-1.615c-0.031-0.010-0.042 1.177-0.036 2.646z" />
-                </svg>
-              )}
-              {link.icon === "email" && (
-                <svg
-                  viewBox="0 0 24 24"
-                  width="24"
-                  height="24"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  fill="none"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                  <polyline points="22,6 12,13 2,6" />
-                </svg>
-              )}
-              {link.icon === "website" && (
-                <svg
-                  viewBox="0 0 24 24"
-                  width="24"
-                  height="24"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  fill="none"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="2" y1="12" x2="22" y2="12" />
-                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                </svg>
-              )}
-              {link.icon === "github" && (
-                <svg
-                  viewBox="0 0 24 24"
-                  width="24"
-                  height="24"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  fill="none"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
-                </svg>
-              )}
-              {link.icon === "linkedin" && (
-                <svg
-                  viewBox="0 0 24 24"
-                  width="24"
-                  height="24"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  fill="none"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-                  <rect x="2" y="9" width="4" height="12" />
-                  <circle cx="4" cy="4" r="2" />
-                </svg>
-              )}
-              {link.icon === "twitter" && (
-                <svg
-                  viewBox="0 0 24 24"
-                  width="24"
-                  height="24"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  fill="none"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" />
-                </svg>
-              )}
-            </a>
-          ))
-        }
+      </nav>
+      <div class="footer-contact">
+        <a class="footer-email" href={`mailto:${CONTACT.emails[0]}`}>
+          {CONTACT.emails[0]}
+        </a>
+        <div class="social-links">
+          {
+            SOCIAL_LINKS.map((link) => (
+              <a
+                href={link.href}
+                target={link.href.startsWith("mailto:") ? undefined : "_blank"}
+                rel={
+                  link.href.startsWith("mailto:")
+                    ? undefined
+                    : "noopener noreferrer"
+                }
+                aria-label={link.label}
+              >
+                {link.icon === "scholar" && (
+                  <svg
+                    fill="currentColor"
+                    viewBox="0 0 32 32"
+                    width="24"
+                    height="24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M14.573 2.729c-0.729 0.484-4.292 2.849-7.917 5.255s-6.589 4.396-6.589 4.422c0 0.026 0.182 0.146 0.406 0.266 0.224 0.13 3.797 2.109 7.953 4.411l7.542 4.193 0.193-0.099c0.109-0.052 2.891-1.641 6.188-3.521l5.99-3.427 0.036 10.599h3.557v-12.401l-4.615-3.094c-6.219-4.167-11.188-7.448-11.307-7.474-0.063-0.010-0.703 0.38-1.438 0.87zM7.141 22.177l0.016 2.672 8.828 5.292 8.891-5.339v-2.641c0-1.458-0.016-2.646-0.031-2.646-0.021 0-1.76 1.042-3.87 2.323l-4.406 2.661-0.578 0.339-1.755-1.052c-1.464-0.875-2.927-1.755-4.385-2.641l-2.672-1.615c-0.031-0.010-0.042 1.177-0.036 2.646z" />
+                  </svg>
+                )}
+                {link.icon === "email" && (
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="24"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    fill="none"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                    <polyline points="22,6 12,13 2,6" />
+                  </svg>
+                )}
+                {link.icon === "website" && (
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="24"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    fill="none"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="2" y1="12" x2="22" y2="12" />
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                  </svg>
+                )}
+                {link.icon === "github" && (
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="24"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    fill="none"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+                  </svg>
+                )}
+                {link.icon === "linkedin" && (
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="24"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    fill="none"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+                    <rect x="2" y="9" width="4" height="12" />
+                    <circle cx="4" cy="4" r="2" />
+                  </svg>
+                )}
+                {link.icon === "twitter" && (
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="24"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    fill="none"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" />
+                  </svg>
+                )}
+              </a>
+            ))
+          }
+        </div>
       </div>
     </div>
+  </div>
+  <div class="footer-bottom">
+    &copy; {today.getFullYear()}
+    {SITE_TITLE}. All rights reserved.
   </div>
 </footer>
 
@@ -402,86 +368,85 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
 
 <style>
   .site-footer {
-    /* Page ground (off-white in light), not the white panel color — the footer is
-       a base surface, not a lifted card. No-op in dark (bg == offset there). */
-    background-color: var(--color-bg);
-    color: var(--color-text-main);
-    padding: 4rem 1rem;
-    margin-top: auto;
-    transition: background-color 0.3s ease;
     position: relative;
-    padding-bottom: 0.5% !important;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-text-main);
+    overflow: hidden;
   }
-
-  .site-footer::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      var(--color-border) 20%,
-      var(--color-border) 80%,
-      transparent 100%
-    );
-    opacity: 0.6;
-  }
-
-  .footer-content {
+  .footer-inner {
+    position: relative;
+    z-index: 1;
     max-width: var(--max-width);
     margin: 0 auto;
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr;
-    gap: 3rem;
+    padding: 2.5rem 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+    flex-wrap: wrap;
   }
-  .footer-col h3 {
+  .footer-name {
     font-family: var(--font-serif);
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    color: var(--color-accent);
-  }
-  .footer-col h4 {
-    font-family: var(--font-sans);
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 1.25rem;
+    font-size: 1.35rem;
+    font-weight: 700;
     color: var(--color-text-main);
   }
-  .footer-col ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+  .footer-quote {
+    margin: 0.4rem 0 0;
+    max-width: 22rem;
+    font-size: 0.85rem;
+    font-style: italic;
+    color: var(--color-text-muted);
   }
-  .footer-col ul li {
-    margin-bottom: 0.75rem;
+  .footer-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.9rem;
   }
-  .footer-col a {
+  .footer-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0;
+  }
+  .footer-nav a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: color 0.2s;
+  }
+  .footer-nav a:hover {
+    color: var(--color-accent);
+  }
+  /* Dot separators between nav links (not after the last). */
+  .footer-nav a + a::before {
+    content: "·";
+    margin: 0 0.6rem;
+    color: var(--color-border);
+  }
+  .footer-contact {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .footer-email {
+    font-size: 0.9rem;
     color: var(--color-text-muted);
     text-decoration: none;
     transition: color 0.2s;
   }
-  .footer-col a:hover {
+  .footer-email:hover {
     color: var(--color-accent);
   }
-  .brand-col p {
-    font-size: 0.95rem;
-    line-height: 1.6;
-    color: var(--color-text-muted);
-    margin-bottom: 1.5rem;
-  }
-  .copyright {
-    font-size: 0.85rem;
-    color: var(--color-text-muted);
-    line-height: 1.5;
-  }
-  address {
-    font-style: normal;
-    font-size: 0.95rem;
-    line-height: 1.6;
+  .footer-bottom {
+    position: relative;
+    z-index: 1;
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 0 1rem 1.75rem;
+    font-size: 0.78rem;
     color: var(--color-text-muted);
   }
   .social-links {
@@ -490,32 +455,15 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
   }
   .social-links a {
     color: var(--color-text-muted);
-    transition: all 0.2s;
+    transition: color 0.2s;
   }
   .social-links a:hover {
     color: var(--color-accent);
-    transform: translateY(-2px);
   }
 
-  @media (max-width: 900px) {
-    .footer-content {
-      grid-template-columns: 1fr 1fr;
-      gap: 2rem;
-    }
-    .brand-col {
-      grid-column: span 2;
-    }
-  }
-  @media (max-width: 600px) {
-    .footer-content {
-      grid-template-columns: 1fr;
-      text-align: center;
-    }
-    .brand-col {
-      grid-column: span 1;
-    }
-    .social-links {
-      justify-content: center;
+  @media (max-width: 640px) {
+    .footer-side {
+      align-items: flex-start;
     }
   }
 
