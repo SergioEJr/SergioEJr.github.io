@@ -1,0 +1,141 @@
+---
+// Compact easter-egg coda: the damped Langevin equation the hero particles
+// actually integrate (HeroSim step(): velocity damping + Gaussian noise +
+// cursor repulsion). Renders as one quiet line; hovering/focusing a term
+// tints it and reveals a small same-colored annotation chip. Nothing invites
+// the interaction — discovery is the point. On (hover: none) devices the
+// chips render statically so touch users get the annotated layout.
+import katex from "katex";
+
+const T = (tex: string) =>
+  katex.renderToString(tex, { throwOnError: false });
+
+const terms = [
+  { key: "drag", tex: "-\\gamma\\,\\mathbf{v}", label: "drag" },
+  { key: "noise", tex: "+\\sqrt{2D}\\,\\boldsymbol{\\xi}(t)", label: "noise" },
+  {
+    key: "you",
+    tex: "+\\mathbf{F}_{\\mathrm{cursor}}(\\mathbf{r})",
+    label: "you (the cursor)",
+  },
+];
+---
+
+<section class="eq-coda" data-reveal>
+  <p class="eq-line">
+    <span class="eq-frag" set:html={T("\\dot{\\mathbf{v}} \\;=\\;")} />
+    {
+      terms.map((t) => (
+        <span
+          class={`eq-term eq-term--${t.key}`}
+          tabindex="0"
+          aria-describedby={`eq-chip-${t.key}`}
+        >
+          <span class="eq-frag" set:html={T(t.tex)} />
+          <span class="eq-chip" id={`eq-chip-${t.key}`}>{t.label}</span>
+        </span>
+      ))
+    }
+  </p>
+  <p class="eq-caption">
+    Every particle in the hero integrates this equation. The last term is you.
+  </p>
+</section>
+
+<style>
+  .eq-coda {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 2.5rem 1rem 3rem;
+    text-align: center;
+  }
+  .eq-line {
+    margin: 0 0 0.9rem;
+    font-size: 1.25rem;
+    color: var(--color-text-main);
+  }
+  .eq-frag :global(.katex) {
+    font-size: 1em;
+  }
+  .eq-term {
+    --eq-c: var(--color-text-main);
+    position: relative;
+    display: inline-block;
+    cursor: default;
+    transition: color 0.2s ease;
+    border-radius: 3px;
+  }
+  .eq-term--drag {
+    --eq-c: var(--color-text-muted);
+  }
+  .eq-term--noise {
+    --eq-c: var(--color-accent);
+  }
+  .eq-term--you {
+    --eq-c: var(--color-hot);
+  }
+  .eq-term:hover,
+  .eq-term:focus-visible {
+    color: var(--eq-c);
+  }
+  .eq-term:focus-visible {
+    outline: 2px solid var(--eq-c);
+    outline-offset: 3px;
+  }
+  /* Chip: real DOM (screen readers can always reach it via aria-describedby);
+     visually revealed on hover/focus. Kept opacity-based, not display:none. */
+  .eq-chip {
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    transform: translate(-50%, 0.15rem);
+    white-space: nowrap;
+    font-family: var(--font-sans);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--eq-c);
+    opacity: 0;
+    transition:
+      opacity 0.2s ease,
+      transform 0.2s ease;
+    pointer-events: none;
+  }
+  .eq-term:hover .eq-chip,
+  .eq-term:focus-visible .eq-chip {
+    opacity: 1;
+    transform: translate(-50%, 0.35rem);
+  }
+  .eq-caption {
+    margin: 1.4rem 0 0;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+  }
+  /* Touch / no-hover: annotated statically (the compact fallback layout). */
+  @media (hover: none) {
+    .eq-line {
+      display: inline-flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: baseline;
+      gap: 0 0.1em;
+    }
+    .eq-chip {
+      position: static;
+      display: block;
+      transform: none;
+      opacity: 1;
+      margin-top: 0.3rem;
+    }
+    .eq-term {
+      color: var(--eq-c);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .eq-term,
+    .eq-chip {
+      transition: none;
+    }
+  }
+</style>

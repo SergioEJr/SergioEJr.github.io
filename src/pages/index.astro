@@ -3,6 +3,7 @@ import BaseHead from "../components/BaseHead.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import HeroSim from "../components/HeroSim.astro";
+import EquationCoda from "../components/EquationCoda.astro";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
 import { url } from "../utils/paths";
 import { pageFade } from "../utils/pageTransition";
@@ -1379,6 +1380,8 @@ const selectedResearch = (
           </section>
         )
       }
+
+      <EquationCoda />
     </main>
     <Footer />
 
