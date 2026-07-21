@@ -130,11 +130,17 @@ existing slot capture, it does not add a new render phase.
    `cite-def` spans, and appends a References section (same shape as
    before: eyebrow label, `<ol>` of entries, backlinks) to the end of the
    transformed HTML string.
-4. Same error behavior as originally specified: throw at *render* time
-   (still build-time for a static site — Astro's static build renders every
-   page during `astro build`, so a thrown error here still fails the build,
-   not just a runtime request) if an id is referenced but never defined, or
-   if two definitions for the same id have different content.
+4. Same error behavior as originally specified: throw at *render* time if an
+   id is referenced but never defined, or if two definitions for the same id
+   have different content. For a PUBLISHED post this fails `astro build`
+   (Astro renders each published page during the static build, so the throw
+   aborts the build). KNOWN LIMITATION: draft posts (`draft: true`) are
+   excluded from the production build's `getStaticPaths` (via
+   `getPublishedPosts`), so they are never rendered during `astro build` —
+   a citation error in a *draft* therefore does NOT fail `npm run build`. It
+   still surfaces in `npm run dev`/preview (drafts render there) and the
+   moment the post is published. This is an accepted limitation: a broken
+   draft isn't shipping, and the error is caught before it can.
 
 This lives entirely within normal Astro component rendering — no new Astro
 integration, no dev-server-specific code path, no build-only hook. It runs
