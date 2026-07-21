@@ -210,8 +210,10 @@ const numberedBody = numberCitations(renderedBody);
         font-size: 0.9rem;
         color: var(--color-text-muted);
       }
-      /* Relabel the auto "Footnotes" heading as a "References" eyebrow (hide the
-			   literal text via font-size:0, show the ::after label). */
+      /* Hide the auto "Footnotes" heading's literal text (font-size:0) and show
+			   a styled eyebrow label via ::after instead — same technique as before,
+			   just no longer mislabeled: this section is genuinely footnotes now
+			   that References is its own system (see .cite-references below). */
       .prose :global(#footnote-label) {
         font-size: 0;
         font-weight: 700;
@@ -221,7 +223,7 @@ const numberedBody = numberCitations(renderedBody);
         margin: 0 0 1rem;
       }
       .prose :global(#footnote-label)::after {
-        content: "References";
+        content: "Footnotes";
         font-size: 0.72rem;
       }
       .prose :global(.footnotes ol) {
@@ -254,6 +256,81 @@ const numberedBody = numberCitations(renderedBody);
       .prose :global(.data-footnote-backref:hover) {
         opacity: 1;
         color: var(--color-accent);
+      }
+      /* References (src/utils/numberCitations.ts / src/components/Cite.astro).
+			   Deliberately mirrors the .footnotes styling immediately above —
+			   the design calls for identical visual treatment for both
+			   end-of-article sections, distinguished only by label text and
+			   in-text marker shape (footnote: superscript number; reference:
+			   bracketed [n]). Always emitted by numberCitations AFTER the
+			   footnotes section (it appends to the end of the captured body
+			   string), so it needs no ordering rule here — source order already
+			   places it last. */
+      .prose :global(.cite-references) {
+        margin-top: 2.5rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--color-border);
+        font-size: 0.9rem;
+        color: var(--color-text-muted);
+      }
+      /* Only add the DOUBLE top margin/border-top when a footnotes section
+			   also rendered before it — otherwise References alone would carry an
+			   oversized gap. Footnotes' own block already supplies one border/gap;
+			   this rule fires only when both exist back to back. */
+      .prose :global(section[data-footnotes] + .cite-references) {
+        margin-top: 3rem;
+      }
+      .prose :global(.cite-references-label) {
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-size: 0.72rem;
+        color: var(--color-text-muted);
+        margin: 0 0 1rem;
+      }
+      .prose :global(.cite-references ol) {
+        margin: 0;
+        padding-left: 1.4rem;
+      }
+      .prose :global(.cite-references li) {
+        margin: 0.5rem 0;
+        line-height: 1.55;
+      }
+      .prose :global(.cite-entry-body) {
+        display: inline;
+      }
+      .prose :global(.cite-entry-body a) {
+        color: var(--color-accent);
+        text-decoration: none;
+        word-break: break-word;
+      }
+      .prose :global(.cite-entry-body a:hover) {
+        text-decoration: underline;
+      }
+      .prose :global(.cite-backref) {
+        margin-left: 0.35rem;
+        text-decoration: none;
+        color: var(--color-text-muted);
+        opacity: 0.7;
+      }
+      .prose :global(.cite-backref:hover) {
+        opacity: 1;
+        color: var(--color-accent);
+      }
+      /* In-text marker: bracketed [n], distinct from a footnote's bare
+			   superscript number at a glance. */
+      .prose :global(sup.cite-ref) {
+        font-size: 0.7em;
+        line-height: 0;
+      }
+      .prose :global(.cite-ref-link) {
+        text-decoration: none;
+        font-weight: 600;
+        padding: 0 0.1em;
+        color: var(--color-accent);
+      }
+      .prose :global(.cite-ref-link:hover) {
+        text-decoration: underline;
       }
       .prose :global(code) {
         font-family:
