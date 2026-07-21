@@ -117,3 +117,7 @@ light mode, hero card, and section headings haven't adopted it yet).
   more-links matching the hero card's, staggered row cascade on reveal.
   Inline styles and the template `<hr>` removed.
 - Footer astro-scholar credit: intentional, keep.
+- Footer de-templated ✅ DONE (2026-07-21): replaced the astro-scholar
+  template's multi-column footer with an editorial single-band layout
+  (name + tagline, nav + contact/social on one side) — template columns
+  removed, roughly half the old height.

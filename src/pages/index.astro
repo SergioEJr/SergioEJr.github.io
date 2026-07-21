@@ -1015,12 +1015,17 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
       .home-contact {
         background: var(--color-bg-offset);
         border-top: 1px solid var(--color-border);
-        border-bottom: 1px solid var(--color-border);
+        /* No border-bottom here on purpose (integration fix, task 5): the
+           band's margin-bottom below pulls it flush against Footer.astro's
+           own border-top, so a bottom rule here would stack a second
+           hairline directly on top of the footer's. The footer is site-wide
+           and needs its top rule on every OTHER page, so we drop the rule
+           on this side of the seam instead of touching Footer.astro. */
         /* Full-bleed out of main's column (same trick as .hero-card). */
         width: 100vw;
         margin-left: calc(50% - 50vw);
         /* main has padding: 3rem 1rem — without this the band's bottom
-           hairline leaves a bare stripe of main's background before the
+           edge leaves a bare stripe of main's background before the
            footer starts. Pull the band down to close that seam. */
         margin-bottom: -3rem;
       }
