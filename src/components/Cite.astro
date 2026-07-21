@@ -17,15 +17,16 @@
 //
 // This component has no visibility into sibling <Cite> uses, so it cannot
 // number itself or assemble the References list — it only renders a stable
-// marker (and, on the defining use, a hidden definition span) for
-// src/plugins/rehype-cite.mjs to number and relocate at build time. Content
-// is ALWAYS rendered into the DOM (never conditionally omitted), the same
-// pattern Derivation.astro uses for build-time equation numbering: a
-// rehype plugin can only see nodes that exist in the tree.
+// marker (and, on the defining use, a hidden definition span) for the
+// numberCitations transform (src/utils/numberCitations.ts) to number and
+// relocate at page-render time. Content is ALWAYS rendered into the DOM
+// (never conditionally omitted), the same pattern Derivation.astro uses for
+// build-time equation numbering: a transform can only see nodes that exist
+// in the rendered HTML.
 //
 // The visible "[?]" marker text is a fallback that should never survive a
-// real build — rehype-cite.mjs overwrites it with the citation's actual
-// number. If you see a literal "[?]" on the live site, the plugin didn't
+// real render — numberCitations overwrites it with the citation's actual
+// number. If you see a literal "[?]" on the live site, the transform didn't
 // run or didn't find this id.
 
 interface Props {

@@ -9,6 +9,7 @@ import Header from "../components/Header.astro";
 import TableOfContents from "../components/TableOfContents.astro";
 import { url } from "../utils/paths";
 import { renderInline, stripInline } from "../utils/inlineText";
+import { numberCitations } from "../utils/numberCitations";
 
 type CategoryBadge = { label: string; color: string };
 // Blog-collection fields are optional here because this layout is also reused by
@@ -43,6 +44,13 @@ const {
 } = Astro.props;
 // Plain text (markers stripped) for metadata/alt; HTML form is used for the visible <h1>.
 const titleText = stripInline(title);
+
+// Capture the rendered post body and number any <Cite> markers in it. <Cite>
+// renders real HTML only at this point (page render), which is why numbering
+// is a string transform here rather than a rehype plugin — see
+// src/utils/numberCitations.ts's header for the full rationale.
+const renderedBody = await Astro.slots.render("default");
+const numberedBody = numberCitations(renderedBody);
 ---
 
 <html lang="en">
@@ -751,7 +759,7 @@ const titleText = stripInline(title);
                   </>
                 )
               }
-              <slot />
+              <Fragment set:html={numberedBody} />
             </div>
           </div>
         </div>
