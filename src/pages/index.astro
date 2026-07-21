@@ -987,7 +987,12 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         font-weight: 700;
         letter-spacing: 0.05em;
         text-transform: uppercase;
-        color: #fff;
+        color: var(--badge-color);
+        border: 1px solid
+          color-mix(in srgb, var(--badge-color) 60%, transparent);
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
       }
       .home-proj-title {
         font-family: var(--font-serif);
@@ -1406,7 +1411,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
                       {project.data.categories?.[0] && (
                         <span
                           class="home-proj-pill"
-                          style={`background: ${
+                          style={`--badge-color: ${
                             PROJECT_CATEGORY_BADGE_VARS[
                               project.data.categories[0]
                             ] ?? "var(--color-accent)"
