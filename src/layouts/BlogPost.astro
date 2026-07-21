@@ -222,9 +222,20 @@ const numberedBody = numberCitations(renderedBody);
         color: var(--color-text-muted);
         margin: 0 0 1rem;
       }
+      /* This heading is a GFM <h2 id="footnote-label">, so it also inherits the
+			     global section-heading `h2::after` accent-rule (a 2.5rem × 3px
+			     accent-colored block; see global.css). That block would render behind
+			     this "Footnotes" text and strike through it, so reset every block
+			     property to make it a plain inline eyebrow label. */
       .prose :global(#footnote-label)::after {
         content: "Footnotes";
         font-size: 0.72rem;
+        display: inline;
+        width: auto;
+        height: auto;
+        margin-top: 0;
+        border-radius: 0;
+        background: none;
       }
       .prose :global(.footnotes ol) {
         margin: 0;
