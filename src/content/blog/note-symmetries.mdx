@@ -13,57 +13,93 @@ tags:
 draft: true # set to false to publish
 ---
 
+import SideNote from "../../components/SideNote.astro"
 import Figure from '../../components/Figure.astro';
 import Derivation from '../../components/Derivation.astro';
 import fieldTranslation from '../../assets/blog/field-translation.svg?raw';
+import fieldVectorTransform from '../../assets/blog/field-vector-transform.svg?raw';
 
 ## Scalar Fields
 
-Suppose I have a hot cup of coffee described by a temperature field $\phi(\boldsymbol{x})$, and I slide the cup by a displacement $\boldsymbol{a}$ on my desk. If physics is going to be of any use in this world, then the total heat content of the coffee better have not changed. Why?
+Suppose I have a hot cup of coffee described by a temperature field $\phi(\bs{x})$, and I slide the cup by a displacement $\bs{a}$ on my desk. If physics is going to be of any use in this world, then the total heat content of the coffee better have not changed. Why?
 
-Because space is *homogeneous* -- there is no preferred position. In other words, the energy $F$ of the coffee cup is invariant under the translation group. How do we describe the transformed temperature field of this displaced coffee? 
+Because space is *homogeneous* -- there is no preferred position. In other words, the energy $F[\phi]$ of the coffee cup is invariant under actions from the translation group $\mathbb{R}^3$. How do we describe the transformed temperature field of this displaced coffee? 
 <Figure
   svg={fieldTranslation}
   width={420}
   alt="A coffee cup at position r, and the same cup displaced by a vector a to a new position, with temperature fields labeled phi and phi-prime"
-  caption="Displacing the cup by $\boldsymbol{a}$ carries the field $\phi$ to a new field $\phi'$."
+  caption="Displacing the cup by $\bs{a}$ carries the field $\phi$ to a new field $\phi'$."
 />
 
 Evidently, the transformed temperature field $\phi'$ now has support in a different region of space. This is a whole new function, it is an entirely different configuration of the coffee cup. In other words, $\phi$ is *not* invariant under translations, unlike the energy. This new function is defined by
 
 $$
 \begin{align*}
-    \phi'(\boldsymbol{x} + \boldsymbol{a}) = \phi(\boldsymbol{x}).
+    \phi'(\bs{x} + \bs{a}) = \phi(\bs{x}).
 \end{align*}
 $$
-This is the most straightforward way to describe the transformation, however, it is customary (and also useful) to describe the transformed field from *its* perspective. Letting $\boldsymbol{x}' = \boldsymbol{x} + \boldsymbol{a}$, we get
+This is the most straightforward way to describe the transformation, however, it is customary (and also useful) to describe the transformed field from *its* perspective. Letting $\bs{x}' = \bs{x} + \bs{a}$, we get
 
 $$
 \begin{align}
-    \htmlId{eq:inverse-transform}{
-      \phi'(\boldsymbol{x}') = \phi(\boldsymbol{x}) 
-      = \phi(\boldsymbol{x}' - \boldsymbol{a}).
+    \htmlId{eq:scalar-translation}{
+      \phi'(\bs{x}') = \phi(\bs{x}) 
+      = \phi(\bs{x}' - \bs{a}).
     }
 \end{align}
 $$
 In general, if $g$ is an element of a group $G$, then the transformed scalar field $g \cdot \phi$ is 
 $$
-\begin{align*}
-(g \cdot \phi)(\boldsymbol{x}) = \phi(g^{-1} \boldsymbol{x}).
-\end{align*}
+\begin{align}
+  \htmlId{eq:scalar-transform}
+  (g \cdot \phi)(\bs{x}) = \phi(g^{-1} \bs{x}).
+\end{align}
 $$
-If the inverse group element is ever confusing, just remember that it comes from expressing the field and points in terms of the new reference frame as in Eq. [](#eq:inverse-transform).
+If the inverse group element is ever confusing, just remember that it comes from expressing the field and points in terms of the new reference frame as in Eq. [](#eq:scalar-translation). This is called a *pullback* -- we define the transformed field $\phi'$ by pulling the evaluation point $\bs{x}$ back to its original position $g^{-1}\bs{x}$ and evaluate the *old* function there.
 
 ## Vector Fields
 
-Now, let's consider a bar magnet whose local magnetization is described by a vector field $\boldsymbol{m}(\boldsymbol{x})$. In the absence of any external field, I can rotate this magnet by some transformation matrix $R$, and the magnetic field better not change. Why?
+Now, let's consider a bar magnet whose local magnetization is described by a vector field $\bs{m}(\bs{x})$. In the absence of any external field, I can rotate this magnet by some transformation matrix $R$, and the energy of the magnetic field better not change. Why?
 
-Because space is *isotropic* -- there is no preferred direction. That means the bar magnet is invariant under elements of the 
-how do I describe this new field?
+<SideNote label="aside"> For relativistic systems, the fundamental group of symmetries is the Poincaré group $P(1,3)$, which is the combination of spacetime translations $\mathbb{R}^{(1,3)}$ and spacetime rotations $O(1,3)$.</SideNote>
+
+Because in addition to being homogeneous, space is also *isotropic* -- there is no preferred direction. That means the energy of the bar magnet $F[\bs{m}]$ is invariant under translations $\mathbb{R}^3$ as well under the group of rotations $O(3)$. Together, these transformations make up the *Euclidean* group $E(3)$, the fundamental group of symmetries for flat three-dimensional space. Let's see how our magnetic field transforms under a rotation:
+
+<Figure
+  svg={fieldVectorTransform}
+  width={560}
+  alt="A bar magnet with magnetization m and position vector x, and three attempts to rotate it by R: rotating both x and m gives the correct transformed field; rotating only m or only x each leaves the magnetization misaligned with the bar and is marked wrong."
+  caption="To transform a vector field, both the positions $\bs{x}$ and the vectors $\bs{m}$ must rotate together (bottom right). Rotating only one leaves the magnetization misaligned with the bar."
+/>
+
+From the diagram above, we can see that the transformed field $\bs{m}'$ is described by,
+
+$$
+\begin{align*}
+  \bs{m}'(R\bs{x}) 
+  = R\bs{m}(\bs{x}).
+\end{align*}
+$$
+Letting $\bs{x}' = R \bs{x}$, we can again express this as a pullback function,
+$$
+\begin{align}
+  \htmlId{eq:vector-rotation}{
+  \bs{m}'(\bs{x}') 
+  = R\bs{m}(R^{-1}\bs{x}') }
+\end{align}
+$$
+so that the rotated field is defined entirely in terms of the untransformed field. This reveals an important distinction between symmetry transformations on scalar fields (Eq. [](#eq:scalar-transform)) and on vector fields: for vector fields, one must transform both the inputs *and* the outputs. From Eq. [](#eq:vector-rotation), it may appear that we should just transform the vector field opposite how we transform the base space, however, we can come up with an immediate counterexample. 
+
+Consider now a general rigid-body transformations $\bs{x}' = R\bs{x} + \bs{a}$. Shifting the magnet by a translation should certainly not change the direction of the field, so only the rotation operator should act on $\bs{m}$, giving
+$$
+\bs{m}'(\bs{x}') = R \bs{m}(R^{-1}(\bs{x}' - \bs{a})).
+$$
+
+We require the value of the transformed field to match, which we verify below.
 
 <Derivation label="Derivation: Jacobian">
 Start from the transformation rule and apply the chain rule. Referencing an
-equation *outside* this block works — see Eq [](#eq:inverse-transform). Defining a
+equation *outside* this block works — see Eq [](#eq:vector-rotation). Defining a
 new relation inside the block,
 
 $$
@@ -81,11 +117,23 @@ rotation matrix itself.
 
 ## Tensor Fields
 
+The previous section motivates the transformation rule for general tensor fields. 
+
+For a general group element $g$, vector fields transform as
+
+$$
+(g \cdot T)(\bs{x}) = \rho(J(\bs{x})) T(g^{-1}\bs{r})
+$$
+
+where $\rho(g)$ is the representation of $g$ in the space of $\bs{m}$. For instance, for general rigid body motions $(\bs{a}, R)$, 
+
 $$
 \begin{align}
-(g \cdot Q)(\boldsymbol{x}) = \rho(g) Q(g^{-1} \boldsymbol{x})
+(g \cdot Q)(\bs{x}) = \rho(g) Q(g^{-1} \bs{x})
 \end{align}
 $$
+
+
 
 
 ## Spinor Fields
