@@ -901,6 +901,10 @@ const titleText = stripInline(title);
           );
           if (!target) return;
           e.preventDefault();
+          // If the target equation is hidden inside a collapsed <Derivation>,
+          // open that block first — otherwise it's display:none and the scroll
+          // lands nowhere. (No-op if it isn't inside a collapsed block.)
+          if (window.__openDerivationFor) window.__openDerivationFor(target);
           const reduce = window.matchMedia(
             "(prefers-reduced-motion: reduce)",
           ).matches;
@@ -927,12 +931,28 @@ const titleText = stripInline(title);
       }
 
       // A page opened directly at #eq:foo gets the same flash. The browser has
-      // already scrolled by now; this only adds the highlight.
+      // usually scrolled by now; this adds the highlight. But if the target is
+      // inside a collapsed <Derivation> it was display:none when the browser
+      // tried to anchor, so nothing scrolled — open the block, then scroll to it
+      // ourselves before flashing.
       if (location.hash) {
         const el = document.getElementById(
           decodeURIComponent(location.hash.slice(1)),
         );
-        if (el) flashEquation(el);
+        if (el) {
+          const opened =
+            window.__openDerivationFor && window.__openDerivationFor(el);
+          if (opened) {
+            const reduce = window.matchMedia(
+              "(prefers-reduced-motion: reduce)",
+            ).matches;
+            el.scrollIntoView({
+              behavior: reduce ? "auto" : "smooth",
+              block: "center",
+            });
+          }
+          flashEquation(el);
+        }
       }
     </script>
   </body>
