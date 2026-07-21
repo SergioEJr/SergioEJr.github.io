@@ -49,55 +49,62 @@ export function numberCitations(html: string): string {
   let n = 0;
 
   // Pass 1: number markers in document order, collect + validate definitions.
-  visit(tree, "element", (node: any, index: number | undefined, parent: any) => {
-    if (hasClass(node, "cite-ref")) {
-      const id = node.properties?.dataCiteId;
-      if (typeof id !== "string") return;
+  visit(
+    tree,
+    "element",
+    (node: any, index: number | undefined, parent: any) => {
+      if (hasClass(node, "cite-ref")) {
+        const id = node.properties?.dataCiteId;
+        if (typeof id !== "string") return;
 
-      if (!numberOf.has(id)) {
-        n += 1;
-        numberOf.set(id, n);
-      }
-      const num = numberOf.get(id)!;
+        if (!numberOf.has(id)) {
+          n += 1;
+          numberOf.set(id, n);
+        }
+        const num = numberOf.get(id)!;
 
-      const occurrence = (occurrenceCount.get(id) || 0) + 1;
-      occurrenceCount.set(id, occurrence);
+        const occurrence = (occurrenceCount.get(id) || 0) + 1;
+        occurrenceCount.set(id, occurrence);
 
-      node.properties.id = `cite-ref-${num}-${occurrence}`;
-      node.children = [
-        {
-          type: "element",
-          tagName: "a",
-          properties: {
-            href: `#cite-${num}`,
-            className: ["cite-ref-link"],
-            "data-astro-history": "replace",
+        node.properties.id = `cite-ref-${num}-${occurrence}`;
+        node.children = [
+          {
+            type: "element",
+            tagName: "a",
+            properties: {
+              href: `#cite-${num}`,
+              className: ["cite-ref-link"],
+              "data-astro-history": "replace",
+            },
+            children: [{ type: "text", value: `[${num}]` }],
           },
-          children: [{ type: "text", value: `[${num}]` }],
-        },
-      ];
-      return;
-    }
-
-    if (hasClass(node, "cite-def")) {
-      const id = node.properties?.dataCiteId;
-      if (typeof id !== "string" || !parent || index === undefined) return;
-
-      const existing = definitionOf.get(id);
-      const incoming = node.children;
-      if (
-        existing &&
-        stringifyWithoutPosition(existing) !== stringifyWithoutPosition(incoming)
-      ) {
-        throw new Error(`Cite id="${id}" defined twice with different content`);
+        ];
+        return;
       }
-      if (!existing) definitionOf.set(id, incoming);
 
-      // Remove the now-relocated definition span from its inline position.
-      parent.children.splice(index, 1);
-      return index; // re-visit this index (it now holds the next sibling)
-    }
-  });
+      if (hasClass(node, "cite-def")) {
+        const id = node.properties?.dataCiteId;
+        if (typeof id !== "string" || !parent || index === undefined) return;
+
+        const existing = definitionOf.get(id);
+        const incoming = node.children;
+        if (
+          existing &&
+          stringifyWithoutPosition(existing) !==
+            stringifyWithoutPosition(incoming)
+        ) {
+          throw new Error(
+            `Cite id="${id}" defined twice with different content`,
+          );
+        }
+        if (!existing) definitionOf.set(id, incoming);
+
+        // Remove the now-relocated definition span from its inline position.
+        parent.children.splice(index, 1);
+        return index; // re-visit this index (it now holds the next sibling)
+      }
+    },
+  );
 
   if (numberOf.size === 0) return toHtml(tree);
 
@@ -141,7 +148,10 @@ export function numberCitations(html: string): string {
   const section = {
     type: "element",
     tagName: "section",
-    properties: { className: ["cite-references"], "data-cite-references": true },
+    properties: {
+      className: ["cite-references"],
+      "data-cite-references": true,
+    },
     children: [
       {
         type: "element",
