@@ -18,7 +18,23 @@ const posts = (await getPublishedPosts())
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
   .slice(0, 3);
 
-const projects = (await getPublishedProjects()).slice(0, 3);
+// Same order convention as /projects (src/pages/projects.astro): manual `order`
+// pins entries first (ascending), the rest fall back to reverse-chronological.
+// getPublishedProjects() only filters drafts — it does not sort — so this must
+// be duplicated here to make the strip a true preview of the Projects page.
+const projects = (await getPublishedProjects())
+  .sort((a, b) => {
+    const ao = a.data.order,
+      bo = b.data.order;
+    if (ao != null && bo != null) return ao - bo;
+    if (ao != null) return -1;
+    if (bo != null) return 1;
+    return (
+      b.data.date.valueOf() - a.data.date.valueOf() ||
+      a.id.localeCompare(b.id)
+    );
+  })
+  .slice(0, 3);
 
 const allResearch = (await getPublishedResearch()).sort(
   (a, b) =>
