@@ -8,7 +8,6 @@ import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import rehypeEqref from "./src/plugins/rehype-eqref.mjs";
 import rehypeFootnoteHistory from "./src/plugins/rehype-footnote-history.mjs";
-import rehypeCite from "./src/plugins/rehype-cite.mjs";
 
 // Shared by both pipelines below so Markdown and MDX behave identically.
 // - rehypeKatex: `trust` enables \htmlId, which is how an equation gets a link
@@ -25,7 +24,6 @@ const contentPlugins = [
   [rehypeKatex, { trust: true }],
   rehypeEqref,
   rehypeFootnoteHistory,
-  rehypeCite,
 ];
 
 // https://astro.build/config
