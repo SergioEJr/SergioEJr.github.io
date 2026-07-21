@@ -121,7 +121,7 @@ const { label = "Note", inline = false } = Astro.props;
   // screen size.
   // (Inline so it's reliably emitted even when this component is used in MDX.)
   (function () {
-    var GAP = 90; // px below the ToC bottom over which the note fades out
+    var GAP = 10; // px below the ToC bottom over which the note fades out
     var ticking = false;
     var notes = [];
     var tocInner = null;
