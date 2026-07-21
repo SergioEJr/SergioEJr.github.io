@@ -67,6 +67,17 @@ export default function rehypeEqref() {
       if (!numbered) return; // starred env: no number, no counter bump
       n += 1;
 
+      // Bake the visible "(n)" into the .eqn-num span as real text. KaTeX
+      // normally prints the number from a CSS counter (katexEqnNo) in an
+      // ::before, but a CSS counter does NOT increment inside a display:none
+      // subtree — so an equation hidden in a collapsed <Derivation> would fail
+      // to advance it and every later equation's visible number would be one
+      // too low until the block is expanded. Writing the number here (the same
+      // count Pass 2 uses for references) makes it static HTML, correct whether
+      // the equation is shown or hidden, and immune to collapse state.
+      // global.css suppresses the ::before counter so the two don't double up.
+      numbered.children = [{ type: "text", value: `(${n})` }];
+
       // The id comes from \htmlId inside the math. KaTeX renders that id on an
       // inner span; hoist it to the display wrapper so the anchor lands on the
       // whole equation (and scroll-margin can clear the sticky navbar).
