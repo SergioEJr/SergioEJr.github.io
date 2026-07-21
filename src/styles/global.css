@@ -522,11 +522,14 @@ a:hover {
 /* rehype-eqref bakes the visible "(n)" into the .eqn-num span as real text so it
    is correct even when the equation is hidden inside a collapsed <Derivation>
    (a CSS counter does not increment in a display:none subtree). KaTeX's own
-   counter-driven ::before would then print a SECOND number, so suppress it. The
-   `counter-increment` in that ::before is thereby dropped too, but nothing reads
-   katexEqnNo anymore — the baked text is the single source of the visible
-   number. */
-.katex .eqn-num:before {
+   counter-driven ::before would then print a SECOND number, so suppress it.
+   KaTeX's rule is `.katex .eqn-num:before` (specificity 0-2-1) and its inlined
+   stylesheet loads AFTER this file, so an equal-specificity override loses on
+   source order and BOTH numbers render. Prefixing with the `.katex-display`
+   ancestor (0-3-1) wins regardless of load order. The `counter-increment` in
+   that ::before is dropped with it, but nothing reads katexEqnNo anymore — the
+   baked text is the single source of the visible number. */
+.katex-display .katex .eqn-num:before {
   content: none;
 }
 
