@@ -6,11 +6,19 @@ import HeroSim from "../components/HeroSim.astro";
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
 import { url } from "../utils/paths";
 import { pageFade } from "../utils/pageTransition";
-import { getPublishedPosts, getPublishedResearch, postLink } from "../utils/posts";
+import {
+  getPublishedPosts,
+  getPublishedProjects,
+  getPublishedResearch,
+  postLink,
+} from "../utils/posts";
+import { PROJECT_CATEGORY_BADGE_VARS } from "../utils/categories";
 
 const posts = (await getPublishedPosts())
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
   .slice(0, 3);
+
+const projects = (await getPublishedProjects()).slice(0, 3);
 
 const allResearch = (await getPublishedResearch()).sort(
   (a, b) =>
@@ -914,6 +922,73 @@ const selectedResearch = (
         transform: translateX(4px);
       }
 
+      /* ---- Projects strip: preview of the Projects page in its card language. ---- */
+      .home-projects {
+        max-width: var(--max-width);
+        margin: 0 auto 2rem;
+        padding: 0 1rem;
+      }
+      .home-proj-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+        gap: 1.5rem;
+      }
+      .home-proj-card {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+      }
+      .home-proj-image {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid var(--color-border);
+        margin-bottom: 0.7rem;
+      }
+      .home-proj-image img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        object-fit: cover;
+        transition: transform 0.25s ease;
+      }
+      .home-proj-card:hover .home-proj-image img {
+        transform: scale(1.03);
+      }
+      .home-proj-pill {
+        position: absolute;
+        top: 0.6rem;
+        left: 0.6rem;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #fff;
+      }
+      .home-proj-title {
+        font-family: var(--font-serif);
+        font-size: 1.05rem;
+        font-weight: 600;
+        line-height: 1.35;
+        color: var(--color-text-main);
+        transition: color 0.15s ease;
+      }
+      .home-proj-card:hover .home-proj-title {
+        color: var(--color-accent);
+      }
+      .home-proj-card:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 3px;
+        border-radius: 4px;
+      }
+      .home-proj-year {
+        font-size: 0.8rem;
+        color: var(--color-text-muted);
+        margin-top: 0.15rem;
+      }
+
       /* --- Mobile: drop the pinned scrub. Sticky pinning + the sim's
          overflow-x clipping fight each other on touch, and a scrub feels worse
          than a simple stack on a phone. Show the sim (one screen) then the card
@@ -985,7 +1060,8 @@ const selectedResearch = (
          staggers the two columns). */
       [data-reveal] h2,
       [data-reveal] .home-row,
-      [data-reveal] .home-more {
+      [data-reveal] .home-more,
+      [data-reveal] .home-proj-card {
         opacity: 0;
         transform: translateY(14px);
         transition:
@@ -996,7 +1072,8 @@ const selectedResearch = (
       }
       [data-reveal].is-revealed h2,
       [data-reveal].is-revealed .home-row,
-      [data-reveal].is-revealed .home-more {
+      [data-reveal].is-revealed .home-more,
+      [data-reveal].is-revealed .home-proj-card {
         opacity: 1;
         transform: none;
       }
@@ -1040,7 +1117,8 @@ const selectedResearch = (
         }
         [data-reveal] h2,
         [data-reveal] .home-row,
-        [data-reveal] .home-more {
+        [data-reveal] .home-more,
+        [data-reveal] .home-proj-card {
           opacity: 1;
           transform: none;
           transition: none;
@@ -1236,6 +1314,55 @@ const selectedResearch = (
           </a>
         </section>
       </div>
+
+      {
+        projects.length > 0 && (
+          <section class="home-projects" data-reveal>
+            <h2 style="margin-top: 0;">Projects</h2>
+            <div class="home-proj-grid">
+              {projects.map((project, i) => (
+                <a
+                  class="home-proj-card"
+                  style={`--i: ${i}`}
+                  href={url(`/projects/${project.id}/`)}
+                >
+                  {project.data.image && (
+                    <div class="home-proj-image">
+                      <img
+                        src={url(project.data.image)}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      {project.data.categories?.[0] && (
+                        <span
+                          class="home-proj-pill"
+                          style={`background: ${
+                            PROJECT_CATEGORY_BADGE_VARS[
+                              project.data.categories[0]
+                            ] ?? "var(--color-accent)"
+                          }`}
+                        >
+                          {project.data.categories[0]}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  <div class="home-proj-title">{project.data.title}</div>
+                  <div class="home-proj-year">
+                    {project.data.date.getUTCFullYear()}
+                  </div>
+                </a>
+              ))}
+            </div>
+            <a href={url("/projects")} class="home-more" style="--i: 3">
+              View all projects<span class="home-more-arrow" aria-hidden="true"
+                >&rarr;</span
+              >
+            </a>
+          </section>
+        )
+      }
     </main>
     <Footer />
 
