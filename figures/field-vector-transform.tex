@@ -1,0 +1,186 @@
+% Transformation of a VECTOR field under a rotation R, via a bar magnet whose
+% magnetization m(x) is the field. A vector field is a set of ARROWS AT POSITIONS,
+% and a rotation acts on BOTH independently: it moves each arrow's basepoint
+% (positions, "r") AND turns each arrow (vectors, "m"). A correct transformation
+% does both together, (R.m)(x) = R m(R^-1 x); doing only one leaves the arrows
+% attached to points that no longer line up with the direction they point.
+%
+% Commutative diagram (R acts on two different spaces, so the two partial
+% rotations are genuine intermediate objects that both complete to the correct
+% result):
+%
+%   m ---- rotate r ----> (positions rotated, vectors not)   [TL -> TR]
+%   |                              |
+%  rotate m                      rotate m
+%   v                              v
+%   (vectors rotated) - rotate r -> (both) = correct         [BL -> BR]
+%
+% plus the direct diagonal TL -> BR. Every path flows into the correct result.
+% See _template.tex / _preamble.tex for the shared setup.
+\ifnum\pdfoutput>0
+\documentclass[tikz,border=3pt]{standalone}         % pdflatex → PDF proof
+\else
+\documentclass[tikz,border=3pt,dvisvgm]{standalone} % latex   → web SVG
+\fi
+\input{_preamble}
+\usetikzlibrary{arrows.meta}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+  % --- Geometry ---------------------------------------------------------------
+  \def\bw{34}   % bar length (long axis)
+  \def\bh{15}   % bar height (short axis)
+
+  \tikzset{
+    mvec/.style  = {line width=1.4pt, figred, -{Stealth[length=2.2mm, width=2mm, round]}, line cap=round},
+    rvec/.style  = {edge, ink, -{Stealth[length=2.4mm, width=1.9mm, round]}, line cap=round},
+    tform/.style = {edge, muted, -{Stealth[length=2.4mm, width=1.9mm, round]}, line cap=round},
+  }
+
+  % \magnet{cx}{cy}{posang}{vecang} draws a magnet centered at (cx,cy).
+  % POSITIONS (the body + the basepoints the field arrows sit on) are rotated by
+  % posang; the arrow DIRECTIONS are rotated by vecang. These are INDEPENDENT --
+  % a vector field is arrows-at-points, and "rotate r" moves the points while
+  % "rotate m" turns the arrows. When posang == vecang the arrows lie along the
+  % bar (physically consistent); when they differ (the wrong panels) the arrows
+  % sit on the rotated lattice but point the wrong way, so field and body clash.
+  \def\np{3}          % field arrows per ROW along the bar
+  % Half-length of each field arrow. Basepoints are \bw/(\np+1) apart; with \np=3
+  % that's ~8.5mm, so keep 2*\alen a couple mm below it for a clear gap between
+  % colinear arrows.
+  \def\alen{3.4}
+  \def\nrow{2}        % number of arrow ROWS, symmetric about the bar's center
+  \def\rowsep{6}      % vertical spacing between the two rows
+  \newcommand{\magnet}[4]{%
+    % Body + big faint N/S watermark live in the POSITION frame (posang).
+    % `transform shape` makes node CONTENTS rotate with the scope -- without it a
+    % \node's position rotates but its text stays upright, so the letters wouldn't
+    % tilt with the magnet. The N/S are large, centered in each pole half, at low
+    % opacity so they read as a faint label behind the field arrows (drawn after).
+    \begin{scope}[shift={(#1,#2)}, rotate=#3, transform shape]
+      \filldraw[edge, ink, fill=figbg] (-\bw/2,-\bh/2) rectangle (\bw/2,\bh/2);
+      \draw[muted, line width=1pt] (0,-\bh/2) -- (0,\bh/2);
+      % NB: Computer Modern caps its design size (~25pt) -- a larger \fontsize
+      % silently renders no bigger (100pt looked like 26pt). To make the N/S
+      % watermark truly fill the bar we SCALE the node instead, which multiplies
+      % the glyph geometry and bypasses the cap. \wmscale tunes the height.
+      \def\wmscale{1.7}
+      \node[figred, opacity=0.10, scale=\wmscale, font=\fontsize{20}{20}\selectfont\sffamily] at (-\bw/4,0) {N};
+      \node[ink,    opacity=0.10, scale=\wmscale, font=\fontsize{20}{20}\selectfont\sffamily] at ( \bw/4,0) {S};
+    \end{scope}
+    % Field arrows on top: two rows (\nrow) symmetric about center, each with \np
+    % arrows. A basepoint is a lattice site (bx, by) in the POSITION frame
+    % (posang); the arrow there points along the VECTOR frame (vecang). rows are at
+    % by = +-\rowsep/2.
+    \foreach \row in {1,...,\nrow}{
+      \pgfmathsetmacro{\by}{(\row-(\nrow+1)/2)*\rowsep}   % centered rows
+      \foreach \k in {1,...,\np}{
+        \pgfmathsetmacro{\bx}{-\bw/2 + \k*\bw/(\np+1)}    % site x along the bar
+        \pgfmathsetmacro{\px}{#1 + \bx*cos(#3) - \by*sin(#3)}
+        \pgfmathsetmacro{\py}{#2 + \bx*sin(#3) + \by*cos(#3)}
+        \pgfmathsetmacro{\dx}{-cos(#4)}                    % dir (N->S = -x) by vecang
+        \pgfmathsetmacro{\dy}{-sin(#4)}
+        \draw[mvec] ({\px-\alen*\dx},{\py-\alen*\dy}) -- ({\px+\alen*\dx},{\py+\alen*\dy});
+      }
+    }
+  }
+
+  % r vector + rotation-axis dot in a panel's POSITION frame. r points from the
+  % axis dot to one field basepoint (so it visibly picks out a position). A small
+  % gap keeps the arrowhead from touching the bar (they looked "attached"). The
+  % blue axis dot is drawn last so it sits above the r arrow.
+  \def\rlen{20}   % r length
+  \def\rgap{2}    % gap between r's head and the bar edge
+  \newcommand{\raxis}[3]{% {cx}{cy}{posang}
+    \begin{scope}[shift={(#1,#2)}, rotate=#3]
+      \draw[rvec] (0,{-\bh/2-\rlen}) -- (0,{-\bh/2-\rgap});
+      \fill[figblue] (0,{-\bh/2-\rlen}) circle[radius=1.1];
+    \end{scope}
+  }
+
+  % --- Panel centers ----------------------------------------------------------
+  \def\colL{0}\def\colR{116}    % left / right column x
+  \def\rowT{0}\def\rowB{-82}    % top / bottom row y (extra gap for arrow labels)
+  \def\rot{30}                  % the rotation R (degrees)
+
+  % ===== TL: start m. Positions flat, vectors flat.
+  \magnet{\colL}{\rowT}{0}{0}
+  \raxis{\colL}{\rowT}{0}
+
+  % ===== TR: rotate r. Positions (body + basepoints + r) tilt by R; vectors flat.
+  \magnet{\colR}{\rowT}{\rot}{0}
+  \raxis{\colR}{\rowT}{\rot}
+
+  % ===== BL: rotate m. Positions flat; vectors tilt by R.
+  \magnet{\colL}{\rowB}{0}{\rot}
+  \raxis{\colL}{\rowB}{0}
+
+  % ===== BR: correct. Positions AND vectors both tilt by R.
+  \magnet{\colR}{\rowB}{\rot}{\rot}
+  \raxis{\colR}{\rowB}{\rot}
+
+  % --- Commutative-diagram arrows; all flows reach BR. Every arrow labeled
+  % "rotate r" / "rotate m", sloped along the line with the line as baseline
+  % (anchor=south via `above`), no background. ------------------------------
+  % NB: a node written AFTER the final coordinate (\draw ... -- (end) node{..})
+  % attaches at the END point, not the middle -- that put every arrow label at
+  % its arrowhead. `midway` forces the geometric center of the segment. `sloped`
+  % makes the text run parallel to the line, `above` sets the line as its
+  % baseline. No fill => no background.
+  % NB: use an ABSOLUTE \fontsize, not \small/\normalsize. The preamble pins
+  % every picture to \figfontsize (13.5pt), which overrides relative sizes -- so
+  % \normalsize here did nothing. An explicit \fontsize wins.
+  % inner sep is the gap between the label and its line; bumped 2pt -> 3pt (1.5x).
+  \def\gap{9}
+  \tikzset{albl/.style = {midway, sloped, above, font=\fontsize{18}{18}\selectfont, muted, inner sep=3pt}}
+  % top edge: TL -> TR (rotate r)
+  \draw[tform] ({\colL+\bw/2+\gap},\rowT) -- ({\colR-\bw/2-\gap},\rowT)
+  node[albl] {rotate $\boldsymbol{x}$};
+  % left edge: TL -> BL (rotate m)
+  \draw[tform] (\colL,{\rowT-\bh/2-\rlen-6}) -- (\colL,{\rowB+\bh/2+6})
+  node[albl] {rotate $\boldsymbol{m}$};
+  % bottom edge: BL -> BR (rotate r)
+  \draw[tform] ({\colL+\bw/2+\gap},\rowB) -- ({\colR-\bw/2-\gap},\rowB)
+  node[albl] {rotate $\boldsymbol{x}$};
+  % right edge: TR -> BR (rotate m). Extended at the TR (top) end by \rext (head
+  % fixed at BR); label centered on the (extended) arrow via albl's midway.
+  \def\rext{14}
+  \draw[tform] (\colR,{\rowT-\bh/2-\rlen-6+\rext}) -- (\colR,{\rowB+\bh/2+6})
+  node[albl] {rotate $\boldsymbol{m}$};
+
+  % diagonal: TL -> BR, the correct (composite) transform. Ink + heavier so it
+  % reads as the composite. Label centered on the line (midway), sloped, no bg.
+  \def\dsx{\colL+\bw/2-1}\def\dsy{\rowT-\bh/2-6}   % start (TL lower-right)
+  \def\dex{\colR-\bw/2+1}\def\dey{\rowB+\bh/2+6}   % end   (BR upper-left)
+  \draw[line width=1.3pt, ink, -{Stealth[length=2.8mm, width=2.2mm, round]}, line cap=round]
+  ({\dsx},{\dsy}) -- ({\dex},{\dey})
+  node[midway, sloped, above, font=\fontsize{18}{18}\selectfont, ink, inner sep=3.75pt]
+  {rotate $\boldsymbol{x}$ and $\boldsymbol{m}$};
+
+  % --- Panel labels: field label (m / Rm) sits at the OUTER-TOP corner of each
+  % magnet; position label (r / Rr) sits by that panel's axis dot. Both are
+  % pushed to the column's outer side (left column -> left, right column -> right)
+  % so they never fall on the connecting arrows. Rm/Rr, not compositions. -----
+  \tikzset{
+    flbl/.style = {font=\fontsize{19}{19}\selectfont, figred},
+    plbl/.style = {font=\fontsize{19}{19}\selectfont, ink},
+  }
+  % field labels: outer-top corner of each magnet, rotated with the body so they
+  % ride the tilted magnets' top edges.
+  \node[flbl, anchor=south east] at ({\colL-\bw/2-3},{\rowT+\bh/2}) {$\boldsymbol{m}$};
+  % TR's m and BR's Rm: NOT in the rotated scope -- placed at fixed page positions
+  % on TL's / BL's label lines, just right of the tilted magnet's right wall
+  % (outer x ~ \colR + (\bw/2)cos(rot) + (\bh/2)sin(rot)). \rlblgap is the gap from
+  % that wall; small so the labels sit close to their magnets.
+  \def\rlblgap{1}
+  \pgfmathsetmacro{\rlblx}{\colR + (\bw/2)*cos(\rot) + (\bh/2)*sin(\rot) + \rlblgap}
+  \node[flbl, anchor=west] at ({\rlblx},{\rowB+\bh/2+3}) {$\boldsymbol{m}'$};
+  % position labels: centered along the r arrow (its midpoint is at
+  % y = -\bh/2 - (\rlen+\rgap)/2), offset to the outer side so it clears the line.
+  \def\rmid{-\bh/2-(\rlen+\rgap)/2}
+  \node[plbl, anchor=east] at ({\colL-4},{\rowT+\rmid}) {$\boldsymbol{x}$};
+  \begin{scope}[shift={(\colR,\rowB)}, rotate=\rot]
+    \node[plbl, anchor=west] at ({4},{\rmid}) {$R\boldsymbol{x}$};
+  \end{scope}
+\end{tikzpicture}
+\end{document}

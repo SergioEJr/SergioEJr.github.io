@@ -13,18 +13,11 @@ export TEXINPUTS="figures:$TEXINPUTS"
 
 latex    -halt-on-error -interaction=batchmode -output-directory=build "figures/$n.tex" >/dev/null
 pdflatex -halt-on-error -interaction=batchmode -output-directory=build "figures/$n.tex" >/dev/null
-# --no-fonts draws every glyph as a <path> instead of embedding fonts and
-# referencing them via CSS classes. This is REQUIRED for correctness when a page
-# inlines more than one of these SVGs: dvisvgm names its text classes generically
-# (text.f0, text.f1, ...) and its @font-face families generically (cmmib10, ...),
-# and those names are GLOBAL once the SVG is inlined into the page. Two figures on
-# one page then collide — the later figure's `text.f0 {font-family; font-size}`
-# overrides the earlier figure's, silently rendering its labels in the wrong font
-# and size (this actually happened: field-vector-transform shrank field-
-# translation's bold vectors to a small non-bold font). Path glyphs carry no
-# shared class/font names, so they cannot collide; they fill with #000, which the
-# color rewrite below folds into currentColor just like the strokes.
-dvisvgm --no-fonts --currentcolor --exact-bbox -o "build/$n.svg" "build/$n.dvi" >/dev/null 2>&1
+# Embed fonts as woff2 and reference them via CSS classes. This keeps figure
+# labels as real <text> — SELECTABLE, with correct glyph metrics/spacing (drawing
+# glyphs as <path> outlines instead, via --no-fonts, loses both). The namespacing
+# step below makes it safe to inline several of these on one page.
+dvisvgm --font-format=woff2 --currentcolor --exact-bbox -o "build/$n.svg" "build/$n.dvi" >/dev/null 2>&1
 
 # dvisvgm compacts hex (#003366 -> #036), so match both forms. Match the long
 # form before the short one (#000000 contains #000) so neither is half-eaten.
@@ -32,11 +25,27 @@ dvisvgm --no-fonts --currentcolor --exact-bbox -o "build/$n.svg" "build/$n.dvi" 
 # fills stay #000, so fold them into currentColor here (the line below then wraps
 # all of it once into the ink var — invisible-in-dark-mode edges were this bug).
 # Keep the SVG's intrinsic width/height (dvisvgm emits them in pt). At 96dpi a pt
-# maps ~1:1 to a CSS px, so this is the figure's natural 1x size. With --no-fonts
-# the label sizes are baked into the glyph PATH geometry (not a font-size on a
-# <text>), so they scale with the whole SVG under Figure.astro's max-width:100%;
-# height:auto — responsive on narrow columns, never blurrily upscaled.
-perl -pe '
+# maps ~1:1 to a CSS px, so this is the figure's natural 1x size — figure text set
+# to the site body size (13.5pt, see _preamble.tex) then renders at ~body px.
+# Figure.astro adds max-width:100%; height:auto, so it still shrinks responsively
+# on narrow columns but never blurrily upscales.
+#
+# NAMESPACING (why $n is threaded in): dvisvgm gives every SVG the SAME generic
+# names — CSS classes f0/f1/…, @font-face families cmmib10/cmmi12/…, and id
+# page1. Once an SVG is inlined into the page (Figure.astro uses set:html), those
+# names are GLOBAL, so two figures on one page collide: the later figure's
+# `text.f0{font-family;font-size}` overrides the earlier figure's, rendering its
+# labels in the wrong font/size. Prefixing all three name kinds with the figure's
+# own name ($n) makes them unique per figure, so any number can share a page.
+# Sed runs first (structural renames), then perl does the color rewrite.
+sed -E \
+  -e "s/(class=')(f[0-9]+')/\1${n}-\2/g" \
+  -e "s/(text\.)(f[0-9]+)/\1${n}-\2/g" \
+  -e "s/(font-family:)(cm[a-z0-9]+)/\1${n}-\2/g" \
+  -e "s/(id=')(page[0-9]+')/\1${n}-\2/g" \
+  -e "s/(url\(#)(page[0-9]+\))/\1${n}-\2/g" \
+  "build/$n.svg" \
+| perl -pe '
   s/#000000\b|#000\b/currentColor/g;
   s/#003366\b|#036\b/var(--color-accent, #003366)/g;
   s/#555555\b|#555\b/var(--color-text-muted, #555555)/g;
@@ -47,7 +56,7 @@ perl -pe '
   s/#047857\b/var(--fig-green, #047857)/gi;
   s/#64748b\b/var(--fig-muted, #64748b)/gi;
   s/currentColor/var(--color-text-main, currentColor)/g;
-' "build/$n.svg" > "src/assets/blog/$n.svg"
+' > "src/assets/blog/$n.svg"
 
 echo "web    -> src/assets/blog/$n.svg"
 echo "paper  -> build/$n.pdf"
