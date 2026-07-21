@@ -49,7 +49,7 @@ export function numberCitations(html: string): string {
   let n = 0;
 
   // Pass 1: number markers in document order, collect + validate definitions.
-  visit(tree, "element", (node: any, index: number | null, parent: any) => {
+  visit(tree, "element", (node: any, index: number | undefined, parent: any) => {
     if (hasClass(node, "cite-ref")) {
       const id = node.properties?.dataCiteId;
       if (typeof id !== "string") return;
@@ -81,7 +81,7 @@ export function numberCitations(html: string): string {
 
     if (hasClass(node, "cite-def")) {
       const id = node.properties?.dataCiteId;
-      if (typeof id !== "string" || !parent || index === null) return;
+      if (typeof id !== "string" || !parent || index === undefined) return;
 
       const existing = definitionOf.get(id);
       const incoming = node.children;
