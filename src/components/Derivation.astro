@@ -146,7 +146,7 @@ const contentId = `derivation-${Math.random().toString(36).slice(2, 9)}`;
   /* Content: padded so math/figures breathe. Hidden via the `hidden` attribute
      (Task 3 toggles it); [hidden] gets display:none from the UA sheet. */
   .derivation__content {
-    padding: 0.2rem 0.95rem 0.5rem;
+    padding: 0.2rem 0.95rem 0rem;
   }
   /* First child sits right under the header without a double gap. */
   .derivation__content > :first-child {
@@ -160,14 +160,13 @@ const contentId = `derivation-${Math.random().toString(36).slice(2, 9)}`;
     justify-content: center;
     gap: 0.3rem;
     width: 100%;
-    margin: 0.6rem 0 0;
     padding: 0.4rem;
     border: 0;
     border-top: 1px solid color-mix(in srgb, var(--color-accent) 16%, transparent);
     background: transparent;
     color: var(--color-text-muted);
     font: inherit;
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
