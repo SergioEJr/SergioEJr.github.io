@@ -13,6 +13,13 @@ import katex from "katex";
 //
 // KaTeX output needs the KaTeX stylesheet, which BaseHead.astro loads on every page.
 
+// Site-wide KaTeX macros. Must mirror `katexMacros` in astro.config.mjs so the
+// same shorthands work in captions/frontmatter (rendered here) and post bodies
+// (rendered by rehype-katex). Keep the two in sync.
+const KATEX_MACROS = {
+  "\\bs": "\\boldsymbol{#1}", // \bs{x} -> bold vector x
+};
+
 // Escape the five HTML-significant characters. Quotes are escaped too so the
 // result is safe in attribute contexts (e.g. `title="${escapeHtml(x)}"`), not
 // just element content — callers shouldn't have to know which context they're
@@ -45,7 +52,10 @@ export function renderInline(input: string, opts: InlineOptions = {}): string {
   while ((m = pattern.exec(input)) !== null) {
     out += applyText(input.slice(last, m.index), strike);
     try {
-      out += katex.renderToString(m[1], { throwOnError: false });
+      out += katex.renderToString(m[1], {
+        throwOnError: false,
+        macros: KATEX_MACROS,
+      });
     } catch {
       out += escapeHtml(m[0]);
     }

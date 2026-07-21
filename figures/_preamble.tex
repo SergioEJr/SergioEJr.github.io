@@ -9,6 +9,10 @@
 
 \usepackage{amsmath}
 
+% Shorthand shared by all figures (mirrors the KaTeX \bs macro used in posts, so
+% figure labels and post math read the same). \bs{x} -> bold vector x.
+\newcommand{\bs}[1]{\boldsymbol{#1}}
+
 % --- Palette: sentinel hexes = the LIGHT-theme values from DESIGN.md. ----------
 % The PDF proof / Overleaf output therefore look like the light rendering, and
 % fig.sh rewrites each hex to its themed CSS variable in the web SVG:

@@ -19,9 +19,17 @@ import rehypeFootnoteHistory from "./src/plugins/rehype-footnote-history.mjs";
 // Typed as any[]: the local .mjs plugins ship no unified type declarations, so
 // the inferred element type doesn't satisfy Pluggable[]/RehypePlugin[] even
 // though they run correctly. The cast keeps `astro check` green.
+// Site-wide KaTeX macros for post bodies. Defined here (not per math block) so
+// they exist in every $...$ across all posts. NOTE: captions/frontmatter render
+// via src/utils/inlineText.ts, a separate katex.renderToString call -- these
+// macros are mirrored there so \bs works in captions too.
+const katexMacros = {
+  "\\bs": "\\boldsymbol{#1}", // \bs{x} -> bold vector x
+};
+
 /** @type {any[]} */
 const contentPlugins = [
-  [rehypeKatex, { trust: true }],
+  [rehypeKatex, { trust: true, macros: katexMacros }],
   rehypeEqref,
   rehypeFootnoteHistory,
 ];
