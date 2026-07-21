@@ -82,11 +82,20 @@ light mode, hero card, and section headings haven't adopted it yet).
     Verified via computed-style checks on the prod preview build. The header
     logo is a `div.brand-heading`, not an `h2`, so needed no change.
 
-- [ ] **4. De-template the hero card (scroll destination)**
-  - Circular headshot + role line + two default buttons = stock academic hero.
-  - Ideas: let a low-density particle remnant drift behind the card
-    (ParticleField already does this in the footer); squared/b&w portrait to
-    match About+Projects photography; carry neon hover language into buttons.
+- [x] **4. De-template the hero card (scroll destination)** ✅ DONE (2026-07-21)
+  - Replaced with the "in his element" editorial card: MIT-podium B&W photo
+    bleeding off the right edge (melt masks on the other edges; container-query
+    crop keeps the face centered at every width), eyebrow + hot tick, serif
+    name, editorial hairline-underline links instead of default buttons.
+  - Scroll transition rebuilt as choreography (not a uniform crossfade): gas
+    evaporates with scale+defocus blur, photo condenses in from the right,
+    copy builds line by line; blueprint grid persists as the stage throughout.
+    Runs on mobile too. Perf: sim freezes once the gas starts fading
+    (`__heroSimSetGasActive`), blur capped at 5px.
+  - Deliberate pacing: 115svh travel, last 20% is a LIVE hold (card drifts
+    slowly upward — sub-linear feedback, no dead frames). Settle targets the
+    hold start. P4 "statement" variant preserved in
+    `docs/design/hero-statement-variant.md` for possible About-page use.
 
 - [ ] **5. Typography conviction**
   - Atkinson (template default) + Georgia headings. Sim stencil font comes from
@@ -101,6 +110,10 @@ light mode, hero card, and section headings haven't adopted it yet).
 - Orphaned `/team` page (template residue, crawlable) — delete or noindex.
 - Radius drift: 4 / 8 / 10 / 999px — consolidate to two values.
 - Body `p` uses `--color-text-muted` as primary reading color (global.css:237).
-- Home below-fold two-column lists still template skeleton w/ inline styles —
-  restyle with Journal row language (number / dot / eyebrow).
+- ~~Home below-fold two-column lists still template skeleton w/ inline styles —
+  restyle with Journal row language (number / dot / eyebrow).~~ DONE
+  (2026-07-21): Journal row language (tabular index numbers, serif titles,
+  hairline separators, italic accent venue / small-caps date), editorial
+  more-links matching the hero card's, staggered row cascade on reveal.
+  Inline styles and the template `<hr>` removed.
 - Footer astro-scholar credit: intentional, keep.

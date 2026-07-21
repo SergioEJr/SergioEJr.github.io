@@ -1506,26 +1506,41 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       for (let k = 0; k < 80; k++) step(1 / 60);
       render();
     } else {
+      // The sim runs only while ALL of these hold: the hero is onscreen, the
+      // tab is visible, and the GAS is active in the scroll choreography.
+      // `gasActive` is driven by the homepage's pinned scrub (index.astro):
+      // the moment the gas starts fading/blurring it freezes the sim — the
+      // canvas holds its last frame (preserveDrawingBuffer), which also lets
+      // the browser treat the scrub's blur as a filter over static content
+      // instead of re-blurring a live animation every frame. During the card
+      // and hold states the sim is fully stopped (no wasted GPU behind an
+      // invisible canvas); scrolling back to the top resumes it.
+      let gasActive = true;
+      function maybeRun() {
+        if (gasActive && !document.hidden && isOnScreen()) start();
+        else stop();
+      }
+      (window as any).__heroSimSetGasActive = (v: boolean) => {
+        if (v === gasActive) return;
+        gasActive = v;
+        maybeRun();
+      };
+
       // Pause when the hero scrolls offscreen.
       const io = new IntersectionObserver(
-        (entries) => {
-          for (const e of entries) {
-            if (e.isIntersecting) start();
-            else stop();
-          }
-        },
+        () => maybeRun(),
         { threshold: 0 },
       );
       io.observe(root);
 
       const onVisibility = () => {
         if (document.hidden) stop();
-        else if (isOnScreen()) {
+        else {
           // Returning from a background tab: the unload-guard below may have hidden
           // the canvas if a (recoverable) pagehide fired. Un-hide before resuming so
           // the particles reappear. start() redraws into the now-visible canvas.
           canvas.style.visibility = "";
-          start();
+          maybeRun();
         }
       };
       document.addEventListener("visibilitychange", onVisibility);
@@ -1598,7 +1613,7 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
         if (initGL()) {
           buildSprites(); // re-bake + re-upload textures
           resize(); // re-set viewport + edge mask
-          if (isOnScreen()) start();
+          maybeRun();
         } else {
           gl = null; // give up; leave static <h1>
         }
@@ -1665,9 +1680,10 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
         }
         delete (canvas as any).__heroSimBound;
         delete (window as any).__heroSimCleanup;
+        delete (window as any).__heroSimSetGasActive;
       };
 
-      if (isOnScreen()) start();
+      maybeRun();
     }
   }
 

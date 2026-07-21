@@ -55,10 +55,32 @@ const selectedResearch = (
          ============================================================ */
       .hero-scroll {
         --header-h: 4.5rem;
-        /* Scroll distance for the crossfade. Kept short so the swap is snappy —
-           a small flick carries you most of the way through the sim→card fade. */
-        --hero-travel: 70svh;
+        /* Total pinned scroll distance. The first ~80% is the TRANSITION
+           (progress 0→1, the choreography below); the last ~20% is a LIVE
+           HOLD — the finished card stays pinned but keeps drifting gently
+           upward (--hero-hold below), so a fast flick can't blow through the
+           card yet every scroll pixel still produces visible motion (a dead
+           hold reads as lag). The 80/20 split is HOLD_FRACTION in
+           initHeroScroll; keep them in sync. */
+        --hero-travel: 115svh;
         --hero-progress: 0;
+        /* 0→1 across the hold segment; drives the card's slow drift. */
+        --hero-hold: 0;
+        /* ---- Choreography bands ----
+           Each element of the transition gets its own window on the progress
+           timeline (0 → not started, 1 → done), instead of one uniform
+           crossfade: the gas evaporates first, the photo condenses in from
+           the right, then the copy builds line by line (tick → name → bio →
+           links). The blueprint grid is NOT faded at all — the stage stays
+           while its contents transform. The stacked fallbacks (mobile,
+           reduced-motion) pin every band to its end state. */
+        --b-gas: clamp(0, calc(1 - var(--hero-progress) / 0.4), 1);
+        --b-photo: clamp(0, calc((var(--hero-progress) - 0.3) / 0.4), 1);
+        --b-eyebrow: clamp(0, calc((var(--hero-progress) - 0.48) / 0.14), 1);
+        --b-tick: clamp(0, calc((var(--hero-progress) - 0.52) / 0.12), 1);
+        --b-name: clamp(0, calc((var(--hero-progress) - 0.55) / 0.2), 1);
+        --b-bio: clamp(0, calc((var(--hero-progress) - 0.63) / 0.19), 1);
+        --b-links: clamp(0, calc((var(--hero-progress) - 0.71) / 0.17), 1);
         position: relative;
         height: calc(100svh - var(--header-h) + var(--hero-travel));
         /* Visible overflow so HeroSim's full-bleed canvas/grid feather past the
@@ -219,16 +241,14 @@ const selectedResearch = (
       }
       /* True below-the-fold content (no scroll-progress opacity of its own) is
          held hidden during the intro so it doesn't pop in early. */
-      :global(html[data-home-intro] .grid-2),
-      :global(html[data-home-intro] main > hr) {
+      :global(html[data-home-intro] .grid-2) {
         opacity: 0;
       }
       /* If the user scrolls past the hero mid-intro (the scroll lock breaks),
          reveal that below-the-fold content so they don't land on a blank page.
          The card and sim are untouched here — they follow scroll progress / the
          scripted timeline respectively. */
-      :global(html[data-home-intro][data-intro-scrolled] .grid-2),
-      :global(html[data-home-intro][data-intro-scrolled] main > hr) {
+      :global(html[data-home-intro][data-intro-scrolled] .grid-2) {
         opacity: 1;
         transition: opacity 0.3s ease-out;
       }
@@ -482,17 +502,29 @@ const selectedResearch = (
         justify-content: center;
       }
 
-      /* --- Sim layer: visible at progress 0, fully faded by ~0.5 (so by the
-         snap midpoint the swap is essentially done and the snap lands clean) --- */
+      /* --- Sim layer: the LAYER stays put (its blueprint grid persists as
+         the stage through the whole transition); only the GAS — canvas +
+         name — dissolves. It scales up and DEFOCUSES (no positional drift):
+         the viewer moves through the gas, and like any medium you pass
+         through, it grows and blurs out of the focal plane. --- */
       .hero-layer-sim {
         position: relative;
         align-items: center;
-        opacity: clamp(0, calc(1 - var(--hero-progress) / 0.5), 1);
-        /* Drift up & away slightly as it fades so the swap has motion. */
-        transform: translateY(calc(var(--hero-progress) * -4vh));
-        /* Once mostly faded, stop intercepting the pointer so the card's links
-           and the page below are interactive. */
         pointer-events: auto;
+      }
+      .hero-layer-sim :global(.hero-sim-canvas) {
+        opacity: var(--b-gas);
+        transform: scale(calc(1 + (1 - var(--b-gas)) * 0.1));
+        /* 5px ceiling: reads as defocus at this scale, at roughly half the
+           GPU cost of the 8px it replaced (the sim also freezes during the
+           scrub — see update() — so this blurs a static frame). */
+        filter: blur(calc((1 - var(--b-gas)) * 5px));
+      }
+      /* The name element is visually transparent (the particles spell it) —
+         it only needs to leave the accessibility tree's geometry alone, so
+         fade it without the transform/filter cost. */
+      .hero-layer-sim :global(.hero-sim-name) {
+        opacity: var(--b-gas);
       }
       .hero-layer-sim > :global(.hero-sim) {
         flex: 0 1 auto;
@@ -530,14 +562,45 @@ const selectedResearch = (
         }
       }
 
-      /* --- Card layer: hidden until ~0.4, fully in by ~0.85 (slightly trails
-         the sim so they briefly overlap instead of flashing empty bg) --- */
+      /* --- Card layer: the layer itself is a fixed frame (per-element bands
+         above handle every entrance, so at progress 0 all its elements are
+         individually transparent — which also keeps it hidden during the
+         intro). Not interactive until substantially visible (JS toggles
+         data-hero-active below). --- */
       .hero-layer-card {
-        opacity: clamp(0, calc((var(--hero-progress) - 0.4) / 0.45), 1);
-        transform: translateY(calc((1 - var(--hero-progress)) * 5vh));
-        /* Not interactive until it's substantially visible (set by JS toggling
-           the data-hero-active attribute below). */
         pointer-events: none;
+        /* LIVE HOLD: once the transition completes, continued scrolling
+           drifts the finished card slowly upward (~17% of scroll rate) —
+           sub-linear feedback that reads as "passing slowly by the card",
+           never a dead frame. Rate discontinuity at unpin reads as release. */
+        transform: translateY(calc(var(--hero-hold, 0) * -4vh));
+      }
+      /* Photo condenses in from the right: its soft melt edge travels
+         right-to-left as it arrives. */
+      .hero-card-photo {
+        opacity: var(--b-photo);
+        transform: translateX(calc((1 - var(--b-photo)) * 7vw));
+      }
+      /* Copy builds line by line. */
+      .hero-card-eyebrow {
+        opacity: var(--b-eyebrow);
+        transform: translateY(calc((1 - var(--b-eyebrow)) * 0.5rem));
+      }
+      .hero-card-tick {
+        transform: scaleX(var(--b-tick));
+        transform-origin: left center;
+      }
+      .hero-card-name {
+        opacity: var(--b-name);
+        transform: translateY(calc((1 - var(--b-name)) * 1.4rem));
+      }
+      .hero-card-bio {
+        opacity: var(--b-bio);
+        transform: translateY(calc((1 - var(--b-bio)) * 1.2rem));
+      }
+      .hero-card-links {
+        opacity: var(--b-links);
+        transform: translateY(calc((1 - var(--b-links)) * 1rem));
       }
       .hero-scroll[data-hero-active="card"] .hero-layer-card {
         pointer-events: auto;
@@ -546,80 +609,309 @@ const selectedResearch = (
         pointer-events: none;
       }
 
+      /* ---- "In his element" card ----
+         .hero-card breaks out of main's --max-width column to span the full
+         viewport (the photo bleeds off the right edge) and re-centers the
+         composition once the viewport outgrows its 112rem cap — past that,
+         stretching further would open a gulf between copy and photo. */
       .hero-card {
+        width: 100vw;
+        margin-left: calc(50% - 50vw);
+        display: flex;
+        justify-content: center;
+      }
+      .hero-card-inner {
+        width: 100%;
+        max-width: 112rem;
+        display: grid;
+        /* minmax(0, …) on the photo track: a bare fr means minmax(auto, fr),
+           and the image's intrinsic 1600px width inflates that auto minimum
+           on wide screens until the copy column collapses. */
+        grid-template-columns: minmax(24rem, 1fr) minmax(0, 1.15fr);
+        align-items: center;
+      }
+      .hero-card-copy {
+        /* Centered within its column's whitespace, sized to its measure —
+           pinning it to the site content column strands it far left on wide
+           screens. */
+        justify-self: center;
+        width: min(29rem, 100%);
+        padding: 0 1rem;
+      }
+      .hero-card-eyebrow {
+        margin: 0 0 0.9rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--color-accent);
         display: flex;
         align-items: center;
-        gap: 3.5rem;
-        max-width: var(--max-width);
-        margin: 0 auto;
-        padding: 0 1rem;
-        width: 100%;
+        white-space: nowrap;
       }
-      .hero-portrait {
-        flex: 0 0 auto;
+      .hero-card-tick {
+        display: inline-block;
+        width: 1.1rem;
+        height: 3px;
+        background: var(--color-hot);
+        margin-right: 0.55rem;
       }
-      .hero-portrait img {
-        display: block;
-        width: 240px;
-        height: 240px;
-        object-fit: cover;
-        border-radius: 50%;
-        border: 6px solid var(--color-bg);
-        box-shadow:
-          0 0 0 1px var(--color-border),
-          0 12px 28px rgba(0, 0, 0, 0.4);
-      }
-      .hero-copy {
-        flex: 1 1 auto;
-      }
-      .hero-copy .hero-name {
+      .hero-card-name {
+        margin: 0 0 1.1rem;
         font-family: var(--font-serif);
         font-weight: 700;
-        font-size: 3rem;
-        margin: 0 0 0.4rem;
-        line-height: 1.05;
+        font-size: clamp(2.8rem, 4.5vw, 4rem);
+        line-height: 1.03;
         color: var(--color-text-main);
       }
-      .hero-role {
-        color: var(--color-accent);
-        font-family: var(--font-sans);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        font-size: 0.95rem;
-        font-weight: 600;
-        margin: 0 0 1.25rem;
-      }
-      .hero-bio {
-        font-size: 1.05rem;
+      .hero-card-bio {
+        margin: 0 0 1.6rem;
+        font-size: 1.02rem;
         line-height: 1.6;
-        margin: 0 0 1.75rem;
+        max-width: 27rem;
       }
-      .hero-buttons {
+      /* Editorial text links: hairline underline that sharpens on hover,
+         arrow that leans into the destination. */
+      .hero-card-links {
         display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
+        gap: 2rem;
+      }
+      .hero-card-link {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding-bottom: 0.3rem;
+        color: var(--color-accent);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .hero-card-link::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: 1px;
+        background: currentColor;
+        opacity: 0.35;
+        transition: opacity 0.2s ease;
+      }
+      .hero-card-link:hover::after {
+        opacity: 1;
+      }
+      .hero-card-link:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 3px;
+        border-radius: 2px;
+      }
+      .hero-card-arrow {
+        transition: transform 0.2s ease;
+      }
+      .hero-card-link:hover .hero-card-arrow {
+        transform: translateX(4px);
+      }
+      .hero-card-link-muted {
+        color: var(--color-text-muted);
+        transition: color 0.2s ease;
+      }
+      .hero-card-link-muted:hover {
+        color: var(--color-accent);
+      }
+      .hero-card-photo {
+        justify-self: end;
+        width: 100%;
+        /* On ultra-wide screens the photo stops growing and hugs the right
+           edge rather than swallowing the whole viewport. */
+        max-width: 58rem;
+        height: min(76svh, 42rem);
+        /* Size container so the img can position its crop in cqw/cqh units. */
+        container-type: size;
+      }
+      .hero-card-photo img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: left center;
+        filter: grayscale(1) contrast(1.02);
+        /* Melt the photo into the page on its left/top/bottom edges (right
+           edge runs to the viewport). Two gradients intersected so both axes
+           fade. */
+        -webkit-mask-image: linear-gradient(to right, transparent 0, #000 26%),
+          linear-gradient(
+            to bottom,
+            transparent 0,
+            #000 12%,
+            #000 88%,
+            transparent 100%
+          );
+        -webkit-mask-composite: source-in;
+        mask-image: linear-gradient(to right, transparent 0, #000 26%),
+          linear-gradient(
+            to bottom,
+            transparent 0,
+            #000 12%,
+            #000 88%,
+            transparent 100%
+          );
+        mask-composite: intersect;
+      }
+      /* Keep the FACE centered SMOOTHLY as the photo column narrows. The face
+         sits at ~38% of the image's width and the image (aspect 1.5) is
+         height-limited under `cover` here, so its rendered width is 150cqh.
+         Centering the face means offsetting the image's left edge by
+           50cqw − (0.38 × 150cqh) = 50cqw − 57cqh,
+         clamped so the crop never slides past the image's left (0px) or right
+         (100cqw − 150cqh) edge. Continuous at every width — no stepped jumps.
+         (Browsers without cq units keep the `left center` fallback above.)
+         Scoped to the split layout; the stacked mobile crop lives in the
+         mobile block below. */
+      @media (min-width: 769px) {
+        .hero-card-photo img {
+          object-position: clamp(
+              calc(100cqw - 150cqh),
+              calc(50cqw - 57cqh),
+              0px
+            )
+            center;
+        }
+      }
+      /* Once the composition is centered (viewport wider than its cap), the
+         photo no longer touches the viewport edge — fade its right side too
+         so it reads as a soft vignette instead of a hard-cropped panel
+         floating mid-page. */
+      @media (min-width: 112rem) {
+        .hero-card-photo img {
+          -webkit-mask-image: linear-gradient(
+              to right,
+              transparent 0,
+              #000 26%,
+              #000 90%,
+              transparent 100%
+            ),
+            linear-gradient(
+              to bottom,
+              transparent 0,
+              #000 12%,
+              #000 88%,
+              transparent 100%
+            );
+          mask-image: linear-gradient(
+              to right,
+              transparent 0,
+              #000 26%,
+              #000 90%,
+              transparent 100%
+            ),
+            linear-gradient(
+              to bottom,
+              transparent 0,
+              #000 12%,
+              #000 88%,
+              transparent 100%
+            );
+        }
       }
 
-      .pub-mini-item {
-        margin-bottom: 1.5rem;
-        padding-bottom: 1.5rem;
+      /* ---- Below-fold rows: the Journal's row language (index-number
+         gutter, serif titles, hairline separators) instead of the template
+         lists. ---- */
+      .home-below.grid-2 {
+        gap: 4rem;
+        margin: 3.5rem 0 2rem;
+      }
+      .home-rows {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .home-row {
+        display: grid;
+        grid-template-columns: 2.2rem 1fr;
+        padding: 1.05rem 0;
         border-bottom: 1px solid var(--color-border);
       }
-      .pub-mini-item:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
+      .home-row:first-child {
+        padding-top: 0.4rem;
       }
-      .pub-title {
-        font-weight: 700;
-        color: var(--color-text-main);
+      .home-row:last-child {
+        border-bottom: none;
+      }
+      .home-row-num {
+        font-variant-numeric: tabular-nums;
+        color: var(--color-text-muted);
+        opacity: 0.5;
+        font-size: 0.9rem;
+        padding-top: 0.25rem;
+      }
+      .home-row-title {
         display: block;
-        margin-bottom: 0.25rem;
         font-family: var(--font-serif);
         font-size: 1.1rem;
+        font-weight: 600;
+        line-height: 1.35;
+        color: var(--color-text-main);
+        text-decoration: none;
+        margin-bottom: 0.3rem;
+        transition: color 0.15s ease;
       }
-      .pub-meta {
-        font-size: 0.9rem;
+      a.home-row-title:hover {
+        color: var(--color-accent);
+      }
+      .home-row-meta {
+        font-size: 0.85rem;
         color: var(--color-text-muted);
+      }
+      .home-row-venue {
+        font-style: italic;
+        color: var(--color-accent);
+      }
+      .home-row-date {
+        text-transform: uppercase;
+        font-size: 0.78rem;
+        letter-spacing: 0.04em;
+      }
+      /* Section more-links: same editorial treatment as the hero card's. */
+      .home-more {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-top: 1.4rem;
+        padding-bottom: 0.3rem;
+        color: var(--color-accent);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .home-more::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: 1px;
+        background: currentColor;
+        opacity: 0.35;
+        transition: opacity 0.2s ease;
+      }
+      .home-more:hover::after {
+        opacity: 1;
+      }
+      .home-more:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 3px;
+        border-radius: 2px;
+      }
+      .home-more-arrow {
+        transition: transform 0.2s ease;
+      }
+      .home-more:hover .home-more-arrow {
+        transform: translateX(4px);
       }
 
       /* --- Mobile: drop the pinned scrub. Sticky pinning + the sim's
@@ -627,67 +919,60 @@ const selectedResearch = (
          than a simple stack on a phone. Show the sim (one screen) then the card
          stacked below; both always visible, no crossfade. --- */
       @media (max-width: 768px) {
+        /* The pinned scrub RUNS on mobile (scrollytelling on touch too) —
+           no stacked fallback here anymore; only the card's composition
+           changes: single column, photo on top, compact type, sized so the
+           whole card fits inside the pinned stage. */
         .hero-scroll {
-          height: auto;
           overflow-x: clip;
         }
-        .hero-stage {
-          position: static;
-          height: auto;
-          display: flex;
-          flex-direction: column;
-          gap: 2rem;
+        .hero-card-inner {
+          grid-template-columns: 1fr;
+          gap: 1.25rem;
         }
-        .hero-layer {
-          /* Cancel all scrub-driven transforms/opacity. */
-          opacity: 1 !important;
-          transform: none !important;
-          pointer-events: auto !important;
+        .hero-card-photo {
+          grid-row: 1;
+          max-width: none;
+          /* Explicit height (not 1fr) so the same rule works in the pinned
+             stage AND the reduced-motion static stack: whatever vertical
+             space the stage has left after ~27rem of copy, clamped so the
+             photo never collapses nor dominates. */
+          height: clamp(10rem, calc(100svh - 27rem), 46svh);
         }
-        /* On desktop the card is hidden at scroll-top by its scroll-progress
-           opacity clamp, so it never shows during the intro. Mobile stacks the
-           layers and forces .hero-layer opacity to 1 (above), which would reveal
-           the card — and its headshot — on landing, flashing it before the sim
-           fades in. Hold the card hidden during the intro so only the simulation
-           is visible on arrival; it follows the sim's fade-in timing. After the
-           intro clears (data-home-intro removed) the card shows normally. */
-        :global(html[data-home-intro]) .hero-layer-card {
-          animation: introCanvasFade var(--intro-sim-dur, 0.45s) ease-out
-            calc(var(--intro-sim-at, 2.1s) + 0.04s) both;
+        .hero-card-copy {
+          grid-row: 2;
+          padding: 0 1.25rem;
         }
-        .hero-layer-sim {
-          /* Fill the entire first screen below the header so the simulation is
-             the ONLY thing visible on landing — the card (and its headshot, plus
-             the stage's row gap) all sit fully below the fold. Use `lvh` (LARGE
-             viewport): on iOS the toolbars are expanded on landing, so `svh`
-             would leave the sim shorter than the visible screen and the headshot
-             would peek at the bottom. `lvh` sizes to the toolbars-hidden height,
-             guaranteeing the sim covers the initial view with no resize jitter. */
-          height: calc(100lvh - var(--header-h));
-          min-height: calc(100lvh - var(--header-h));
-        }
-        .hero-layer-sim > :global(.hero-sim) {
-          flex: 1 1 auto;
-          height: 100%;
-          max-height: none;
-        }
-        .hero-scroll-cue {
-          display: none;
-        }
-        .hero-card {
-          flex-direction: column;
-          text-align: center;
-          gap: 1.5rem;
-        }
-        .hero-portrait img {
-          width: 200px;
-          height: 200px;
-        }
-        .hero-buttons {
-          justify-content: center;
-        }
-        .hero-copy .hero-name {
+        .hero-card-name {
           font-size: 2.25rem;
+        }
+        .hero-card-bio {
+          font-size: 0.95rem;
+        }
+        .hero-card-photo img {
+          /* Fixed crop bias (the cq formula assumes the height-limited split
+             layout): 20% keeps the face near center; vertical 45% sits the
+             window above center so the head keeps clearance while the MIT
+             podium sign stays in frame. Melt BOTH horizontal edges: the top
+             fade (10%) softens the hard line that otherwise scrolls under the
+             sticky header; the bottom fade stays short (ends 86%, ~14%) so it
+             doesn't swallow the sign. Both only touch wall/frames, never the
+             face. */
+          object-position: 20% 45%;
+          -webkit-mask-image: linear-gradient(
+            to bottom,
+            transparent 0,
+            #000 10%,
+            #000 86%,
+            transparent 100%
+          );
+          mask-image: linear-gradient(
+            to bottom,
+            transparent 0,
+            #000 10%,
+            #000 86%,
+            transparent 100%
+          );
         }
       }
 
@@ -695,15 +980,23 @@ const selectedResearch = (
          Posts) starts slightly down + transparent and eases in when scrolled into
          view (JS adds .is-revealed via IntersectionObserver). --reveal-delay
          staggers the two columns. --- */
-      [data-reveal] {
+      /* The section container itself doesn't move — its heading fades first,
+         then the rows cascade (each row's --i sets its slot; --reveal-delay
+         staggers the two columns). */
+      [data-reveal] h2,
+      [data-reveal] .home-row,
+      [data-reveal] .home-more {
         opacity: 0;
-        transform: translateY(22px);
+        transform: translateY(14px);
         transition:
-          opacity 0.6s ease-out var(--reveal-delay, 0s),
-          transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay, 0s);
-        will-change: opacity, transform;
+          opacity 0.55s ease-out
+            calc(var(--reveal-delay, 0s) + var(--i, 0) * 80ms),
+          transform 0.55s cubic-bezier(0.16, 1, 0.3, 1)
+            calc(var(--reveal-delay, 0s) + var(--i, 0) * 80ms);
       }
-      [data-reveal].is-revealed {
+      [data-reveal].is-revealed h2,
+      [data-reveal].is-revealed .home-row,
+      [data-reveal].is-revealed .home-more {
         opacity: 1;
         transform: none;
       }
@@ -713,6 +1006,14 @@ const selectedResearch = (
       @media (prefers-reduced-motion: reduce) {
         .hero-scroll {
           height: auto;
+          /* Stacked, no scrub: pin the choreography to its end state. */
+          --b-gas: 1;
+          --b-photo: 1;
+          --b-eyebrow: 1;
+          --b-tick: 1;
+          --b-name: 1;
+          --b-bio: 1;
+          --b-links: 1;
         }
         .hero-stage {
           position: static;
@@ -737,10 +1038,22 @@ const selectedResearch = (
         .hero-scroll-cue {
           display: none;
         }
-        [data-reveal] {
+        [data-reveal] h2,
+        [data-reveal] .home-row,
+        [data-reveal] .home-more {
           opacity: 1;
           transform: none;
           transition: none;
+        }
+        .hero-card-arrow,
+        .home-more-arrow {
+          transition: none;
+        }
+        .home-more:hover .home-more-arrow {
+          transform: none;
+        }
+        .hero-card-link:hover .hero-card-arrow {
+          transform: none;
         }
       }
     </style>
@@ -778,33 +1091,54 @@ const selectedResearch = (
           </div>
 
           <div class="hero-layer hero-layer-card" data-hero-card>
+            {
+              /* "In his element" card: copy on the left, the podium photo
+                bleeding off the right viewport edge. The photo loads eagerly
+                (no loading=lazy) — it appears one small scroll after landing,
+                mid-crossfade, and must not pop in half-faded. */
+            }
             <div class="hero-card">
-              <div class="hero-portrait">
-                <img
-                  src={url("/about/profile.jpeg")}
-                  width={260}
-                  height={260}
-                  alt="Sergio Eraso"
-                  decoding="async"
-                />
-              </div>
-              <div class="hero-copy">
-                {/* Not an <h1>: the page's single <h1> is the crawlable name in
-                    HeroSim (shown in the default sim view). This card-layer name
-                    is the same text revealed by the scroll crossfade, styled to
-                    look like a heading. */}
-                <p class="hero-name">Sergio Eraso</p>
-                <p class="hero-role">PhD Candidate in Physics · MIT</p>
-                <p class="hero-bio">
-                  I work on <strong
-                    >nonequilibrium statistical physics and biophysics</strong
-                  > — finding the simple local rules that add up to complex collective
-                  behavior, and building the models, simulations, and tools to actually
-                  run them.
-                </p>
-                <div class="hero-buttons">
-                  <a href={url("/publications")} class="btn">View Research</a>
-                  <a href={url("/about")} class="btn btn-outline">About</a>
+              <div class="hero-card-inner">
+                <div class="hero-card-copy">
+                  <p class="hero-card-eyebrow">
+                    <span class="hero-card-tick" aria-hidden="true"></span>PhD
+                    Candidate in Physics · MIT
+                  </p>
+                  {/* Not an <h1>: the page's single <h1> is the crawlable name
+                      in HeroSim (shown in the default sim view). This
+                      card-layer name is the same text revealed by the scroll
+                      crossfade, styled to look like a heading. */}
+                  <p class="hero-card-name">Sergio Eraso</p>
+                  <p class="hero-card-bio">
+                    I work on nonequilibrium statistical physics and biophysics
+                    — finding the simple local rules that add up to complex
+                    collective behavior, and building the models, simulations,
+                    and tools to actually run them.
+                  </p>
+                  <div class="hero-card-links">
+                    <a href={url("/publications")} class="hero-card-link">
+                      View research<span class="hero-card-arrow" aria-hidden="true"
+                        >&rarr;</span
+                      >
+                    </a>
+                    <a
+                      href={url("/about")}
+                      class="hero-card-link hero-card-link-muted"
+                    >
+                      About<span class="hero-card-arrow" aria-hidden="true"
+                        >&rarr;</span
+                      >
+                    </a>
+                  </div>
+                </div>
+                <div class="hero-card-photo">
+                  <img
+                    src={url("/about/about.jpeg")}
+                    width={1600}
+                    height={1066}
+                    alt="Sergio Eraso presenting at the MIT Department of Physics"
+                    decoding="async"
+                  />
                 </div>
               </div>
             </div>
@@ -812,81 +1146,94 @@ const selectedResearch = (
         </div>
       </section>
 
-      <hr style="margin: 3rem 0; border-top: 1px solid var(--color-border);" />
-
-      <div class="grid-2" style="gap: 4rem; margin-top: 0;">
+      {
+        /* Below-fold: Selected Research + Latest Posts in the Journal's row
+           language (index-number gutter, serif titles, hairline separators)
+           rather than the astro-scholar template lists. Rows cascade in with
+           a small stagger when scrolled into view (initReveal + --i). */
+      }
+      <div class="home-below grid-2">
         <section data-reveal>
           <h2 style="margin-top: 0;">Selected Research</h2>
-          <div class="publication-list">
-            {
-              selectedResearch.length > 0 ? (
-                selectedResearch.map((entry) => (
-                  <div class="pub-mini-item">
-                    <a
-                      class="pub-title"
-                      href={url(`/publications/${entry.id}/`)}
-                      style="display: block;"
-                    >
-                      {entry.data.title}
-                    </a>
-                    <div class="pub-meta">
-                      <span
-                        style="font-style: italic; color: var(--color-accent);"
-                      >{entry.data.venue || "In preparation"}</span
-                      ><span>, {entry.data.date.getUTCFullYear()}</span>
+          {
+            selectedResearch.length > 0 ? (
+              <ol class="home-rows">
+                {selectedResearch.map((entry, i) => (
+                  <li class="home-row" style={`--i: ${i}`}>
+                    <span class="home-row-num" aria-hidden="true">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <div class="home-row-main">
+                      <a
+                        class="home-row-title"
+                        href={url(`/publications/${entry.id}/`)}
+                      >
+                        {entry.data.title}
+                      </a>
+                      <div class="home-row-meta">
+                        <span class="home-row-venue">{entry.data.venue || "In preparation"}</span>,{" "}
+                        {entry.data.date.getUTCFullYear()}
+                      </div>
                     </div>
-                  </div>
-                ))
-              ) : (
-                <p>No research entries yet.</p>
-              )
-            }
-          </div>
-          <div style="margin-top: 1.5rem;">
-            <a href={url("/publications")} style="font-weight: 600;"
-              >View all research &rarr;</a
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p>No research entries yet.</p>
+            )
+          }
+          <a href={url("/publications")} class="home-more" style="--i: 3">
+            View all research<span class="home-more-arrow" aria-hidden="true"
+              >&rarr;</span
             >
-          </div>
+          </a>
         </section>
 
         <section data-reveal style="--reveal-delay: 0.08s;">
           <h2 style="margin-top: 0;">Latest Posts</h2>
-          <ul style="list-style: none; padding: 0;">
+          <ol class="home-rows">
             {
-              posts.map((post) => {
+              posts.map((post, i) => {
                 const link = postLink(post);
-                const titleStyle =
-                  "display: block; font-family: var(--font-serif); font-size: 1.1rem; font-weight: 600; color: var(--color-text-main); margin-bottom: 0.25rem;";
                 return (
-                  <li style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px dashed var(--color-border);">
-                    {link.href ? (
-                      <a
-                        href={link.href}
-                        {...(link.external
-                          ? { target: "_blank", rel: "noopener noreferrer" }
-                          : {})}
-                        style={titleStyle}
-                      >
-                        {post.data.title}
-                      </a>
-                    ) : (
-                      /* noLink pointer/update post — no destination, render as text */
-                      <span style={titleStyle}>{post.data.title}</span>
-                    )}
-                    <small style="color: var(--color-text-muted); text-transform: uppercase; font-size: 0.8rem;">
-                      {post.data.pubDate.toLocaleDateString("en-us", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                        timeZone: "UTC",
-                      })}
-                    </small>
+                  <li class="home-row" style={`--i: ${i}`}>
+                    <span class="home-row-num" aria-hidden="true">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <div class="home-row-main">
+                      {link.href ? (
+                        <a
+                          class="home-row-title"
+                          href={link.href}
+                          {...(link.external
+                            ? { target: "_blank", rel: "noopener noreferrer" }
+                            : {})}
+                        >
+                          {post.data.title}
+                        </a>
+                      ) : (
+                        /* noLink pointer/update post — no destination, render as text */
+                        <span class="home-row-title">{post.data.title}</span>
+                      )}
+                      <div class="home-row-meta home-row-date">
+                        {post.data.pubDate.toLocaleDateString("en-us", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          timeZone: "UTC",
+                        })}
+                      </div>
+                    </div>
                   </li>
                 );
               })
             }
-          </ul>
-          <a href={url("/blog")} style="font-weight: 600;">View Blog &rarr;</a>
+          </ol>
+          <a href={url("/blog")} class="home-more" style="--i: 3">
+            View journal<span class="home-more-arrow" aria-hidden="true"
+              >&rarr;</span
+            >
+          </a>
         </section>
       </div>
     </main>
@@ -911,12 +1258,14 @@ const selectedResearch = (
         const stage = section.querySelector(".hero-stage");
         const docEl = document.documentElement;
         const mqReduce = window.matchMedia("(prefers-reduced-motion: reduce)");
-        const mqMobile = window.matchMedia("(max-width: 768px)");
 
         let raf = null;
 
+        // The scrub runs on ALL viewport sizes (mobile included — the card
+        // just recomposes to a single column there). Only reduced-motion gets
+        // the static stacked fallback.
         function isFallback() {
-          return mqReduce.matches || mqMobile.matches;
+          return mqReduce.matches;
         }
 
         // SNAP MODEL — JS settle on scroll-idle (NOT CSS scroll-snap).
@@ -984,9 +1333,12 @@ const selectedResearch = (
           settleTimer = null;
           if (isFallback() || settling) return;
           const p = progress();
-          if (p <= 0.001 || p >= 0.999) return; // already on an endpoint
+          if (p <= 0.001 || p >= 0.999) return; // endpoint or inside the hold
           const m = metrics();
-          const targetY = settleTarget(p) === 0 ? m.start : m.start + m.travel;
+          // The card endpoint is the START of the hold (transition just
+          // finished), not the end of the section — settling to the section
+          // end would silently spend the hold distance.
+          const targetY = settleTarget(p) === 0 ? m.start : m.start + m.scrub;
           if (Math.abs(targetY - window.scrollY) < 1) return;
           settling = true;
           window.scrollTo({ top: targetY, behavior: "smooth" });
@@ -1012,35 +1364,60 @@ const selectedResearch = (
           settleTimer = window.setTimeout(doSettle, SETTLE_IDLE_MS);
         }
 
+        // The pinned distance splits into TRANSITION (progress 0→1 over the
+        // first 1−HOLD_FRACTION of the travel) and HOLD (progress stays 1
+        // while the finished card remains pinned) — so a single fast gesture
+        // can't blow through the transition AND past the card. Must match the
+        // --hero-travel comment in the CSS above.
+        const HOLD_FRACTION = 0.2;
+
         function metrics() {
           const headerH =
             (stage && parseFloat(getComputedStyle(stage).top)) || 4.5 * 16;
           const pinned = window.innerHeight - headerH;
           const travel = Math.max(1, section.offsetHeight - pinned);
+          const scrub = Math.max(1, travel * (1 - HOLD_FRACTION));
           const sectionTop =
             section.getBoundingClientRect().top + window.scrollY;
           const start = sectionTop - headerH;
-          return { start, end: start + travel, travel };
+          return { start, end: start + travel, travel, scrub };
         }
         function progress() {
           const m = metrics();
           return Math.min(
             1,
-            Math.max(0, (window.scrollY - m.start) / m.travel),
+            Math.max(0, (window.scrollY - m.start) / m.scrub),
           );
         }
 
         function update() {
           raf = null;
-          // In the stacked fallbacks there's no scrub.
+          // In the reduced-motion fallback there's no scrub.
           if (isFallback()) {
             section.style.setProperty("--hero-progress", "0");
+            section.style.setProperty("--hero-hold", "0");
             section.removeAttribute("data-hero-active");
+            window.__heroSimSetGasActive?.(true);
             return;
           }
-          const p = progress();
+          const m = metrics();
+          const y = window.scrollY;
+          const p = Math.min(1, Math.max(0, (y - m.start) / m.scrub));
+          // Hold progress: 0→1 across the pinned distance AFTER the
+          // transition; drives the card's slow drift (CSS --hero-hold).
+          const hp = Math.min(
+            1,
+            Math.max(0, (y - m.start - m.scrub) / (m.travel - m.scrub)),
+          );
           section.style.setProperty("--hero-progress", p.toFixed(4));
+          section.style.setProperty("--hero-hold", hp.toFixed(4));
           section.setAttribute("data-hero-active", p > 0.5 ? "card" : "sim");
+          // PERF: freeze the sim the moment the gas starts fading — the
+          // canvas holds its last frame (preserveDrawingBuffer), so the
+          // scrub blurs a static image instead of re-blurring a live 60fps
+          // animation, and nothing renders behind the invisible canvas in
+          // the card/hold states. Resumes when scrolled back to the top.
+          window.__heroSimSetGasActive?.(p < 0.03);
           setGuardForProgress(p);
         }
         function onScroll() {
@@ -1076,7 +1453,6 @@ const selectedResearch = (
           update();
         };
         mqReduce.addEventListener("change", onMqChange);
-        mqMobile.addEventListener("change", onMqChange);
         applyGuard();
         update();
 
@@ -1087,7 +1463,6 @@ const selectedResearch = (
           window.removeEventListener("touchstart", cancelSettle);
           window.removeEventListener("keydown", cancelSettle);
           mqReduce.removeEventListener("change", onMqChange);
-          mqMobile.removeEventListener("change", onMqChange);
           if (raf != null) cancelAnimationFrame(raf);
           if (settleTimer != null) clearTimeout(settleTimer);
           settling = false;
