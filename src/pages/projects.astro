@@ -74,6 +74,27 @@ for (const p of projects)
         margin: 0 auto;
         line-height: 1.7;
       }
+      /* First view per full load (class set by the inline script in the
+         hero): the blueprint grid CONDENSES in — defocused and faint, then
+         sharp — echoing the homepage gas language. Keyframes state only
+         `from`; the end state is the canvas's natural styling. */
+      .projects-hero.grid-intro :global(.blueprint-grid) {
+        /* Faster establish than the JS retraction's 0.55s start (see
+           BlueprintGrid.astro): the extended grid gets a readable beat at
+           full presence before it begins receding. */
+        animation: projects-grid-in 0.8s 0.1s ease-out backwards;
+      }
+      @keyframes projects-grid-in {
+        from {
+          opacity: 0;
+          filter: blur(4px);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .projects-hero.grid-intro :global(.blueprint-grid) {
+          animation: none;
+        }
+      }
       .projects-filters {
         display: flex;
         flex-wrap: wrap;
@@ -481,6 +502,19 @@ for (const p of projects)
     <main class="projects-section" transition:animate={pageFade}>
       <div class="projects-hero">
         <BlueprintGrid />
+        <!-- First view per full page load: the blueprint grid condenses in
+             (fade + defocus, echoing the homepage's gas language). Same
+             pattern as the Research tick — synchronous pre-paint class,
+             window flag so client-side nav within the session doesn't
+             replay it. -->
+        <script is:inline data-astro-rerun>
+          if (!window.__projectsGridShown) {
+            window.__projectsGridShown = true;
+            document
+              .querySelector(".projects-hero")
+              ?.classList.add("grid-intro");
+          }
+        </script>
         <h1>Projects</h1>
         <p>
           Tools, teaching, and experiments I've built — most started as a

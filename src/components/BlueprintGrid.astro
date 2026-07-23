@@ -42,12 +42,15 @@ const { class: className = "" } = Astro.props;
   // canvas. Track them and release on astro:before-swap.
   let bpAbort: AbortController | null = null;
   const bpObservers = new Set<MutationObserver>();
+  const bpRafs = new Set<number>();
 
   function teardownBlueprintGrid() {
     bpAbort?.abort();
     bpAbort = null;
     for (const obs of bpObservers) obs.disconnect();
     bpObservers.clear();
+    for (const raf of bpRafs) cancelAnimationFrame(raf);
+    bpRafs.clear();
   }
 
   function initBlueprintGrid() {
@@ -77,7 +80,7 @@ const { class: className = "" } = Astro.props;
         );
       }
 
-      function resize() {
+      function resize(extraH = 0) {
         const rect = parent.getBoundingClientRect();
         // Full-bleed: canvas spans the whole viewport width, shifted so its left
         // edge sits at viewport x=0 → canvas-local coords == viewport coords.
@@ -86,7 +89,9 @@ const { class: className = "" } = Astro.props;
         // Bleed the top UP to the navbar bottom (4.5rem ≈ 72px) so the grid meets
         // the navbar instead of starting abruptly mid-page at the hero's top.
         const bleedUp = Math.max(0, rect.top - NAVBAR_BOTTOM);
-        H = rect.height + bleedUp;
+        // extraH: intro-only over-allocation — the retract animation draws
+        // progressively shorter grids into this taller canvas.
+        H = rect.height + bleedUp + extraH;
         // Header center-X in canvas-local (== viewport) coords: the grid is
         // generated symmetrically outward from here so it's anchored to the
         // centered "Projects" title.
@@ -102,9 +107,10 @@ const { class: className = "" } = Astro.props;
       }
 
       // Downward fade: 1 at the top → 0 near the bottom (so the grid never
-      // touches the cards below the header).
-      function vfade(y: number): number {
-        return Math.max(0, 1 - y / (H * 0.9));
+      // touches the cards below the header). Parameterized by the drawn
+      // height so the intro retraction's fade recedes with the grid.
+      function vfade(y: number, vH: number): number {
+        return Math.max(0, 1 - y / (vH * 0.9));
       }
 
       // Turn a CSS accent color + alpha into an rgba() string. Resolves any CSS
@@ -120,7 +126,11 @@ const { class: className = "" } = Astro.props;
         return `rgba(${r},${g},${b},${a})`;
       }
 
-      function draw() {
+      // vH: the height the grid is drawn to (defaults to the full canvas).
+      // The intro retract animation calls this with shrinking values — the
+      // fade profile scales with vH, so the grid recedes upward with its
+      // fade intact and lands pixel-identical to the resting draw.
+      function draw(vH = H) {
         ctx!.clearRect(0, 0, W, H);
         const color = accent();
         ctx!.lineWidth = 1;
@@ -135,14 +145,14 @@ const { class: className = "" } = Astro.props;
           if (x < -1 || x > W + 1) continue;
           const major = k % 5 === 0;
           const a = major ? 0.22 : 0.1;
-          const grad = ctx!.createLinearGradient(0, 0, 0, H);
+          const grad = ctx!.createLinearGradient(0, 0, 0, vH);
           grad.addColorStop(0, hexA(color, a));
           grad.addColorStop(0.9, hexA(color, 0));
           grad.addColorStop(1, hexA(color, 0));
           ctx!.strokeStyle = grad;
           ctx!.beginPath();
           ctx!.moveTo(x, 0);
-          ctx!.lineTo(x, H);
+          ctx!.lineTo(x, vH);
           ctx!.stroke();
         }
 
@@ -150,9 +160,9 @@ const { class: className = "" } = Astro.props;
         // major = every 5th row from the top.
         ctx!.strokeStyle = color;
         let row = 0;
-        for (let y = 0; y <= H; y += GRID, row++) {
+        for (let y = 0; y <= vH; y += GRID, row++) {
           const major = row % 5 === 0;
-          const a = (major ? 0.22 : 0.1) * vfade(y);
+          const a = (major ? 0.22 : 0.1) * vfade(y, vH);
           if (a <= 0.001) continue;
           ctx!.globalAlpha = a;
           ctx!.beginPath();
@@ -163,12 +173,61 @@ const { class: className = "" } = Astro.props;
         ctx!.globalAlpha = 1;
       }
 
+      let introRaf = 0;
       function render() {
+        // A window resize (or any external render) ends the intro: cancel the
+        // retract loop so it can't keep drawing tall grids into the
+        // re-allocated standard-height canvas.
+        if (introRaf) {
+          cancelAnimationFrame(introRaf);
+          bpRafs.delete(introRaf);
+          introRaf = 0;
+        }
         resize();
         draw();
       }
 
-      render();
+      // First view per full load (the page's inline script puts .grid-intro
+      // on the hero pre-paint): the grid initially spans well PAST its
+      // resting extent — deeper into the page — and retracts upward while
+      // the CSS condense (fade + defocus) plays. Implemented by drawing
+      // progressively shorter grids into a once-allocated taller canvas:
+      // the bottom fade scales with the drawn height, so the recession
+      // carries its fade with it and the final frame is pixel-identical to
+      // the resting draw.
+      const introHost = parent.closest(".grid-intro");
+      const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+      if (introHost && !reduceMotion) {
+        const EXTRA = Math.round(window.innerHeight * 0.7);
+        // The CSS condense (0.8s + 0.1s delay, projects.astro) mostly
+        // finishes before the retraction starts, so the extended grid is
+        // plainly visible for a beat before it recedes.
+        const DELAY = 550;
+        const DUR = 1300;
+        resize(EXTRA);
+        const restingH = H - EXTRA;
+        const easeInOut = (u: number) =>
+          u < 0.5 ? 2 * u * u : 1 - (2 - 2 * u) ** 2 / 2;
+        const t0 = performance.now();
+        const step = (now: number) => {
+          bpRafs.delete(introRaf);
+          introRaf = 0;
+          if (signal.aborted) return;
+          const u = Math.min(1, Math.max(0, (now - t0 - DELAY) / DUR));
+          draw(restingH + EXTRA * (1 - easeInOut(u)));
+          if (u < 1) {
+            introRaf = requestAnimationFrame(step);
+            bpRafs.add(introRaf);
+          } else {
+            render(); // restore standard geometry; visually a no-op
+          }
+        };
+        step(performance.now());
+      } else {
+        render();
+      }
       window.addEventListener("resize", render, { signal });
       // Redraw on theme change so the line color follows light/dark.
       const themeObs = new MutationObserver(() => draw());
