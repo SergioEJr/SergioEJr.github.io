@@ -285,7 +285,10 @@ h2::after {
   height: 3px;
   margin-top: 0.55rem;
   border-radius: 2px;
-  background: var(--color-accent);
+  /* The hot spark, not accent blue: separates heading rule-marks from the
+     interactive accent (links, labels, CTAs). Stays within the hot token's
+     non-interactive contract (selection, sim spark, logo glyphs). */
+  background: var(--color-hot);
 }
 
 h3 {
