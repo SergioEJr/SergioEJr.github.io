@@ -1,29 +1,51 @@
 ---
-// Compact easter-egg coda: the damped Langevin equation the hero particles
-// actually integrate (HeroSim step(): velocity damping + Gaussian noise +
-// cursor repulsion). Renders as one quiet line; hovering/focusing a term
-// tints it and reveals a small same-colored annotation chip. Nothing invites
-// the interaction — discovery is the point. On (hover: none) devices the
-// chips render statically so touch users get the annotated layout.
+// Compact easter-egg coda: the Langevin dynamics the hero particles
+// integrate, written in the OVERDAMPED (position) form — the sim's strong
+// velocity damping puts it in that regime, so the inertial v̇ term drops and
+// the noise amplitude is the bare √(2D). The shorter equation also fits one
+// line on phones. Hovering/focusing a term tints it and reveals a small
+// same-colored annotation chip. Nothing invites the interaction — discovery
+// is the point. On (hover: none) devices the chips render statically so
+// touch users get the annotated layout.
 import katex from "katex";
 
 const T = (tex: string) =>
   katex.renderToString(tex, { throwOnError: false });
 
+// Each term renders as its own KaTeX fragment so it can carry hover state.
+// The leading empty group `{}` before + makes KaTeX treat it as a BINARY
+// operator (thin space on both sides); rendered alone, a leading + would
+// parse as unary and get no spacing — the terms then read cramped.
+// The interactive term is f_you, not f_cursor — on touch screens there is no
+// cursor, and "you" matches the caption. The chip then says who "you" is per
+// device: "the cursor" under a mouse, "your finger" on touch (the touch span
+// is display:none'd per media query, which also keeps it out of the
+// aria-describedby accessible name).
 const terms = [
-  { key: "drag", tex: "-\\gamma\\,\\mathbf{v}", label: "drag" },
-  { key: "noise", tex: "+\\sqrt{2D}\\,\\boldsymbol{\\xi}(t)", label: "noise" },
+  {
+    key: "noise",
+    tex: "\\sqrt{2D}\\,\\boldsymbol{\\eta}(t)",
+    label: "noise",
+  },
   {
     key: "you",
-    tex: "+\\mathbf{F}_{\\mathrm{cursor}}(\\mathbf{r})",
-    label: "you (the cursor)",
+    tex: "{}+\\boldsymbol{f}_{\\mathrm{you}}(\\boldsymbol{r})",
+    label: "the cursor",
+    labelTouch: "your finger",
   },
 ];
 ---
 
 <section class="eq-coda" data-reveal>
+  {/* Caption FIRST — it introduces the line below and doubles as the
+      separator between the contact section and this epilogue. */}
+  <p class="eq-caption">
+    Every particle in the opening simulation integrates this equation. The last
+    term is you.
+  </p>
   <p class="eq-line">
-    <span class="eq-frag" set:html={T("\\dot{\\mathbf{v}} \\;=\\;")} />
+    {/* Trailing `{}` keeps `=` binary-spaced despite the missing right side. */}
+    <span class="eq-frag" set:html={T("\\dot{\\boldsymbol{r}} = {}")} />
     {
       terms.map((t) => (
         <span
@@ -32,13 +54,19 @@ const terms = [
           aria-describedby={`eq-chip-${t.key}`}
         >
           <span class="eq-frag" set:html={T(t.tex)} />
-          <span class="eq-chip" id={`eq-chip-${t.key}`}>{t.label}</span>
+          <span class="eq-chip" id={`eq-chip-${t.key}`}>
+            {t.labelTouch ? (
+              <>
+                <span class="eq-chip-pointer">{t.label}</span>
+                <span class="eq-chip-touch">{t.labelTouch}</span>
+              </>
+            ) : (
+              t.label
+            )}
+          </span>
         </span>
       ))
     }
-  </p>
-  <p class="eq-caption">
-    Every particle in the hero integrates this equation. The last term is you.
   </p>
 </section>
 
@@ -46,11 +74,14 @@ const terms = [
   .eq-coda {
     max-width: var(--max-width);
     margin: 0 auto;
-    padding: 2.5rem 1rem 3rem;
+    /* Epilogue spacing: air above (after the contact section); the bottom
+       padding leaves room for the hover chips, which now open DOWNWARD into
+       empty space (the caption sits above the equation). */
+    padding: 3.5rem 1rem 2rem;
     text-align: center;
   }
   .eq-line {
-    margin: 0 0 0.9rem;
+    margin: 0;
     font-size: 1.25rem;
     color: var(--color-text-main);
   }
@@ -64,9 +95,6 @@ const terms = [
     cursor: default;
     transition: color 0.2s ease;
     border-radius: 3px;
-  }
-  .eq-term--drag {
-    --eq-c: var(--color-text-muted);
   }
   .eq-term--noise {
     --eq-c: var(--color-accent);
@@ -108,9 +136,15 @@ const terms = [
     transform: translate(-50%, 0.35rem);
   }
   .eq-caption {
-    margin: 1.4rem 0 0;
+    margin: 0 0 1.5rem;
     font-size: 0.9rem;
     color: var(--color-text-muted);
+  }
+  /* Device-appropriate chip wording: "the cursor" under a mouse, "your
+     finger" on touch. display:none also removes the hidden span from the
+     aria-describedby accessible name. */
+  .eq-chip-touch {
+    display: none;
   }
   /* Touch / no-hover: annotated statically (the compact fallback layout). */
   @media (hover: none) {
@@ -128,8 +162,22 @@ const terms = [
       opacity: 1;
       margin-top: 0.3rem;
     }
+    /* Tapping a term focuses it, and the base :focus-visible reveal rule
+       (higher specificity) would re-apply its translate to the now-static
+       chip — the label visibly jumped on tap. Pin the static layout at
+       matching specificity. */
+    .eq-term:hover .eq-chip,
+    .eq-term:focus-visible .eq-chip {
+      transform: none;
+    }
     .eq-term {
       color: var(--eq-c);
+    }
+    .eq-chip-pointer {
+      display: none;
+    }
+    .eq-chip-touch {
+      display: inline;
     }
   }
   @media (prefers-reduced-motion: reduce) {

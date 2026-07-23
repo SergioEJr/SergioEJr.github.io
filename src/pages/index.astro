@@ -3,7 +3,10 @@ import BaseHead from "../components/BaseHead.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import HeroSim from "../components/HeroSim.astro";
-import EquationCoda from "../components/EquationCoda.astro";
+// TABLED (2026-07): the equation coda is not rendered for now — component
+// kept intact at src/components/EquationCoda.astro; re-enable by restoring
+// this import and the <EquationCoda /> tag before </main>.
+// import EquationCoda from "../components/EquationCoda.astro";
 import { SITE_TITLE, SITE_DESCRIPTION, CONTACT, CV_URL, SOCIAL_LINKS } from "../consts";
 import { url } from "../utils/paths";
 import { pageFade } from "../utils/pageTransition";
@@ -13,11 +16,38 @@ import {
   getPublishedResearch,
   postLink,
 } from "../utils/posts";
-import { PROJECT_CATEGORY_BADGE_VARS } from "../utils/categories";
 import { CV_AVAILABLE } from "../utils/cv";
+import { renderInline } from "../utils/inlineText";
 
-const posts = (await getPublishedPosts())
-  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+const allPosts = (await getPublishedPosts()).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+// Front-page split by Journal register: a hand-curated pair of prose pieces
+// (essays or notebook, via `featured` in frontmatter) leads alongside
+// Research; notebook notes and short announcements go to the rail as compact
+// title-only lists. Falls back to the newest prose posts if nothing is
+// flagged, so the section can't go empty.
+const prosePool = allPosts.filter((p) => p.data.category !== "updates");
+// Numeric `featured` values rank the lead explicitly (1 = first); boolean
+// `true` entries follow, newest-first (prosePool is already date-sorted and
+// .sort() is stable).
+const rank = (p: (typeof prosePool)[number]) =>
+  typeof p.data.featured === "number" ? p.data.featured : Infinity;
+const featuredProse = prosePool
+  .filter((p) => p.data.featured)
+  .sort((a, b) => rank(a) - rank(b));
+const journalLead = (featuredProse.length > 0 ? featuredProse : prosePool).slice(
+  0,
+  3,
+);
+// Rail lists. The Notebook group skips anything already featured in the lead
+// so a flagged note never appears twice on the page.
+const leadIds = new Set(journalLead.map((p) => p.id));
+const notebookPosts = allPosts
+  .filter((p) => p.data.category === "notebook" && !leadIds.has(p.id))
+  .slice(0, 3);
+const updatePosts = allPosts
+  .filter((p) => p.data.category === "updates")
   .slice(0, 3);
 
 // Same order convention as /projects (src/pages/projects.astro): manual `order`
@@ -104,13 +134,18 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
            links). The blueprint grid is NOT faded at all — the stage stays
            while its contents transform. The stacked fallbacks (mobile,
            reduced-motion) pin every band to its end state. */
-        --b-gas: clamp(0, calc(1 - var(--hero-progress) / 0.4), 1);
-        --b-photo: clamp(0, calc((var(--hero-progress) - 0.3) / 0.4), 1);
-        --b-eyebrow: clamp(0, calc((var(--hero-progress) - 0.48) / 0.14), 1);
-        --b-tick: clamp(0, calc((var(--hero-progress) - 0.52) / 0.12), 1);
-        --b-name: clamp(0, calc((var(--hero-progress) - 0.55) / 0.2), 1);
-        --b-bio: clamp(0, calc((var(--hero-progress) - 0.63) / 0.19), 1);
-        --b-links: clamp(0, calc((var(--hero-progress) - 0.71) / 0.17), 1);
+        /* Bands OVERLAP so the timeline has no empty trough: the gas lingers
+           to p=0.5 while the photo starts at 0.2 — around p≈0.35–0.45
+           something is always at meaningful presence (previously the gas died
+           at 0.4 before the copy started at 0.48, leaving ~2 near-blank
+           tenths of blueprint grid on a slow scroll). */
+        --b-gas: clamp(0, calc(1 - var(--hero-progress) / 0.5), 1);
+        --b-photo: clamp(0, calc((var(--hero-progress) - 0.2) / 0.38), 1);
+        --b-eyebrow: clamp(0, calc((var(--hero-progress) - 0.44) / 0.14), 1);
+        --b-tick: clamp(0, calc((var(--hero-progress) - 0.48) / 0.12), 1);
+        --b-name: clamp(0, calc((var(--hero-progress) - 0.51) / 0.2), 1);
+        --b-bio: clamp(0, calc((var(--hero-progress) - 0.59) / 0.19), 1);
+        --b-links: clamp(0, calc((var(--hero-progress) - 0.67) / 0.17), 1);
         position: relative;
         height: calc(100svh - var(--header-h) + var(--hero-travel));
         /* Visible overflow so HeroSim's full-bleed canvas/grid feather past the
@@ -270,17 +305,11 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         opacity: 0;
       }
       /* True below-the-fold content (no scroll-progress opacity of its own) is
-         held hidden during the intro so it doesn't pop in early. */
-      :global(html[data-home-intro] .grid-2) {
+         held hidden during the intro so it doesn't pop in early. (Scrolling
+         mid-intro ENDS the intro — onScrollIntent removes data-home-intro —
+         so this rule can never hide content from someone scrolling past.) */
+      :global(html[data-home-intro] .home-front) {
         opacity: 0;
-      }
-      /* If the user scrolls past the hero mid-intro (the scroll lock breaks),
-         reveal that below-the-fold content so they don't land on a blank page.
-         The card and sim are untouched here — they follow scroll progress / the
-         scripted timeline respectively. */
-      :global(html[data-home-intro][data-intro-scrolled] .grid-2) {
-        opacity: 1;
-        transition: opacity 0.3s ease-out;
       }
       /* Final beat of the intro: the "scroll" cue fades in once the name has
          finished igniting (sim start + the activation flicker length), so it
@@ -517,6 +546,13 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         /* Remove the global top padding on the homepage so the pinned hero starts
            immediately below the header and scroll progress begins on first input. */
         padding-top: 0;
+        /* Homepage-only wider column: the hero sim and profile card already
+           span wide, so the content panels below breathe at 70rem instead of
+           the site's 960px reading column. Overriding the VAR (not max-width
+           directly) widens main itself AND every panel that sizes itself with
+           var(--max-width) — while the footer, outside main, keeps the
+           site-wide width. */
+        --max-width: 70rem;
       }
       .hero-stage {
         position: sticky;
@@ -846,12 +882,315 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         }
       }
 
-      /* ---- Below-fold rows: the Journal's row language (index-number
-         gutter, serif titles, hairline separators) instead of the template
-         lists. ---- */
-      .home-below.grid-2 {
+      /* ---- Below-fold "front page": Research leads in the wide column
+         (Journal row language — index-number gutter, serif titles, hairline
+         separators); the Journal + Projects sit in a slim rail behind a
+         newspaper-style vertical hairline. Deliberate asymmetry — the two
+         content types no longer pretend to be equals. ---- */
+      .home-front {
+        display: grid;
+        grid-template-columns: minmax(0, 1.7fr) minmax(15rem, 1fr);
+        column-gap: 2.75rem;
+        /* Generous bottom margin: the newspaper feed should finish breathing
+           before the contact band takes over. */
+        margin: 5.5rem 0 7.5rem;
+      }
+      /* Lead column: two stories stacked (Research, then Journal prose). */
+      .home-lead {
+        display: flex;
+        flex-direction: column;
         gap: 4rem;
-        margin: 3.5rem 0 2rem;
+      }
+      .home-row-desc {
+        margin: 0 0 0.4rem;
+        /* Cap the measure — at full lead-column width this smallest text ran
+           ~90 characters per line, past the ~75 CPL comfort ceiling. */
+        max-width: 35rem;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        color: var(--color-text-muted);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .home-rail {
+        border-left: 1px solid var(--color-border);
+        padding-left: 2.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 3.25rem;
+      }
+      /* Rail quote: a personal epigraph at the top of the rail. Set larger
+         than the rail entries but italic and unlabeled — flavor, not a
+         section. */
+      .home-rail-quote {
+        margin: 0;
+        padding: 0.35rem 0 0;
+      }
+      .home-rail-quote-text {
+        margin: 0 0 0.55rem;
+        font-family: var(--font-serif);
+        font-style: italic;
+        font-size: 1.4rem;
+        line-height: 1.4;
+        color: var(--color-text-main);
+      }
+      .home-rail-quote-attr {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+      }
+      .home-rail-quote-attr::before {
+        content: "\2014\00a0"; /* em dash */
+      }
+      /* Rail group labels: the hero card's eyebrow voice (small caps, accent),
+         subordinate to the lead's serif h2. */
+      .home-rail-label {
+        margin: 0 0 0.5rem;
+        font-family: var(--font-sans);
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--color-accent);
+      }
+      /* The label IS the link to its page — no separate CTA row. Hovering
+         (or keyboard-focusing) reveals an "All" prefix and a trailing arrow,
+         so "Projects" reads as "All Projects →": the two visible items are a
+         sample, not the inventory. */
+      .home-rail-label-link {
+        /* Block-level flex, NOT inline-flex: the hit area spans the full
+           rail column and never resizes when the label text morphs on hover.
+           With a text-sized hit box, the "Featured Project" → "All Projects"
+           swap SHRINKS the link out from under a cursor near its right edge,
+           un-hovering it and looping the animation forever. */
+        display: flex;
+        align-items: center;
+        position: relative;
+        color: inherit;
+        text-decoration: none;
+      }
+      /* Invisible hit-area extension: the small-caps text alone is a
+         ~15px-tall strip — too precise a target. An absolute pseudo grows
+         the hover/click box past the text's top and bottom with ZERO layout
+         involvement (padding/negative-margin tricks fought the h3's margin
+         collapsing and grew the heading box). */
+      .home-rail-label-link::before {
+        content: "";
+        position: absolute;
+        inset: -0.55rem 0;
+      }
+      .rail-label-all,
+      .rail-label-s {
+        display: inline-block;
+        max-width: 0;
+        opacity: 0;
+        overflow: hidden;
+        transition:
+          max-width 0.25s ease,
+          opacity 0.2s ease;
+      }
+      /* "Featured " runs the same reveal in reverse — present at rest,
+         collapsing on hover as "All " expands. */
+      .rail-label-featured {
+        display: inline-block;
+        max-width: 7em;
+        opacity: 1;
+        overflow: hidden;
+        transition:
+          max-width 0.25s ease,
+          opacity 0.2s ease;
+      }
+      .home-rail-label-link:hover .rail-label-featured,
+      .home-rail-label-link:focus-visible .rail-label-featured {
+        max-width: 0;
+        opacity: 0;
+      }
+      .home-rail-label-link:hover .rail-label-s,
+      .home-rail-label-link:focus-visible .rail-label-s {
+        max-width: 1em;
+        opacity: 1;
+      }
+      .rail-label-arrow {
+        opacity: 0;
+        transform: translateX(-4px);
+        margin-left: 0.35rem;
+        transition:
+          opacity 0.2s ease,
+          transform 0.2s ease;
+      }
+      .home-rail-label-link:hover .rail-label-all,
+      .home-rail-label-link:focus-visible .rail-label-all {
+        max-width: 3em;
+        opacity: 1;
+      }
+      .home-rail-label-link:hover .rail-label-arrow,
+      .home-rail-label-link:focus-visible .rail-label-arrow {
+        opacity: 1;
+        transform: none;
+      }
+      .home-rail-label-link:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 3px;
+        border-radius: 2px;
+      }
+      .home-rail-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .home-rail-item {
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--color-border);
+      }
+      .home-rail-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0.4rem;
+      }
+      /* Rail titles at reading weight, NOT headline weight — bold serif is
+         reserved for the lead's stories. Ten equal headlines overwhelm; five
+         headlines plus quiet marginalia don't. */
+      .home-rail-title {
+        display: block;
+        font-family: var(--font-serif);
+        font-size: 0.95rem;
+        font-weight: 400;
+        line-height: 1.4;
+        color: var(--color-text-main);
+        text-decoration: none;
+        margin-bottom: 0.25rem;
+        transition: color 0.15s ease;
+      }
+      a.home-rail-title:hover {
+        color: var(--color-accent);
+      }
+      /* Rail projects: ONE featured image card on the wide layout — a
+         centerpiece plate, slightly inset and centered — rather than every
+         project as a full-width card (two stacked images out-weighed the
+         text-only lead even with the columns flush). The label's
+         "All Projects →" carries the rest; the stacked mobile layout shows
+         every card (it reads well there). Image at this size is fair to the
+         photos — postage-stamp thumbs were illegible and dictated the art. */
+      .home-rail-proj {
+        display: block;
+        /* 18.5rem ≈ the ink right edge of the rail's longest text line, so
+           the image's right edge sits on the same visual margin as the
+           neighboring Updates/Notes text. */
+        max-width: 18.5rem;
+        text-align: left;
+        text-decoration: none;
+        color: inherit;
+      }
+      .home-rail-thumb {
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 1px solid var(--color-border);
+        margin-bottom: 0.65rem;
+      }
+      /* Image cards separate themselves — no hairlines between project
+         items, unlike the text-only rail lists. */
+      .home-rail-list--proj .home-rail-item {
+        border-bottom: none;
+        padding: 0.85rem 0;
+      }
+      /* Only the FIRST project shows, at every width — the label reads
+         "Featured Project" accordingly. */
+      .home-rail-list--proj .home-rail-item:nth-child(n + 2) {
+        display: none;
+      }
+      .home-rail-list--proj .home-rail-item:last-child {
+        padding-bottom: 0;
+      }
+      /* Pull the following group (Notes) closer: the card's small caption
+         next to the uniform 3.25rem rail gap read as a hole. Reset on the
+         stacked layout below. */
+      .home-rail-list--proj {
+        margin-bottom: -1rem;
+      }
+      .home-rail-proj-title {
+        display: block;
+        font-family: var(--font-serif);
+        font-size: 0.95rem;
+        font-weight: 400;
+        line-height: 1.4;
+        color: var(--color-text-main);
+        transition: color 0.15s ease;
+      }
+      .home-rail-proj:hover .home-rail-proj-title {
+        color: var(--color-accent);
+      }
+      .home-rail-proj:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 3px;
+        border-radius: 4px;
+      }
+      .home-rail-proj-year {
+        display: block;
+        font-size: 0.78rem;
+        color: var(--color-text-muted);
+        margin-top: 0.15rem;
+      }
+      /* Stacked front page: rail groups flow full-width below the lead; the
+         vertical hairline goes away with the column. auto-fit lets the two
+         rail groups sit side by side on tablets and stack on phones. */
+      @media (max-width: 900px) {
+        .home-front {
+          grid-template-columns: 1fr;
+          row-gap: 3.5rem;
+          /* NEGATIVE top: the mobile hero stage keeps ~90px of empty tail
+             below the card's links (stage = full viewport, card is shorter),
+             so the front page pulls up over that dead zone — the grid has
+             already feathered out there. Net visual gap ≈ 70px. */
+          margin: -2rem 0 5rem;
+        }
+        .home-rail {
+          border-left: none;
+          padding-left: 0;
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+          gap: 2.75rem 3rem;
+        }
+        /* The epigraph is a wide-layout device — stacked below the lead it
+           would just push real content down. */
+        .home-rail-quote {
+          display: none;
+        }
+        /* Stacked layout: still ONE project (a second full-width card made
+           the phone page feel crowded). */
+        .home-rail-list--proj {
+          margin-bottom: 0;
+        }
+        /* Single-column (tablet) view: the rail sits two-up, Updates BESIDE
+           the project card — the card pulls in slightly so the pairing
+           doesn't lopside. Phones override both below. */
+        .home-rail-proj {
+          max-width: 18rem;
+        }
+        /* No Notes group when stacked — it stood between the reader and the
+           "Get in touch" CTA on an already-long page. Notes stay reachable
+           through the Journal. */
+        .home-rail-group--notes {
+          display: none;
+        }
+      }
+      /* True mobile: the rail is a single column again (auto-fit collapses
+         below ~600px), so the side-by-side balance concerns vanish and the
+         road-to-CTA ones return. */
+      @media (max-width: 600px) {
+        .home-rail-proj {
+          max-width: none;
+        }
+        /* Two updates instead of three — shorter road to the CTA. The full
+           list lives at /blog#updates. */
+        .home-rail-group--updates .home-rail-item:nth-child(n + 3) {
+          display: none;
+        }
       }
       .home-rows {
         list-style: none;
@@ -861,7 +1200,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
       .home-row {
         display: grid;
         grid-template-columns: 2.2rem 1fr;
-        padding: 1.05rem 0;
+        padding: 1.3rem 0;
         border-bottom: 1px solid var(--color-border);
       }
       .home-row:first-child {
@@ -944,113 +1283,25 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         transform: translateX(4px);
       }
 
-      /* ---- Projects strip: preview of the Projects page in its card language. ---- */
-      .home-projects {
-        max-width: var(--max-width);
-        margin: 0 auto 2rem;
-        padding: 0 1rem;
-      }
-      .home-proj-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-        gap: 1.5rem;
-      }
-      .home-proj-card {
-        display: block;
-        text-decoration: none;
-        color: inherit;
-      }
-      .home-proj-image {
-        position: relative;
-        border-radius: 8px;
-        overflow: hidden;
-        border: 1px solid var(--color-border);
-        margin-bottom: 0.7rem;
-      }
-      .home-proj-image img {
-        display: block;
-        width: 100%;
-        aspect-ratio: 16 / 10;
-        object-fit: cover;
-        transition: transform 0.25s ease;
-      }
-      .home-proj-card:hover .home-proj-image img {
-        transform: scale(1.03);
-      }
-      .home-proj-pill {
-        position: absolute;
-        top: 0.6rem;
-        left: 0.6rem;
-        padding: 0.15rem 0.55rem;
-        border-radius: 999px;
-        font-size: 0.68rem;
-        font-weight: 700;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        color: var(--badge-color);
-        border: 1px solid
-          color-mix(in srgb, var(--badge-color) 60%, transparent);
-        background: rgba(15, 23, 42, 0.55);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-      }
-      .home-proj-title {
-        font-family: var(--font-serif);
-        font-size: 1.05rem;
-        font-weight: 600;
-        line-height: 1.35;
-        color: var(--color-text-main);
-        transition: color 0.15s ease;
-      }
-      .home-proj-card:hover .home-proj-title {
-        color: var(--color-accent);
-      }
-      .home-proj-card:focus-visible {
-        outline: 2px solid var(--color-accent);
-        outline-offset: 3px;
-        border-radius: 4px;
-      }
-      .home-proj-year {
-        font-size: 0.8rem;
-        color: var(--color-text-muted);
-        margin-top: 0.15rem;
-      }
-
-      /* ---- Contact band: the page's final beat — ends on the ask. ---- */
+      /* ---- Get in touch: the ask, in the same editorial grammar as the
+         sections above it (serif h2 + hot rule, left-aligned, in the reading
+         column). Its predecessor was a centered full-bleed band on
+         --color-bg-offset, which vanished entirely in dark mode (offset ==
+         body there) and read as a template CTA strip. A first-class section
+         needs no surface to exist. ---- */
       .home-contact {
-        background: var(--color-bg-offset);
-        border-top: 1px solid var(--color-border);
-        /* No border-bottom here on purpose (integration fix, task 5): the
-           band's margin-bottom below pulls it flush against Footer.astro's
-           own border-top, so a bottom rule here would stack a second
-           hairline directly on top of the footer's. The footer is site-wide
-           and needs its top rule on every OTHER page, so we drop the rule
-           on this side of the seam instead of touching Footer.astro. */
-        /* Full-bleed out of main's column (same trick as .hero-card). */
-        width: 100vw;
-        margin-left: calc(50% - 50vw);
-        /* main has padding: 3rem 1rem — without this the band's bottom
-           edge leaves a bare stripe of main's background before the
-           footer starts. Pull the band down to close that seam. */
-        margin-bottom: -3rem;
-      }
-      .home-contact-inner {
-        max-width: var(--max-width);
-        margin: 0 auto;
-        padding: 2.75rem 1rem;
-        text-align: center;
+        margin: 0 0 5.5rem;
       }
       .home-contact-line {
-        margin: 0 auto 1.4rem;
+        margin: 0 0 1.6rem;
         max-width: 36rem;
-        font-size: 1.05rem;
-        line-height: 1.6;
+        font-size: 1.1rem;
+        line-height: 1.65;
         color: var(--color-text-main);
       }
       .home-contact-links {
         display: flex;
-        justify-content: center;
-        gap: 2rem;
+        gap: 2.25rem;
         flex-wrap: wrap;
       }
       .home-contact-links .home-more {
@@ -1068,6 +1319,10 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
            whole card fits inside the pinned stage. */
         .hero-scroll {
           overflow-x: clip;
+          /* Much shorter travel than desktop's 115svh: one energetic thumb
+             flick should carry through the whole transition + hold. The JS
+             metrics() reads geometry, so the scrub/hold split follows. */
+          --hero-travel: 70svh;
         }
         .hero-card-inner {
           grid-template-columns: 1fr;
@@ -1127,9 +1382,12 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
          then the rows cascade (each row's --i sets its slot; --reveal-delay
          staggers the two columns). */
       [data-reveal] h2,
+      [data-reveal] .home-rail-quote-text,
+      [data-reveal] .home-rail-quote-attr,
+      [data-reveal] .home-rail-label,
       [data-reveal] .home-row,
+      [data-reveal] .home-rail-item,
       [data-reveal] .home-more,
-      [data-reveal] .home-proj-card,
       [data-reveal] .home-contact-line,
       [data-reveal] .home-contact-links {
         opacity: 0;
@@ -1141,9 +1399,12 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
             calc(var(--reveal-delay, 0s) + var(--i, 0) * 80ms);
       }
       [data-reveal].is-revealed h2,
+      [data-reveal].is-revealed .home-rail-quote-text,
+      [data-reveal].is-revealed .home-rail-quote-attr,
+      [data-reveal].is-revealed .home-rail-label,
       [data-reveal].is-revealed .home-row,
+      [data-reveal].is-revealed .home-rail-item,
       [data-reveal].is-revealed .home-more,
-      [data-reveal].is-revealed .home-proj-card,
       [data-reveal].is-revealed .home-contact-line,
       [data-reveal].is-revealed .home-contact-links {
         opacity: 1;
@@ -1188,9 +1449,12 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           display: none;
         }
         [data-reveal] h2,
+        [data-reveal] .home-rail-quote-text,
+        [data-reveal] .home-rail-quote-attr,
+        [data-reveal] .home-rail-label,
         [data-reveal] .home-row,
+        [data-reveal] .home-rail-item,
         [data-reveal] .home-more,
-        [data-reveal] .home-proj-card,
         [data-reveal] .home-contact-line,
         [data-reveal] .home-contact-links {
           opacity: 1;
@@ -1198,7 +1462,11 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           transition: none;
         }
         .hero-card-arrow,
-        .home-more-arrow {
+        .home-more-arrow,
+        .rail-label-all,
+        .rail-label-s,
+        .rail-label-featured,
+        .rail-label-arrow {
           transition: none;
         }
         .home-more:hover .home-more-arrow {
@@ -1299,14 +1567,16 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
       </section>
 
       {
-        /* Below-fold: Selected Research + Latest Posts in the Journal's row
-           language (index-number gutter, serif titles, hairline separators)
-           rather than the astro-scholar template lists. Rows cascade in with
-           a small stagger when scrolled into view (initReveal + --i). */
+        /* Below-fold "front page": Research is the wide lead column in the
+           Journal's row language (index-number gutter, serif titles, hairline
+           separators); a slim right rail carries the Journal and Projects as
+           compact eyebrow-labeled lists behind a newspaper-style vertical
+           hairline. Rows cascade in when scrolled into view (initReveal + --i). */
       }
-      <div class="home-below grid-2">
+      <div class="home-front">
+        <div class="home-lead">
         <section data-reveal>
-          <h2 style="margin-top: 0;">Selected Research</h2>
+          <h2 style="margin-top: 0;">Research</h2>
           {
             selectedResearch.length > 0 ? (
               <ol class="home-rows">
@@ -1341,112 +1611,260 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           </a>
         </section>
 
-        <section data-reveal style="--reveal-delay: 0.08s;">
-          <h2 style="margin-top: 0;">Latest Posts</h2>
-          <ol class="home-rows">
-            {
-              posts.map((post, i) => {
-                const link = postLink(post);
-                return (
-                  <li class="home-row" style={`--i: ${i}`}>
-                    <span class="home-row-num" aria-hidden="true">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <div class="home-row-main">
-                      {link.href ? (
-                        <a
-                          class="home-row-title"
-                          href={link.href}
-                          {...(link.external
-                            ? { target: "_blank", rel: "noopener noreferrer" }
-                            : {})}
-                        >
-                          {post.data.title}
-                        </a>
-                      ) : (
-                        /* noLink pointer/update post — no destination, render as text */
-                        <span class="home-row-title">{post.data.title}</span>
-                      )}
-                      <div class="home-row-meta home-row-date">
-                        {post.data.pubDate.toLocaleDateString("en-us", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                          timeZone: "UTC",
-                        })}
+        {
+          journalLead.length > 0 && (
+            <section data-reveal>
+              <h2 style="margin-top: 0;">From the Journal</h2>
+              <ol class="home-rows">
+                {journalLead.map((post, i) => {
+                  const link = postLink(post);
+                  return (
+                    <li class="home-row" style={`--i: ${i}`}>
+                      <span class="home-row-num" aria-hidden="true">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <div class="home-row-main">
+                        {/* renderInline: titles may carry ~~strike~~ markup
+                            (e.g. the grades op-ed), same as the Journal page. */}
+                        {link.href ? (
+                          <a
+                            class="home-row-title"
+                            href={link.href}
+                            {...(link.external
+                              ? { target: "_blank", rel: "noopener noreferrer" }
+                              : {})}
+                            set:html={renderInline(post.data.title)}
+                          />
+                        ) : (
+                          <span
+                            class="home-row-title"
+                            set:html={renderInline(post.data.title)}
+                          />
+                        )}
+                        <p class="home-row-desc">{post.data.description}</p>
+                        <div class="home-row-meta home-row-date">
+                          {post.data.pubDate.toLocaleDateString("en-us", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            timeZone: "UTC",
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  </li>
-                );
-              })
-            }
-          </ol>
-          <a href={url("/blog")} class="home-more" style="--i: 3">
-            View journal<span class="home-more-arrow" aria-hidden="true"
-              >&rarr;</span
-            >
-          </a>
-        </section>
+                    </li>
+                  );
+                })}
+              </ol>
+              <a href={url("/blog")} class="home-more" style="--i: 3">
+                View journal<span class="home-more-arrow" aria-hidden="true"
+                  >&rarr;</span
+                >
+              </a>
+            </section>
+          )
+        }
+        </div>
+
+        <aside class="home-rail">
+          {
+            /* Wide-screens-only personal touch atop the rail (hidden when the
+               rail stacks below the lead — there it would just delay content). */
+          }
+          <blockquote class="home-rail-quote" data-reveal>
+            <p class="home-rail-quote-text">&ldquo;More is different.&rdquo;</p>
+            <footer class="home-rail-quote-attr" style="--i: 1">
+              P.&thinsp;W. Anderson
+            </footer>
+          </blockquote>
+          {
+            updatePosts.length > 0 && (
+              <section
+                class="home-rail-group home-rail-group--updates"
+                data-reveal
+                style="--reveal-delay: 0.08s;"
+              >
+                <h3 class="home-rail-label">
+                  <a
+                    class="home-rail-label-link"
+                    href={url("/blog") + "#updates"}
+                  >
+                    <span class="rail-label-all">All&nbsp;</span>Updates<span
+                      class="rail-label-arrow"
+                      aria-hidden="true">&rarr;</span
+                    >
+                  </a>
+                </h3>
+                <ol class="home-rail-list">
+                  {updatePosts.map((post, i) => {
+                    const link = postLink(post);
+                    return (
+                      <li class="home-rail-item" style={`--i: ${i}`}>
+                        {link.href ? (
+                          <a
+                            class="home-rail-title"
+                            href={link.href}
+                            {...(link.external
+                              ? { target: "_blank", rel: "noopener noreferrer" }
+                              : {})}
+                            set:html={renderInline(post.data.title)}
+                          />
+                        ) : (
+                          /* noLink update post — no destination, render as text */
+                          <span
+                            class="home-rail-title"
+                            set:html={renderInline(post.data.title)}
+                          />
+                        )}
+                        <div class="home-row-meta home-row-date">
+                          {post.data.pubDate.toLocaleDateString("en-us", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            timeZone: "UTC",
+                          })}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+                {/* No CTA here — the lead's "View journal" already covers it,
+                    and the rail stays quieter than its labels without one. */}
+              </section>
+            )
+          }
+
+          {
+            /* Projects outrank the notebook — different row anatomy
+               (thumbnails), but rail position = importance. */
+            projects.length > 0 && (
+              <section
+                class="home-rail-group"
+                data-reveal
+                style="--reveal-delay: 0.16s;"
+              >
+                <h3 class="home-rail-label">
+                  {/* Rest: "Featured Project" (one card shows). Hover/focus
+                      morphs it into "All Projects →": the "All " prefix and
+                      plural "s" expand while "Featured " collapses.
+                      aria-label pins the accessible name to the destination
+                      instead of the mid-morph text soup. */}
+                  <a
+                    class="home-rail-label-link"
+                    href={url("/projects")}
+                    aria-label="All Projects"
+                  >
+                    <span class="rail-label-all">All&nbsp;</span><span
+                      class="rail-label-featured">Featured&nbsp;</span
+                    >Project<span class="rail-label-s">s</span><span
+                      class="rail-label-arrow"
+                      aria-hidden="true">&rarr;</span
+                    >
+                  </a>
+                </h3>
+                <ol class="home-rail-list home-rail-list--proj">
+                  {projects.map((project, i) => (
+                    <li class="home-rail-item" style={`--i: ${i}`}>
+                      <a
+                        class="home-rail-proj"
+                        href={url(`/projects/${project.id}/`)}
+                      >
+                        {project.data.image && (
+                          <img
+                            class="home-rail-thumb"
+                            src={url(project.data.image)}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        )}
+                        <span class="home-rail-proj-main">
+                          <span class="home-rail-proj-title">
+                            {project.data.title}
+                          </span>
+                          <span class="home-rail-proj-year">
+                            {project.data.date.getUTCFullYear()}
+                          </span>
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )
+          }
+
+          {
+            notebookPosts.length > 0 && (
+              <section
+                class="home-rail-group home-rail-group--notes"
+                data-reveal
+                style="--reveal-delay: 0.24s;"
+              >
+                <h3 class="home-rail-label">
+                  <a
+                    class="home-rail-label-link"
+                    href={url("/blog") + "#notebook"}
+                  >
+                    <span class="rail-label-all">All&nbsp;</span>Notes<span
+                      class="rail-label-arrow"
+                      aria-hidden="true">&rarr;</span
+                    >
+                  </a>
+                </h3>
+                <ol class="home-rail-list">
+                  {notebookPosts.map((post, i) => {
+                    const link = postLink(post);
+                    return (
+                      <li class="home-rail-item" style={`--i: ${i}`}>
+                        {link.href ? (
+                          <a
+                            class="home-rail-title"
+                            href={link.href}
+                            {...(link.external
+                              ? { target: "_blank", rel: "noopener noreferrer" }
+                              : {})}
+                            set:html={renderInline(post.data.title)}
+                          />
+                        ) : (
+                          <span
+                            class="home-rail-title"
+                            set:html={renderInline(post.data.title)}
+                          />
+                        )}
+                        <div class="home-row-meta home-row-date">
+                          {/* Notes are evergreen — their topic says more than
+                              a date would. */}
+                          {post.data.topic ??
+                            post.data.pubDate.toLocaleDateString("en-us", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              timeZone: "UTC",
+                            })}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </section>
+            )
+          }
+        </aside>
       </div>
 
       {
-        projects.length > 0 && (
-          <section class="home-projects" data-reveal>
-            <h2 style="margin-top: 0;">Projects</h2>
-            <div class="home-proj-grid">
-              {projects.map((project, i) => (
-                <a
-                  class="home-proj-card"
-                  style={`--i: ${i}`}
-                  href={url(`/projects/${project.id}/`)}
-                >
-                  {project.data.image && (
-                    <div class="home-proj-image">
-                      <img
-                        src={url(project.data.image)}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                      />
-                      {project.data.categories?.[0] && (
-                        <span
-                          class="home-proj-pill"
-                          style={`--badge-color: ${
-                            PROJECT_CATEGORY_BADGE_VARS[
-                              project.data.categories[0]
-                            ] ?? "var(--color-accent)"
-                          }`}
-                        >
-                          {project.data.categories[0]}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  <div class="home-proj-title">{project.data.title}</div>
-                  <div class="home-proj-year">
-                    {project.data.date.getUTCFullYear()}
-                  </div>
-                </a>
-              ))}
-            </div>
-            <a href={url("/projects")} class="home-more" style="--i: 3">
-              View all projects<span class="home-more-arrow" aria-hidden="true"
-                >&rarr;</span
-              >
-            </a>
-          </section>
-        )
+        /* Get in touch: an editorial section in the page's own grammar
+           (serif h2 + hot rule, left-aligned, in the reading column) rather
+           than a centered full-bleed CTA strip. No surface needed, so it
+           reads identically in both themes. */
       }
-
-      <EquationCoda />
-
       <section class="home-contact" data-reveal>
-        <div class="home-contact-inner">
-          <p class="home-contact-line">
-            I'm finishing my PhD and open to what comes next — if your team works
-            on problems where modeling, simulation, or messy data matter, I'd like
-            to hear from you.
-          </p>
+        <h2 style="margin-top: 0;">Get in touch</h2>
+        <p class="home-contact-line">
+          I'm finishing my PhD and open to what comes next, in research or in
+          industry. If you work on problems where modeling and simulation
+          matter, I'd like to hear from you.
+        </p>
           <div class="home-contact-links">
             <a href={`mailto:${contactEmail}`} class="home-more" style="--i: 0">
               Email<span class="home-more-arrow" aria-hidden="true">&rarr;</span>
@@ -1479,8 +1897,14 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
               )
             }
           </div>
-        </div>
       </section>
+
+      {
+        /* Quiet epilogue, the very last thing before the footer: the equation
+           the opening simulation integrates. Easter egg, not a headline.
+           TABLED for now — to re-enable, restore the import at the top of
+           this file and render <EquationCoda /> right here. */
+      }
     </main>
     <Footer />
 
@@ -1766,12 +2190,21 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           showCue();
         };
         // RESPONSIVENESS: the lock only exists to play the intro "from the top".
-        // It is INDEPENDENT of the animation (CSS + the sim's RAF loop, both
-        // driven by data-home-intro / the cue timer — none of which read
-        // scrollY), so the moment the user actually tries to scroll we release
-        // the lock and let them go; the intro keeps playing underneath, no
-        // glitch. A short floor stops a stray load-time event from skipping it.
-        // Without interaction, the timed release at the end still fires (below).
+        // The moment the user actually tries to scroll we END the intro
+        // entirely (remove data-home-intro), not just release the lock.
+        // Cutting it short matters for the scrub: while the attribute is
+        // present, the introCanvasFade ANIMATION (fill: both) owns the
+        // canvas's opacity and overrides the choreography's
+        // `opacity: var(--b-gas)` — so a mid-intro scroller would carry a
+        // frozen, full-opacity sim snapshot into the card view until the
+        // intro timer expired. Removing the attribute unapplies all intro
+        // animations: nav and grid snap to their resting states (visually
+        // identical to the intro's end state) and the canvas immediately
+        // follows the scroll choreography. The sim's own name-activation
+        // flare runs off its persistent introStart clock, so it finishes
+        // smoothly regardless. A short floor stops a stray load-time event
+        // from skipping the intro. Without interaction, the timed removal
+        // at the end still fires (below).
         const INTRO_SCROLL_FLOOR = 350; // ms before user intent can break the lock
         const introStart = performance.now();
         const SCROLL_KEYS = new Set([
@@ -1787,9 +2220,9 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           // Ignore zoom/modifier gestures; only genuine scroll intent releases.
           if (e.type === "keydown" && !SCROLL_KEYS.has(e.key)) return;
           if (performance.now() - introStart < INTRO_SCROLL_FLOOR) return;
-          // Force-reveal below-the-fold content (it's held at opacity:0 during
-          // the intro) so scrolling away from the hero doesn't show a blank page.
-          root.setAttribute("data-intro-scrolled", "");
+          // End the intro: unapplies every intro animation (see the note
+          // above) and lets the below-the-fold content show normally.
+          root.removeAttribute("data-home-intro");
           releaseScrollLock();
         };
         window.addEventListener("wheel", onScrollIntent, { passive: true });
@@ -1853,7 +2286,6 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         window.setTimeout(
           () => {
             root.removeAttribute("data-home-intro");
-            root.removeAttribute("data-intro-scrolled");
             releaseScrollLock();
           },
           Math.max(cssEnd, activationEnd, cueEnd) + 120,
