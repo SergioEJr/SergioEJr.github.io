@@ -336,16 +336,85 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     // apply, so a lingering inline opacity:0 would hide the canvas permanently.
     // Clearing it on animationend hands control back to the canvas's resting CSS
     // (opacity:1). Harmless if no intro: the listener simply never fires.
+    let introAttrObs: MutationObserver | null = null;
+    let introSampleRaf = 0;
+    let introContinuation: Animation | null = null;
     if (introWanted) {
+      // INVARIANT for a CUT-SHORT intro (user scroll removes data-home-intro
+      // before introCanvasFade finishes): what's on screen must keep matching
+      // the intro's own schedule — nothing yet if the gas hadn't appeared,
+      // the half-faded gas if it was mid-fade — while the scrub's
+      // var(--b-gas) applies on top. Instant-clearing the flash guard made
+      // the gas POP to full; leaving it made the gas vanish permanently.
+      //
+      // Mechanism: every frame, snapshot the live CSSAnimation's keyframes,
+      // timing, and currentTime (it stops being readable the instant the
+      // attribute is removed). On cut, clone that animation onto the WRAPPER
+      // (root) and resume it at the same timestamp: the wrapper's opacity
+      // continues the intro fade exactly — delay phase included — and
+      // MULTIPLIES with the canvas's cascade opacity (var(--b-gas)), so the
+      // scrub stays in control simultaneously. The grid's introGridFade
+      // shares this schedule (±0.02s), so the wrapper covers it too.
+      let snap: {
+        keyframes: Keyframe[];
+        timing: OptionalEffectTiming;
+        time: number;
+      } | null = null;
+      const sample = () => {
+        const anim = canvasEl
+          .getAnimations()
+          .find(
+            (a) => (a as CSSAnimation).animationName === "introCanvasFade",
+          );
+        const effect = anim?.effect as KeyframeEffect | undefined;
+        if (anim && effect) {
+          snap = {
+            keyframes: effect.getKeyframes(),
+            timing: effect.getTiming() as OptionalEffectTiming,
+            time: (anim.currentTime as number) ?? 0,
+          };
+        }
+        introSampleRaf = requestAnimationFrame(sample);
+      };
+      introSampleRaf = requestAnimationFrame(sample);
+      const stopSampling = () => {
+        cancelAnimationFrame(introSampleRaf);
+        introSampleRaf = 0;
+        introAttrObs?.disconnect();
+        introAttrObs = null;
+      };
       canvasEl.addEventListener(
         "animationend",
         (e) => {
           if ((e as AnimationEvent).animationName === "introCanvasFade") {
+            // Natural completion at opacity 1 — instant clear is invisible.
+            stopSampling();
             canvasEl.style.opacity = "";
           }
         },
         { once: true },
       );
+      introAttrObs = new MutationObserver(() => {
+        if (document.documentElement.hasAttribute("data-home-intro")) return;
+        stopSampling();
+        canvasEl.style.opacity = ""; // canvas follows var(--b-gas) from now on
+        if (snap) {
+          introContinuation = root.animate(snap.keyframes, snap.timing);
+          introContinuation.currentTime = snap.time;
+          introContinuation.finished
+            .then(() => {
+              // Ends at opacity 1 == the wrapper's natural value; cancel to
+              // drop the effect with no visual change.
+              introContinuation?.cancel();
+              introContinuation = null;
+            })
+            .catch(() => {}); // cancelled during teardown — fine
+        }
+      });
+      introAttrObs.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-home-intro"],
+      });
     }
     // The particle canvas is centered in the viewport and capped to a laptop-like
     // width so huge monitors don't dilute the fixed particle budget. canvasLeft
@@ -374,9 +443,16 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
     function introElapsed() {
       if (!introWanted) return Infinity;
-      if (!document.documentElement.hasAttribute("data-home-intro")) {
-        return Infinity;
-      }
+      // NOTE: no `hasAttribute("data-home-intro")` short-circuit here. The
+      // attribute is removed EARLY when a user scroll cuts the intro
+      // (index.astro onScrollIntent), and returning Infinity then teleports
+      // every envelope to its settled state — the next frame draws the
+      // fully-lit name over what was still gray pre-ignition gas (the
+      // "snapshot inconsistent with the sim" bug). The latched persistent
+      // clock below is the single source of truth: it keeps the ignition
+      // timeline continuous across a cut, and at the intro's NATURAL end
+      // (~4s) the clock is already past every envelope's endpoint, so the
+      // behavior there is identical to the old Infinity.
       // Latch the sim-phase start once, on the first frame it's resolvable. Prefer
       // the canvas's introCanvasFade animation: its startTime + delay is the exact
       // instant (in performance.now terms) the gas begins, frame-accurate and
@@ -399,9 +475,18 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
           }
         } catch {}
         if (introStart === null) {
-          // Animation not readable yet this frame: report a pre-start time (the
-          // gas hasn't begun), so ambient/activation stay at 0 until we latch.
-          return -readSimIntroDelayMs();
+          if (!document.documentElement.hasAttribute("data-home-intro")) {
+            // The intro was cut before the animation was ever readable (can
+            // only happen in the first frames): the animation is gone, so it
+            // can never latch. Anchor the schedule to the resolved delay
+            // from now — approximate but within a frame or two of truth.
+            introStart = performance.now() + readSimIntroDelayMs();
+          } else {
+            // Animation not readable yet this frame: report a pre-start time
+            // (the gas hasn't begun), so ambient/activation stay at 0 until
+            // we latch.
+            return -readSimIntroDelayMs();
+          }
         }
       }
       return performance.now() - introStart;
@@ -888,7 +973,12 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       // name's size/position/spacing. Placed just off the last line's top-right.
       jrMask = new Uint8Array(n);
       octx.clearRect(0, 0, fieldW, fieldH);
-      const jrPx = lastFontPx * 0.4 * scale; // small superscript
+      // Small superscript — but with a FLOOR: at phone name sizes, 0.4× the
+      // name font rasterizes to only a few field cells and the JR reads as a
+      // pink smudge instead of letters. The floor only binds on small
+      // screens; the 0.65× ceiling keeps it a superscript even there.
+      const jrPx =
+        Math.min(Math.max(lastFontPx * 0.4, 26), lastFontPx * 0.65) * scale;
       octx.font = `${weight} ${jrPx}px ${family}`;
       octx.textAlign = "left";
       octx.textBaseline = "alphabetic";
@@ -1505,6 +1595,25 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       // if gl somehow survived but reduceMotion, renderGL draws one frame.)
       for (let k = 0; k < 80; k++) step(1 / 60);
       render();
+      // With no rAF loop, a theme toggle would leave this frame in the old
+      // theme's colors forever — recolor and redraw it once per toggle.
+      const moStatic = new MutationObserver(() => {
+        readColors();
+        buildSprites();
+        buildField();
+        render();
+      });
+      moStatic.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-theme"],
+      });
+      (window as any).__heroSimCleanup = () => {
+        moStatic.disconnect();
+        introAttrObs?.disconnect();
+        if (introSampleRaf) cancelAnimationFrame(introSampleRaf);
+        introContinuation?.cancel();
+        delete (window as any).__heroSimCleanup;
+      };
     } else {
       // The sim runs only while ALL of these hold: the hero is onscreen, the
       // tab is visible, and the GAS is active in the scroll choreography.
@@ -1640,6 +1749,11 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
         readColors();
         buildSprites();
         buildField();
+        // If the sim is FROZEN (gas faded out in the scrub, or offscreen),
+        // no rAF will repaint the held frame — preserveDrawingBuffer keeps
+        // showing the OLD theme's colors when the user scrolls back up. Draw
+        // one frame now so the snapshot always matches the current theme.
+        if (!running) render();
       });
       mo.observe(document.documentElement, {
         attributes: true,
@@ -1650,6 +1764,9 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
         stop();
         io.disconnect();
         mo.disconnect();
+        introAttrObs?.disconnect();
+        if (introSampleRaf) cancelAnimationFrame(introSampleRaf);
+        introContinuation?.cancel();
         document.removeEventListener("visibilitychange", onVisibility);
         window.removeEventListener("beforeunload", hideForUnload);
         window.removeEventListener("pagehide", hideForUnload);
