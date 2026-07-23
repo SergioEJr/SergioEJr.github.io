@@ -4,6 +4,7 @@ description: "College students are more worried about their test scores than the
 pubDate: "2020-02-26"
 category: essays
 subject: Ideas
+featured: 2
 # Pointer post: links straight to the op-ed on the Emory Wheel.
 externalUrl: https://www.emorywheel.com/article/f290c82c-fdd0-49ec-9181-774486430288
 tags:

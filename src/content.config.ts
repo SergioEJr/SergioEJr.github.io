@@ -26,6 +26,12 @@ const blog = defineCollection({
       //   essays   → pop-sci/pop-math, big-picture, accessible
       //   notebook → notes/explainers on a topic, technical → simple
       category: z.enum(["updates", "essays", "notebook"]).default("updates"),
+      // Front-page pick: hand-curated posts (essays or notebook) surfaced in
+      // the homepage's lead "From the Journal" section. Curation, not recency
+      // — the homepage falls back to the newest prose posts only when nothing
+      // is flagged. `true` = featured (newest-first among unranked); a NUMBER
+      // both features the post and sets its position (1 = first).
+      featured: z.union([z.boolean(), z.number()]).default(false),
       topic: z.string().optional(), // groups Notebook posts (Math, Physics, Git, WebDev…)
       subject: z.enum(["Science", "Math", "Ideas"]).optional(), // Essays dot/underline color
       // "Pointer" posts: a Journal entry whose title/description are timeline-friendly
