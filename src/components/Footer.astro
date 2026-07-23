@@ -1,18 +1,9 @@
 ---
 const today = new Date();
-import {
-  CONTACT,
-  CV_URL,
-  SITE_TAGLINE,
-  SITE_TITLE,
-  SOCIAL_LINKS,
-} from "../consts";
-import { CV_AVAILABLE } from "../utils/cv";
+import { SITE_TAGLINE, SITE_TITLE, SOCIAL_LINKS } from "../consts";
 import Search from "./Search.astro";
 import ParticleField from "./ParticleField.astro";
 import { url } from "../utils/paths";
-
-const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
 ---
 
 <footer class="site-footer">
@@ -29,23 +20,13 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         <a href={url("/publications")}>Research</a>
         <a href={url("/projects")}>Projects</a>
         <a href={url("/blog")}>Journal</a>
-        {
-          cvHref && (
-            <a
-              href={cvHref}
-              target="_blank"
-              data-umami-event="cv-download"
-              data-umami-event-location="footer"
-            >
-              CV
-            </a>
-          )
-        }
+        {/* No CV link here — the homepage's "Get in touch" section (and the
+            header icon) own that ask; repeating it inches from the section
+            blunted it (2026-07 design audit). */}
       </nav>
       <div class="footer-contact">
-        <a class="footer-email" href={`mailto:${CONTACT.emails[0]}`}>
-          {CONTACT.emails[0]}
-        </a>
+        {/* Email lives in the icon row (SOCIAL_LINKS includes an email icon) —
+            a text address alongside it was redundant. */}
         <div class="social-links">
           {
             SOCIAL_LINKS.map((link) => (
@@ -369,10 +350,27 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
 <style>
   .site-footer {
     position: relative;
-    border-top: 1px solid var(--color-border);
     background: var(--color-bg);
     color: var(--color-text-main);
     overflow: hidden;
+  }
+  /* Soft separator (restored from the pre-redesign footer): an edge-fading
+     gradient hairline rather than a solid full-width line. */
+  .site-footer::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--color-border) 20%,
+      var(--color-border) 80%,
+      transparent 100%
+    );
+    opacity: 0.6;
   }
   .footer-inner {
     position: relative;
@@ -420,9 +418,11 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
   .footer-nav a:hover {
     color: var(--color-accent);
   }
-  /* Dot separators between nav links (not after the last). */
+  /* Dot separators between nav links (not after the last). The alt-text
+     syntax keeps the dot out of the link's accessible name ("About", not
+     "·About") in browsers that support it. */
   .footer-nav a + a::before {
-    content: "·";
+    content: "·" / "";
     margin: 0 0.6rem;
     color: var(--color-border);
   }
@@ -430,15 +430,6 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
     display: flex;
     align-items: center;
     gap: 1rem;
-  }
-  .footer-email {
-    font-size: 0.9rem;
-    color: var(--color-text-muted);
-    text-decoration: none;
-    transition: color 0.2s;
-  }
-  .footer-email:hover {
-    color: var(--color-accent);
   }
   .footer-bottom {
     position: relative;
@@ -464,6 +455,16 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
   @media (max-width: 640px) {
     .footer-side {
       align-items: flex-start;
+    }
+    /* Narrow screens wrap the nav row, and the ::before dot travels WITH the
+       link that follows it — a wrapped line then opens with an orphaned "·".
+       CSS can't tell which links wrapped, so below the wrap-prone width the
+       dots go away entirely and plain gaps separate the links. */
+    .footer-nav {
+      gap: 0.35rem 1.2rem;
+    }
+    .footer-nav a + a::before {
+      content: none;
     }
   }
 
