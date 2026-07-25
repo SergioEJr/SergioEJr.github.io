@@ -1,0 +1,86 @@
+% Two-panel entropy bookkeeping for melting ice: the environment gives up heat
+% (S_env down by Q/T_env), the ice absorbs it (S_ice up by Q/T_ice). Arrow SIZE
+% carries the physics: when T_env < T_ice the environment's loss dominates and
+% melting is entropically unfavorable; when T_env > T_ice the ice's gain wins.
+\ifnum\pdfoutput>0
+  \documentclass[tikz,border=3pt]{standalone}         % pdflatex → PDF proof
+\else
+  \documentclass[tikz,border=3pt,dvisvgm]{standalone} % latex   → web SVG
+\fi
+\input{_preamble}
+\usetikzlibrary{decorations.pathmorphing}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+  % Isometric-ish projection for the ice cube (same setup as cube-x3).
+  \def\ax{1}\def\ay{0}      % right
+  \def\bx{0}\def\by{1}      % up
+  \def\cx{0.5}\def\cy{0.35} % depth (foreshortened)
+  \newcommand{\Q}[3]{({(#1)*\ax + (#2)*\bx + (#3)*\cx}, {(#1)*\ay + (#2)*\by + (#3)*\cy})}
+
+  \tikzset{
+    % Icy translucent tint over the page bg, one depth per face (top catches
+    % light, right sits in shade) so the cube reads as frosted glass. Tint is
+    % figblue so it flips with the theme; nothing sits behind the cube, so a
+    % translucent fill is safe here (no occlusion needed).
+    icetop/.style   = {draw=figblue, edge, fill=figblue, fill opacity=0.08},
+    icefront/.style = {draw=figblue, edge, fill=figblue, fill opacity=0.16},
+    iceright/.style = {draw=figblue, edge, fill=figblue, fill opacity=0.26},
+    heat/.style     = {figred, edge, ->,
+                       decorate, decoration={snake, amplitude=0.8mm,
+                                             segment length=3mm, post length=2mm}},
+    bigarrow/.style   = {ink, line width=1.8pt, ->},
+    smallarrow/.style = {ink, line width=1pt, ->},
+  }
+  \def\X{18}   % ice cube edge (mm)
+
+  % One panel = environment box + ice cube + heat arrows. Entropy arrows differ
+  % per panel, so they're drawn outside this macro.
+  % \panel{label-env? 1/0}
+  \newcommand{\panel}[1]{%
+    \draw[edge, ink] (0,0) rectangle (66,52);
+    \begin{scope}[shift={(21,8)}]
+      % faces drawn individually so each carries its own tint depth
+      \filldraw[icefront] \Q{0}{0}{0} -- \Q{\X}{0}{0} -- \Q{\X}{\X}{0} -- \Q{0}{\X}{0} -- cycle;
+      \filldraw[icetop]   \Q{0}{\X}{0} -- \Q{\X}{\X}{0} -- \Q{\X}{\X}{\X} -- \Q{0}{\X}{\X} -- cycle;
+      \filldraw[iceright] \Q{\X}{0}{0} -- \Q{\X}{\X}{0} -- \Q{\X}{\X}{\X} -- \Q{\X}{0}{\X} -- cycle;
+      % glint: two parallel slashes on the front face's upper-left, the classic
+      % ice-cube highlight (front face has depth 0, so coords are just (a,b))
+      \draw[figblue, hair, line cap=round] (3,15.5) -- (5.5,13);
+      \draw[figblue, hair, line cap=round] (6.5,16) -- (8,14.5);
+    \end{scope}
+    % heat squiggles onto the top face...
+    \draw[heat] (31,38.5) -- (27,29);
+    \draw[heat] (38,39.5) -- (34,30);
+    \draw[heat] (45,41.0) -- (41,31.5);
+    % ...and one from the right
+    \draw[heat] (60,23) -- (51,21);
+    \ifnum#1>0
+      \node[text=ink, anchor=east] at (63,47) {environment};
+      \node[text=figred] at (57,15) {heat};
+    \fi
+  }
+
+  % --- Panel 1: T_env < T_ice — environment's entropy loss dominates. ---------
+  \begin{scope}
+    \panel{1}
+    \node[text=ink, anchor=west] at (4,44) {$S_{\mathrm{env}}$};
+    \draw[bigarrow] (16.5,50) -- (16.5,37);
+    \node[text=ink, anchor=west] at (23,17) {$S_{\mathrm{ice}}$};
+    \draw[smallarrow] (33.5,14.5) -- (33.5,19.5);
+    \node[text=ink]   at (33,57) {$T_{\mathrm{env}} < T_{\mathrm{ice}}$};
+    \node[text=muted] at (33,-5) {melting unfavorable};
+  \end{scope}
+
+  % --- Panel 2: T_env > T_ice — the ice's entropy gain wins. ------------------
+  \begin{scope}[shift={(78,0)}]
+    \panel{0}
+    \node[text=ink, anchor=west] at (4,44) {$S_{\mathrm{env}}$};
+    \draw[smallarrow] (16.5,46.5) -- (16.5,41.5);
+    \node[text=ink, anchor=west] at (23,17) {$S_{\mathrm{ice}}$};
+    \draw[bigarrow] (33.5,10.5) -- (33.5,23.5);
+    \node[text=ink]   at (33,57) {$T_{\mathrm{env}} > T_{\mathrm{ice}}$};
+    \node[text=muted] at (33,-5) {melting favorable};
+  \end{scope}
+\end{tikzpicture}
+\end{document}
