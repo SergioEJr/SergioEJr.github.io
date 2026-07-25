@@ -101,8 +101,13 @@ const { label = "Note", inline = false } = Astro.props;
     .sidenote__body:not(.sidenote__body--inline) {
       float: right;
       clear: right;
-      width: 190px;
-      margin: 0 -222px 1rem 0; /* -(gutter width) so it sits outside the column */
+      /* Target width, capped by the real gutter — (100vw - 760px column)/2,
+         minus breathing room — so the note narrows near the 1200px breakpoint
+         instead of clipping at the viewport edge. */
+      --sidenote-width: min(266px, calc((100vw - 760px) / 2 - 34px));
+      width: var(--sidenote-width);
+      /* -(width + 32px gap) so it sits outside the column */
+      margin: 0 calc(-1 * (var(--sidenote-width) + 32px)) 1rem 0;
       transition: opacity 0.2s ease;
     }
     /* `inline` notes keep the base in-column card even on wide screens. They read
