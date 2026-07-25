@@ -1,7 +1,7 @@
 ---
-title: "The entropy equation"
-description: "If water, steam, and ice are all made of the same molecule (H₂O), why do they take on such different forms? Read how simple probabilistic arguments explain why we have phases of matter and why our universe has an arrow of time."
-pubDate: "2024-08-24"
+title: "Entropy and the arrow of time"
+description: "Physicists say no law is more sacred than the second law of thermodynamics. With the help of a stopwatch, a box of coins, and a little fifth-grade counting, you can see what entropy really is and why time only runs one way."
+pubDate: "2024-06-24"
 category: essays
 subject: Science
 featured: 1
@@ -9,33 +9,26 @@ authors:
   - sergio-eraso
 toc: true
 tags:
-  - physics
-  - chemistry
+  - statistical physics
   - thermodynamics
+  - time
 draft: false # set to true to unpublish
 ---
 
-import Figure from '../../components/Figure.astro';
 import SideNote from '../../components/SideNote.astro';
+import Figure from '../../components/Figure.astro';
+import coinMacrostates from '../../assets/blog/coin-macrostates.svg?raw';
 
-
-## More is Different
-
-Suppose all scientific knowledge has suddenly evaporated and you were tasked to pass along a single sentence to the next generation of scientists. What would you say?
-
-This scenario was posed to Nobel laureate and physicist Richard Feynman. His answer was the atomic hypothesis: everything is made of atoms. The ice you skate on, the water you drink, the steam that powers your home, all atoms.
-
-But wait… all of these different things are made of the same molecule, H₂O? Why yes, of course, we learn about the states of matter in elementary school, this is not very shocking. However, notice how it is nonsensical to melt a single H₂O molecule or to speak of a gas consisting of a single atom. Evidently, a large collection of atoms is required to give rise to the novel and emergent phenomena we know as the states of matter. A collection of atoms is more than the sum of its parts.
-
-Large collections of atoms undergo phase transitions at specific temperatures. This feels so familiar it may seem almost trivial, but it turns out that describing the physics of phase transitions took some major scientific developments. One of these developements was introduced by Ludwig Boltzmann back in 1865: entropy.
-
-## The Second Law
 
 Physicists like to say that there is no law more sacred than the second law of thermodynamics: the entropy of a closed system always increases. But what does it _mean?_ We’ll work through this slowly, but we have to define some terms first, stick around.
 
-If your friend asks you for the time, you’re likely to round to the nearest quarter or five-minute interval instead of replying with the exact time down to the millisecond. For instance, your mind may automatically assign the times of 12:14, 12:15, 12:16 to the phrase _quarter past twelve_. Why do we do this? Because for most cases, a general idea of the current time is simply more _useful_ than knowledge of the _exact_ microsecond. In physics, we call this process of blurring out unnecessary details _coarse-graining_. The coarse-grained time bins we decide to use (e.g. 12:15, 12:30, 12:45) are called _macrostates_ and the exact times that go into each bin are called _microstates_ (e.g. 12:01:024 and 12:02:130 both go into the 12 o’clock bin).
+## Microstates and macrostates
 
-Here's another example: suppose you have a box with $10,000$ coins inside. You vigorously shake the box and let out one coin at a time writing down the resulting sequence of heads and tails. Each sequence -- e.g. $HTTHHT$ -- constitutes a microstate while a coarse-grained quantity, such as the total number of heads $ \#H $, forms a macrostate. Entropy is simply a way to count how many full-detail microstates belong to each coarse-grained macrostate. More precisely, if $M$ is a macrostate,
+If your friend asks you for the time, you’re likely to round to the nearest quarter or five-minute interval instead of replying with the exact time down to the millisecond. For instance, your mind may automatically assign the times of 12:14, 12:15, 12:16 to the phrase _quarter past twelve_. Why do we do this? Because for most cases, a general idea of the current time is simply more _useful_ than knowledge of the _exact_ microsecond. In physics, we distinguish between these two levels of description. The less exact, but more useful, times (e.g. 12:15, 12:30, 12:45) are called _macrostates_ and the more exact times, like what a stopwatch tracks, are called _microstates_ (e.g. 12:01:024 and 12:02:130).
+
+## The entropy equation
+
+Here's another example: suppose you have a box with $1,000$ coins inside. You vigorously shake the box and let out one coin at a time writing down the resulting sequence of heads and tails. Each sequence -- e.g. $HTTHHT$ -- constitutes a microstate while a coarse-grained quantity, such as the total number of heads $ \#H $, forms a macrostate. Entropy[^natural] is simply a way to count how many full-detail microstates belong to each coarse-grained macrostate. More precisely, if $M$ is a macrostate,
 
 $$
 \underbrace{S(M)}_{\textcolor{gray}{\mathclap{\footnotesize\text{entropy}}}}
@@ -43,19 +36,29 @@ $$
 \overbrace{\Omega(M)}^{\textcolor{gray}{\mathclap{\footnotesize\text{number of microstates}}}}
 $$
 
-Even though each sequence of heads and tails is equally likely -- they each have a probability of $1/2^{10000}$ -- there is only one single sequence that produces exactly $10,000$ heads. In other words, $S(\#H = 10000) = \log 1 = 0$.  
-On the other hand, there are more ways to get $5,000$ heads than there are atoms in the entire observable universe! <SideNote label="aside"> The number of ways to get $5,000$ heads from our box is $\binom{10000}{5000} \approx 10^{3008} $ giving an entropy of $S(\#H = 5000) \approx 3008 \log 10$. In contrast, there are only about $10^{80}$ atoms in the entire universe. </SideNote> Therefore, after shaking the box, our system naturally favors the outcome with the most possiblities and on-average we see sequences with close to $5,000$ heads. This is the essence of the second law.
+If logarithms are a distant memory, don't worry. The log is just a convenient way of writing astronomically large counts as manageable numbers; all you need for this essay is that the more microstates a macrostate contains, the higher its entropy.
 
-Much like our coins, the atoms in a room are constantly being jiggled around due to thermal fluctuations and there are many more ways to arrange the particles such that they uniformly take up the entire volume of the room versus being concentrated in some corner. Indeed, smoke in a room will naturally diffuse and take up as much volume as possible. Thus, the statement of the second law of thermodynamics is simply the observation that physical systems tend to evolve towards their most likely state! This is why entropy is sometimes considered a measure of disorder; maximum entropy states allow for the maximum number of rearrangements of microscopic constituents.
+<Figure
+  svg={coinMacrostates}
+  width={400}
+  alt="Coin-flip sequences on the left funnel into two macrostate bins on the right: a single all-heads sequence is the only arrow into the 1,000 heads bin, while many sequences pour into the 500 heads bin."
+  caption="Entropy essentially counts the number of arrows going into each bin. Only one sequence lands in the all-heads bin, so its entropy is zero; an astronomical number land near five hundred heads, so that is the state you actually see."
+/>
 
-## Phase Transitions
+## Majority rule
 
-If entropy always increases, then why do we have states of matter at all? Shouldn’t a block of ice spontaneously release its molecules into the surrounding air to increase the entropy of the universe, regardless of the temperature?
+Even though each sequence of heads and tails is equally likely -- they each have a probability of $1/2^{1000}$ -- there is only one single sequence that produces exactly $1,000$ heads. With only one possibility, the entropy is as low as it gets: $S(\#H = 1000) = \log 1 = 0$.  
+On the other hand, there are more ways to get $500$ heads than there are atoms in the entire observable universe! <SideNote label="aside"> The number of ways to get $500$ heads from our box is $\binom{1000}{500} \approx 10^{299} $ giving an entropy of $S(\#H = 500) \approx 299 \log 10$. There are only about $10^{80}$ atoms in the entire observable universe. </SideNote> Therefore, after shaking the box, our system naturally favors the outcome with the most possiblities and on-average we see sequences with close to $500$ heads. This is the essence of the second law.
 
-The short answer is that we have forgotten to take the conservation of energy into account. If the room is isolated, then the ice + room system is closed, and its total energy must be conserved. It takes energy to expel molecules from the surface of the ice, so the air in the room must give up some of its own energy to vaporize the ice cube, drastically decreasing the entropy of the air in the room. Thus, for the total entropy of the ice + environment to increase, the increase in entropy of the ice turning into vapor must outweigh the decrease in entropy of the surroundings as it heats up the cube. This competition between the energy and entropy of the system (ice) and the environment (room) is key in how physicists study phase transitions. To quantify this competition, physicists study a quantity known as the free energy.
+## The arrow of time
 
-A key advantage of the free energy is that it encapsulates all of the details about the surroundings we do not care about into a single quantity, the temperature. We also know that the system + surroundings must maximize their collective entropy. It turns out that this is accomplished when the free energy is minimized. We thus see that when temperature is low, the free energy is minimized when the internal energy of the system is minimized. On the other hand, at large temperatures, the entropy term dominates, and the system prefers disordered states such as a gaseous state.
+Much like our coins, the atoms in a room are constantly being jiggled around by thermal fluctuations, and there are far more ways to arrange them evenly across the room than crammed into one corner. This is why smoke released in a corner spreads until it fills the whole room, almost every rearrangement produces that configuration. The second law of thermodynamics is simply this observation, that physical systems drift toward their most likely state. It is also why entropy is often called a measure of disorder: the disordered arrangements are usually, but not always, the ones that can be realized in the most ways.
 
-## Conclusion
+Now, record a video of the smoke starting from the corner of the room and play the movie backwards. A clip of two air molecules colliding like two billiard balls looks perfectly fine in reverse; the microscopic laws of physics are symmetric under the reversal of time. Yet, the smoke gathering itself back into one corner of the room looks absurd, and you would spot it in a second. Where does the difference come from? Not from the laws of motion, but from the counting we just did. There are overwhelmingly more ways for smoke to fill a room than to huddle in a corner, so the direction we call _forward in time_ is simply the direction in which arrangements become more likely. The arrow of time is statistics.[^time]
 
-I hope you can now appreciate that the physics of phase transitions is a perhaps unexpectedly deep and exciting topic. Its ideas have had profound applications in quantum physics, materials engineering, and even the origins of our own universe. Next time you toss a coin or melt an ice cube, just remember the dance between energy and entropy that makes the world an exciting place to be.
+## Entropy is counting
+
+I hope entropy now feels a little less mysterious. In essence, it is counting. Shake anything, a box of coins, a room full of air, the universe, and it drifts toward the arrangement with the most possibilities. But this leaves a puzzle. If entropy always increases, why doesn't every ice cube fly apart into vapor to boost the entropy of the universe? Why do solids exist at all? That question deserves its own essay: [Why does ice melt?](/blog/physics-why-ice-melts/)
+
+[^natural]: We assume natural units $k_B = 1$, so entropy is just a number.
+[^time]: From the point of view of statistical physics, time is an emergent phenomenon; it arises from considering collections of particles. From the perspective of relativity, time is not emergent, it is baked directly into the theory through spacetime.

@@ -1,0 +1,45 @@
+% Microstates funneling into macrostates for the entropy essay: the single
+% all-heads sequence lands alone in the #H=1,000 bin (Omega=1, S=0), while
+% astronomically many sequences pour into #H=500 (Omega ~ 10^299). The
+% figure is S = log(Omega) drawn: entropy = how many arrows hit your bin.
+\ifnum\pdfoutput>0
+  \documentclass[tikz,border=3pt]{standalone}         % pdflatex → PDF proof
+\else
+  \documentclass[tikz,border=3pt,dvisvgm]{standalone} % latex   → web SVG
+\fi
+\input{_preamble}
+
+\begin{document}
+\begin{tikzpicture}[x=1mm, y=1mm]
+  \tikzset{
+    seq/.style    = {text=muted},
+    redbin/.style = {edge, figred, fill=figbg, rounded corners=2pt},
+    bluebin/.style= {edge, figblue, fill=figbg, rounded corners=2pt},
+    flow/.style   = {line width=1pt, ->},
+  }
+
+  % Column headers
+  \node[text=muted, font=\small] at (20,53) {\textit{microstates}};
+  \node[text=muted, font=\small] at (79,53) {\textit{macrostates}};
+
+  % --- Top: the single all-heads sequence -> #H = 1,000. --------------------
+  \node[seq] at (20,44) {$HHHHHH\cdots H$};
+  \draw[flow, figred] (40,44) -- (59,44);
+  \draw[redbin] (60,39) rectangle (98,49);
+  \node[text=ink] at (79,44) {$1{,}000$ heads};
+
+  % --- Bottom: many sequences -> #H = 500. -----------------------------------
+  \node[seq] at (20,24) {$HTHHTH\cdots T$};
+  \node[seq] at (20,19) {$THTHHT\cdots H$};
+  \node[seq] at (20,14) {$HHTHTT\cdots H$};
+  \node[text=muted] at (20,9) {$\vdots$};
+  \node[seq] at (20,3)  {$TTHHHT\cdots T$};
+  \draw[flow, figblue] (40,24) -- (59,17.5);
+  \draw[flow, figblue] (40,19) -- (59,16.9);
+  \draw[flow, figblue] (40,14) -- (59,16.3);
+  \draw[flow, figblue] (40,9)  -- (59,15.7);
+  \draw[flow, figblue] (40,3)  -- (59,15.1);
+  \draw[bluebin] (60,11.5) rectangle (98,21.5);
+  \node[text=ink] at (79,16.5) {$500$ heads};
+\end{tikzpicture}
+\end{document}
