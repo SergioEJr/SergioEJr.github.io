@@ -23,7 +23,11 @@ Always finish a change with `npm run build` and confirm it's clean.
 - **`position: sticky` + horizontal overflow don't mix.** A sticky-navbar
   failure almost always means something overflows horizontally. Fix with
   `overflow-x: clip` (NOT `hidden`/`auto`, which create a scroll container and
-  break sticky).
+  break sticky) — but put the clip on `<html>`/`<body>` ONLY. An overflow clip
+  on any other ancestor of a sticky element demotes iOS sticky positioning to
+  the main thread: the element visibly jitters against the composited scroll,
+  worst while the URL bar animates (root cause of the 2026-07 mobile hero
+  jitter).
 - **Dev HMR can serve stale inlined CSS** on client-side (ClientRouter)
   navigation — a style looks wrong on nav but right after a hard refresh. This is
   dev-only; verify CSS changes on `npm run preview` before trusting them.

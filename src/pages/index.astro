@@ -1320,7 +1320,12 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
            changes: single column, photo on top, compact type, sized so the
            whole card fits inside the pinned stage. */
         .hero-scroll {
-          overflow-x: clip;
+          /* Do NOT re-clip overflow-x here: an overflow clip on an ANCESTOR
+             of the sticky stage makes iOS WebKit reposition the sticky on the
+             main thread (compositing demotion) — the hero card then jitters
+             against the composited scroll, worst while the URL bar animates.
+             Root-cause of the 2026-07 mobile jitter bug; html/body's clip
+             already contains any sideways overflow. */
           /* Much shorter travel than desktop's 115svh: one energetic thumb
              flick should carry through the whole transition + hold. The JS
              metrics() reads geometry, so the scrub/hold split follows. */
@@ -1990,10 +1995,11 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         // dir 0 (e.g. resize) falls back to the nearest endpoint by the midpoint.
         const SETTLE_IDLE_MS = 110; // quiet time after last scroll before settling
         const FLICK = 0.12; // dead-zone near an endpoint that resists the flick
-        // The settle is desktop-only. Any programmatic scroll on a mobile
-        // browser re-expands the collapsed URL bar (Brave/Firefox iOS), which
-        // resizes the viewport and visibly shifts the page — far worse than
-        // occasionally resting half-faded. Touch devices keep the free scrub.
+        // Pointer class picks the settle MECHANISM (see doSettle): fine
+        // pointers get a smooth scroll glide; touch devices get an instant
+        // scroll jump + visual tween, because a programmatic glide re-expands
+        // the collapsed mobile URL bar (Brave/Firefox iOS) → viewport resize
+        // → jarring page shift.
         const mqFinePointer = window.matchMedia(
           "(hover: hover) and (pointer: fine)",
         );
@@ -2016,29 +2022,56 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           // The card endpoint is the START of the hold (transition just
           // finished), not the end of the section — settling to the section
           // end would silently spend the hold distance.
-          const targetY = settleTarget(p) === 0 ? m.start : m.start + m.scrub;
+          const pTo = settleTarget(p);
+          const targetY = pTo === 0 ? m.start : m.start + m.scrub;
           if (Math.abs(targetY - window.scrollY) < 1) return;
           settling = true;
-          window.scrollTo({ top: targetY, behavior: "smooth" });
-          // Clear the settling flag once we've effectively arrived (smooth scroll
-          // has no completion event). Poll briefly; bail out if the user grabs the
-          // scroll again (handled in onScroll, which cancels settling on real input).
-          const startedAt = performance.now();
-          const check = () => {
-            if (!settling) return;
-            if (
-              Math.abs(window.scrollY - targetY) < 2 ||
-              performance.now() - startedAt > 700
-            ) {
-              settling = false;
-              return;
-            }
+          if (mqFinePointer.matches) {
+            // Desktop: smooth glide. Fine here — no dynamic URL bar to poke.
+            window.scrollTo({ top: targetY, behavior: "smooth" });
+            // Clear the settling flag once we've effectively arrived (smooth
+            // scroll has no completion event). Poll briefly; bail out if the
+            // user grabs the scroll again (onScroll cancels on real input).
+            const startedAt = performance.now();
+            const check = () => {
+              if (!settling) return;
+              if (
+                Math.abs(window.scrollY - targetY) < 2 ||
+                performance.now() - startedAt > 700
+              ) {
+                settling = false;
+                return;
+              }
+              requestAnimationFrame(check);
+            };
             requestAnimationFrame(check);
+            return;
+          }
+          // Touch: a programmatic glide makes mobile browsers re-expand the
+          // collapsed URL bar (viewport resize + page shift — the Brave bug).
+          // Instead exploit the pinned band: scroll position is INVISIBLE
+          // inside it (the stage is sticky), so jump scrollY to the endpoint
+          // in one frame — nothing glides, the browser chrome stays put —
+          // and tween only the VISUAL progress to the endpoint.
+          window.scrollTo({ top: targetY, behavior: "instant" });
+          const pFrom = p;
+          const DUR = 300;
+          const t0 = performance.now();
+          const step = () => {
+            if (tweenRaf == null) return; // cancelled by real input
+            const k = Math.min(1, (performance.now() - t0) / DUR);
+            const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+            applyProgress(pFrom + (pTo - pFrom) * e, 0);
+            if (k < 1) {
+              tweenRaf = requestAnimationFrame(step);
+            } else {
+              tweenRaf = null;
+              settling = false;
+            }
           };
-          requestAnimationFrame(check);
+          tweenRaf = requestAnimationFrame(step);
         }
         function scheduleSettle() {
-          if (!mqFinePointer.matches) return;
           if (settleTimer != null) clearTimeout(settleTimer);
           settleTimer = window.setTimeout(doSettle, SETTLE_IDLE_MS);
         }
@@ -2076,6 +2109,29 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           );
         }
 
+        // Write one visual frame. Shared by the scroll path (update) and the
+        // touch-settle tween (doSettle), so both drive the same choreography.
+        function applyProgress(p, hp) {
+          section.style.setProperty("--hero-progress", p.toFixed(4));
+          section.style.setProperty("--hero-hold", hp.toFixed(4));
+          section.setAttribute("data-hero-active", p > 0.5 ? "card" : "sim");
+          // PERF: freeze the sim the moment the gas starts fading — the
+          // canvas holds its last frame (preserveDrawingBuffer), so the
+          // scrub blurs a static image instead of re-blurring a live 60fps
+          // animation, and nothing renders behind the invisible canvas in
+          // the card/hold states. Resumes when scrolled back to the top.
+          window.__heroSimSetGasActive?.(p < 0.03);
+          setGuardForProgress(p);
+        }
+        // Non-null while the touch settle is tweening the visuals; update()
+        // must not stomp the tween's frames with scroll-derived ones.
+        let tweenRaf = null;
+        function cancelTween() {
+          if (tweenRaf != null) {
+            cancelAnimationFrame(tweenRaf);
+            tweenRaf = null;
+          }
+        }
         function update() {
           raf = null;
           // In the reduced-motion fallback there's no scrub.
@@ -2095,16 +2151,8 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
             1,
             Math.max(0, (y - m.start - m.scrub) / (m.travel - m.scrub)),
           );
-          section.style.setProperty("--hero-progress", p.toFixed(4));
-          section.style.setProperty("--hero-hold", hp.toFixed(4));
-          section.setAttribute("data-hero-active", p > 0.5 ? "card" : "sim");
-          // PERF: freeze the sim the moment the gas starts fading — the
-          // canvas holds its last frame (preserveDrawingBuffer), so the
-          // scrub blurs a static image instead of re-blurring a live 60fps
-          // animation, and nothing renders behind the invisible canvas in
-          // the card/hold states. Resumes when scrolled back to the top.
-          window.__heroSimSetGasActive?.(p < 0.03);
-          setGuardForProgress(p);
+          if (tweenRaf != null) return; // settle tween owns the visuals
+          applyProgress(p, hp);
         }
         function onScroll() {
           const y = window.scrollY;
@@ -2134,6 +2182,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
             clearTimeout(settleTimer);
             settleTimer = null;
           }
+          cancelTween(); // real input takes the visuals back from the tween
           settling = false;
         };
         window.addEventListener("scroll", onScroll, { passive: true });
@@ -2158,6 +2207,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           mqReduce.removeEventListener("change", onMqChange);
           if (raf != null) cancelAnimationFrame(raf);
           if (settleTimer != null) clearTimeout(settleTimer);
+          cancelTween();
           settling = false;
           // Drop the page-scoped overscroll guard so other pages overscroll /
           // pull-to-refresh normally.

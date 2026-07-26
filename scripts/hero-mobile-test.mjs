@@ -70,19 +70,31 @@ const progressOf = (page) =>
   await page.close();
 }
 
-// ---- Test 2: no idle-settle on touch devices --------------------------------
-// Mid-band on an emulated iPhone: scrollY must rest where the user left it
-// (no programmatic glide that would re-show the URL bar).
+// ---- Test 2: touch settle = ONE instant scroll jump + visual tween ----------
+// Mid-band on an emulated iPhone: the page must commit to an endpoint, but via
+// a single discrete scrollY change (a smooth glide would re-show the mobile
+// URL bar). We sample scrollY at ~30ms; intermediate values = glide = fail.
 {
   const ctx = await browser.newContext({ ...devices['iPhone 13'] });
   const page = await ctx.newPage();
   await ready(page);
   await toMidBand(page);
   const y0 = await page.evaluate(() => window.scrollY);
-  await page.waitForTimeout(900);
+  const seen = new Set();
+  for (let i = 0; i < 25; i++) {
+    seen.add(await page.evaluate(() => window.scrollY));
+    await page.waitForTimeout(30);
+  }
   const y1 = await page.evaluate(() => window.scrollY);
-  check('T2  no settle glide on touch device',
-    Math.abs(y1 - y0) < 2, `y ${y0} -> ${y1}`);
+  const p1 = parseFloat(await page.evaluate(() =>
+    getComputedStyle(document.querySelector('.hero-scroll')).getPropertyValue('--hero-progress')));
+  const intermediates = [...seen].filter((y) => y !== y0 && y !== y1).length;
+  check('T2a touch settle commits scrollY to an endpoint',
+    Math.abs(y1 - y0) > 10, `y ${y0} -> ${y1}`);
+  check('T2b touch settle jumps (no glide)',
+    intermediates === 0, `intermediate scrollY values: ${intermediates}`);
+  check('T2c visual progress tweens to the endpoint',
+    p1 < 0.02 || p1 > 0.98, `p=${p1}`);
   await ctx.close();
 }
 
