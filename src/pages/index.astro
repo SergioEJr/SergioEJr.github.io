@@ -122,7 +122,13 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
            card yet every scroll pixel still produces visible motion (a dead
            hold reads as lag). The 80/20 split is HOLD_FRACTION in
            initHeroScroll; keep them in sync. */
-        --hero-travel: 115svh;
+        /* --hero-svh = 1% of the small viewport, LOCKED to px by JS at init
+           (recomputed only on width change). Safari's svh is already static,
+           but iOS Brave/Firefox report svh dynamically as their toolbars
+           collapse — every svh-sized hero box then resizes with the URL bar,
+           shoving the whole page (the 2026-07 "page jumps on bar resize" bug).
+           The 1svh fallback covers SSR/no-JS. */
+        --hero-travel: calc(var(--hero-svh, 1svh) * 115);
         --hero-progress: 0;
         /* 0→1 across the hold segment; drives the card's slow drift. */
         --hero-hold: 0;
@@ -147,7 +153,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         --b-bio: clamp(0, calc((var(--hero-progress) - 0.59) / 0.19), 1);
         --b-links: clamp(0, calc((var(--hero-progress) - 0.67) / 0.17), 1);
         position: relative;
-        height: calc(100svh - var(--header-h) + var(--hero-travel));
+        height: calc(var(--hero-svh, 1svh) * 100 - var(--header-h) + var(--hero-travel));
         /* Visible overflow so HeroSim's full-bleed canvas/grid feather past the
            content column (mobile re-clips below). */
         overflow-x: visible;
@@ -557,7 +563,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
       .hero-stage {
         position: sticky;
         top: var(--header-h);
-        height: calc(100svh - var(--header-h));
+        height: calc(var(--hero-svh, 1svh) * 100 - var(--header-h));
         display: grid; /* stack the two layers in one cell */
       }
       .hero-layer {
@@ -641,7 +647,9 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
            never a dead frame. Rate discontinuity at unpin reads as release. */
         /* svh, not vh: Firefox mobile resizes plain vh with the URL bar, which
            moved the whole card as the bar collapsed/expanded. */
-        transform: translateY(calc(var(--hero-hold, 0) * -4svh));
+        transform: translateY(
+          calc(var(--hero-hold, 0) * var(--hero-svh, 1svh) * -4)
+        );
       }
       /* Photo condenses in from the right: its soft melt edge travels
          right-to-left as it arrives. */
@@ -794,7 +802,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         /* On ultra-wide screens the photo stops growing and hugs the right
            edge rather than swallowing the whole viewport. */
         max-width: 58rem;
-        height: min(76svh, 42rem);
+        height: min(calc(var(--hero-svh, 1svh) * 76), 42rem);
         /* Size container so the img can position its crop in cqw/cqh units. */
         container-type: size;
       }
@@ -1329,7 +1337,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           /* Much shorter travel than desktop's 115svh: one energetic thumb
              flick should carry through the whole transition + hold. The JS
              metrics() reads geometry, so the scrub/hold split follows. */
-          --hero-travel: 70svh;
+          --hero-travel: calc(var(--hero-svh, 1svh) * 70);
         }
         .hero-card-inner {
           grid-template-columns: 1fr;
@@ -1342,7 +1350,11 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
              stage AND the reduced-motion static stack: whatever vertical
              space the stage has left after ~27rem of copy, clamped so the
              photo never collapses nor dominates. */
-          height: clamp(10rem, calc(100svh - 27rem), 46svh);
+          height: clamp(
+            10rem,
+            calc(var(--hero-svh, 1svh) * 100 - 27rem),
+            calc(var(--hero-svh, 1svh) * 46)
+          );
         }
         .hero-card-copy {
           grid-row: 2;
@@ -2007,6 +2019,16 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         let settling = false; // true while OUR programmatic glide is running
         let lastY = window.scrollY;
         let dir = 0; // +1 down, -1 up, 0 none
+        // Touch settle is TWO-PHASE. Phase 1 (on release + idle): tween the
+        // VISUALS to the endpoint, no scrolling — a programmatic scroll with
+        // no finger down makes iOS Brave/Firefox re-expand the URL bar
+        // (viewport resize + page shift). Phase 2 (next touchstart): commit
+        // scrollY invisibly — inside the pinned band scroll position has no
+        // visual expression, and a scroll during an active touch doesn't
+        // toggle browser chrome.
+        let touchDown = false;
+        let pendingSnapY = null; // scrollY to commit at the next touchstart
+        let snapRestY = 0; // where scrollY actually rests while deferred
 
         function settleTarget(p) {
           if (dir > 0) return p < FLICK ? 0 : 1; // heading down → card
@@ -2047,13 +2069,10 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
             requestAnimationFrame(check);
             return;
           }
-          // Touch: a programmatic glide makes mobile browsers re-expand the
-          // collapsed URL bar (viewport resize + page shift — the Brave bug).
-          // Instead exploit the pinned band: scroll position is INVISIBLE
-          // inside it (the stage is sticky), so jump scrollY to the endpoint
-          // in one frame — nothing glides, the browser chrome stays put —
-          // and tween only the VISUAL progress to the endpoint.
-          window.scrollTo({ top: targetY, behavior: "instant" });
+          // Touch: phase 1 — tween visuals only; scrollY stays put until the
+          // next gesture (see onTouchStart). See the pendingSnapY comment.
+          pendingSnapY = targetY;
+          snapRestY = window.scrollY;
           const pFrom = p;
           const DUR = 300;
           const t0 = performance.now();
@@ -2072,6 +2091,10 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           tweenRaf = requestAnimationFrame(step);
         }
         function scheduleSettle() {
+          // Never settle under a held finger: a stationary touch produces the
+          // same scroll-event silence as a released one, but the user still
+          // owns the scrub. Re-armed by onTouchEnd when the finger lifts.
+          if (touchDown) return;
           if (settleTimer != null) clearTimeout(settleTimer);
           settleTimer = window.setTimeout(doSettle, SETTLE_IDLE_MS);
         }
@@ -2152,10 +2175,22 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
             Math.max(0, (y - m.start - m.scrub) / (m.travel - m.scrub)),
           );
           if (tweenRaf != null) return; // settle tween owns the visuals
+          // While a snap commit is deferred, hold the endpoint visuals —
+          // bar-induced scroll/resize noise must not un-commit the crossfade.
+          if (pendingSnapY != null) return;
           applyProgress(p, hp);
         }
         function onScroll() {
           const y = window.scrollY;
+          // Deferred-snap dormancy: ignore small (URL-bar-induced) drift, but
+          // anything that moves scrollY far from its rest position is a real
+          // scroll — release the deferral and resume normal mapping.
+          if (
+            pendingSnapY != null &&
+            (touchDown || Math.abs(y - snapRestY) > 60)
+          ) {
+            pendingSnapY = null;
+          }
           // Only REAL user scrolling cancels an in-flight settle and re-arms the
           // idle timer. Our own programmatic glide (settling) must not cancel
           // itself or it would never reach the endpoint.
@@ -2166,11 +2201,34 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           lastY = y;
           if (raf == null) raf = requestAnimationFrame(update);
         }
+        // Lock 1svh to a pixel value, measured while the URL bar is expanded
+        // (page load / width change). Safari's svh is already static, but iOS
+        // Brave/Firefox report svh DYNAMICALLY as their toolbars collapse —
+        // every svh-sized hero box then resized with the bar, shoving the
+        // whole page (the "site jumps when the bar grows" bug). A hidden
+        // 100svh probe reads whatever the browser's svh means right now.
+        function lockSvh() {
+          const probe = document.createElement("div");
+          probe.style.cssText =
+            "position:absolute;height:100svh;width:0;visibility:hidden;pointer-events:none";
+          document.body.appendChild(probe);
+          const h = probe.offsetHeight || window.innerHeight;
+          probe.remove();
+          docEl.style.setProperty("--hero-svh", (h / 100).toFixed(2) + "px");
+        }
+        let lockedW = window.innerWidth;
+        lockSvh();
         // Resize only re-renders — it must NEVER schedule a settle. On mobile
         // the URL bar firing resize at gesture end otherwise queued a
         // programmatic scroll, which re-shows the bar → another resize → the
-        // sudden page shift reported on Brave/Firefox iOS.
+        // sudden page shift reported on Brave/Firefox iOS. The svh lock is
+        // re-measured only when WIDTH changes (rotation / desktop resize);
+        // height-only resizes are the bar itself and must not re-measure.
         function onResize() {
+          if (window.innerWidth !== lockedW) {
+            lockedW = window.innerWidth;
+            lockSvh();
+          }
           if (raf == null) raf = requestAnimationFrame(update);
         }
 
@@ -2185,10 +2243,29 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           cancelTween(); // real input takes the visuals back from the tween
           settling = false;
         };
+        const onTouchStart = () => {
+          touchDown = true;
+          cancelSettle();
+          // Phase 2 of the touch settle: commit the deferred snap invisibly
+          // under the fresh gesture (see the pendingSnapY comment above).
+          if (pendingSnapY != null) {
+            const yTo = pendingSnapY;
+            pendingSnapY = null;
+            window.scrollTo({ top: yTo, behavior: "instant" });
+            lastY = yTo;
+          }
+        };
+        const onTouchEnd = (e) => {
+          if (e.touches && e.touches.length > 0) return; // fingers remain
+          touchDown = false;
+          if (!isFallback()) scheduleSettle();
+        };
         window.addEventListener("scroll", onScroll, { passive: true });
         window.addEventListener("resize", onResize);
         window.addEventListener("wheel", cancelSettle, { passive: true });
-        window.addEventListener("touchstart", cancelSettle, { passive: true });
+        window.addEventListener("touchstart", onTouchStart, { passive: true });
+        window.addEventListener("touchend", onTouchEnd, { passive: true });
+        window.addEventListener("touchcancel", onTouchEnd, { passive: true });
         window.addEventListener("keydown", cancelSettle);
         const onMqChange = () => {
           applyGuard();
@@ -2202,13 +2279,17 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           window.removeEventListener("scroll", onScroll);
           window.removeEventListener("resize", onResize);
           window.removeEventListener("wheel", cancelSettle);
-          window.removeEventListener("touchstart", cancelSettle);
+          window.removeEventListener("touchstart", onTouchStart);
+          window.removeEventListener("touchend", onTouchEnd);
+          window.removeEventListener("touchcancel", onTouchEnd);
           window.removeEventListener("keydown", cancelSettle);
           mqReduce.removeEventListener("change", onMqChange);
           if (raf != null) cancelAnimationFrame(raf);
           if (settleTimer != null) clearTimeout(settleTimer);
           cancelTween();
           settling = false;
+          pendingSnapY = null;
+          docEl.style.removeProperty("--hero-svh");
           // Drop the page-scoped overscroll guard so other pages overscroll /
           // pull-to-refresh normally.
           enableGuard(false);
