@@ -176,18 +176,61 @@ const { count = 46, class: className = "" } = Astro.props;
       function resize() {
         const rect = parent.getBoundingClientRect(); // .j-head box
         const bar = document.querySelector(".j-filters-bar");
-        const barRect = bar ? bar.getBoundingClientRect() : null;
 
-        // Vertical band: from just under the navbar down to the filter bar's TOP.
-        const bleedUp = Math.max(0, rect.top - NAVBAR_BOTTOM);
-        const top = rect.top - bleedUp;
-        const bottom = barRect ? barRect.top : rect.bottom;
+        // Geometry must be SCROLL-INDEPENDENT. Measure in layout/offset space,
+        // never from a viewport-relative rect that moves as you scroll —
+        // otherwise mobile URL-bar show/hide (which fires `resize`) recomputes a
+        // different band on every scroll, visibly changing the field's extent
+        // and, before reflow() existed, re-rolling every particle.
+        //
+        // .j-head is statically positioned, so its offsetTop is stable.
+        const headTopDoc = parent.offsetTop;
+        // Bleed a FIXED distance up toward the navbar (clamped so the band never
+        // starts above the top of the page). This was previously derived from
+        // .j-head's viewport rect.top, which made it scroll-dependent.
+        const bleedUp = Math.min(NAVBAR_BOTTOM, headTopDoc);
+        const top = headTopDoc - bleedUp;
+        // Band bottom = the filter bar's UNSTUCK (layout) top.
+        //
+        // The bar is `position: sticky`, so BOTH its offsetTop and its rect
+        // report the CURRENT stuck offset, not the layout position — measured
+        // here they jump 270 -> 867 the moment it sticks. That was the main
+        // reason the band's extent changed on every scroll.
+        //
+        // We also can't reconstruct it from .j-head's bottom: #j-subtitle's
+        // bottom margin COLLAPSES through .j-head (padding-bottom is 0), so the
+        // real gap is ~20px larger than .j-head's offsetHeight reports.
+        //
+        // Instead, briefly neutralize the stickiness (`position: static`) and
+        // read the rect. That forces the browser to report the bar's LAYOUT
+        // position regardless of current scroll. The style is restored in the
+        // same synchronous block, so it is never painted — and since we only do
+        // this inside resize() (which now early-returns when nothing changed),
+        // it costs one extra layout on genuine resizes only, not per scroll.
+        let bottom: number;
+        if (bar instanceof HTMLElement) {
+          const prevPos = bar.style.position;
+          bar.style.position = "static";
+          bottom = bar.getBoundingClientRect().top + window.scrollY;
+          bar.style.position = prevPos;
+        } else {
+          bottom = headTopDoc + parent.offsetHeight;
+        }
 
         // Horizontal: bleed full viewport width, capped at MAX_W and centered.
         const vw = document.documentElement.clientWidth;
-        W = Math.min(vw, MAX_W);
-        const canvasLeftVp = (vw - W) / 2; // viewport X of the canvas left edge
-        H = Math.max(1, bottom - top);
+        const nextW = Math.min(vw, MAX_W);
+        const canvasLeftVp = (vw - nextW) / 2; // viewport X of the canvas left edge
+        const nextH = Math.max(1, bottom - top);
+
+        // Bail out when the band is unchanged. `resize` fires on every mobile
+        // URL-bar show/hide, and reassigning canvas.width/height CLEARS the
+        // canvas even when the value is identical — so without this the field
+        // blanked for a frame on each scroll. Returning false also tells the
+        // caller not to touch the particles at all.
+        if (nextW === W && nextH === H) return false;
+        W = nextW;
+        H = nextH;
 
         // Canvas is absolutely positioned inside .j-head (rect.left from viewport
         // edge); offset so its left edge lands at canvasLeftVp in the viewport.
@@ -206,6 +249,7 @@ const { count = 46, class: className = "" } = Astro.props;
         // Light is pinned to the eyebrow near the top of the band.
         recomputeTarget();
         if (light.x === 0) light.x = targetX;
+        return true;
       }
 
       // Compose the bottom fade (always) with optional left/right side fades
@@ -232,18 +276,49 @@ const { count = 46, class: className = "" } = Astro.props;
         return Math.max(MIN_N, Math.min(MAX_N, n));
       }
 
+      function newParticle(x: number, y: number) {
+        return {
+          x,
+          y,
+          vx: (Math.random() - 0.5) * 0.15,
+          vy: (Math.random() - 0.5) * 0.15,
+          r: 0.8 + Math.random() * 1.4,
+          ph: Math.random() * Math.PI * 2,
+        };
+      }
+
       function seed() {
         parts.length = 0;
         const N = particleCount();
         for (let i = 0; i < N; i++) {
-          parts.push({
-            x: Math.random() * W,
-            y: Math.random() * H,
-            vx: (Math.random() - 0.5) * 0.15,
-            vy: (Math.random() - 0.5) * 0.15,
-            r: 0.8 + Math.random() * 1.4,
-            ph: Math.random() * Math.PI * 2,
-          });
+          parts.push(newParticle(Math.random() * W, Math.random() * H));
+        }
+      }
+
+      // Re-fit the EXISTING particles to a new canvas size instead of re-rolling
+      // them. `resize` fires on every mobile URL-bar show/hide, i.e. constantly
+      // while scrolling; calling seed() there made the whole field visibly
+      // re-scatter on each scroll. Positions are remapped proportionally (so the
+      // pattern stretches with the band rather than jumping), and the count is
+      // only topped up / trimmed at the ends when the area change warrants it.
+      // Identity — velocity, radius, twinkle phase — is preserved throughout.
+      function reflow(prevW: number, prevH: number) {
+        if (!parts.length) {
+          seed();
+          return;
+        }
+        if (prevW > 0 && prevH > 0 && (prevW !== W || prevH !== H)) {
+          const sx = W / prevW;
+          const sy = H / prevH;
+          for (const p of parts) {
+            p.x *= sx;
+            p.y *= sy;
+          }
+        }
+        const N = particleCount();
+        while (parts.length > N) parts.pop();
+        while (parts.length < N) {
+          parts.push(newParticle(Math.random() * W, Math.random() * H));
         }
       }
 
@@ -390,6 +465,9 @@ const { count = 46, class: className = "" } = Astro.props;
         glowRafs.add(raf);
       }
 
+      // Set while the field is fully out of view; consumed on its way back in.
+      let needsReseed = false;
+
       let raf = 0;
       resize();
       seed();
@@ -408,6 +486,13 @@ const { count = 46, class: className = "" } = Astro.props;
             if (e.isIntersecting) {
               canvas.style.opacity = "1";
               recomputeTarget(); // re-measure in case layout shifted while away
+              // Re-scatter ONLY here: the field is completely out of sight, so a
+              // fresh arrangement can't be seen popping. While any part of it is
+              // on screen, particles persist (resize goes through reflow()).
+              if (needsReseed) {
+                needsReseed = false;
+                seed();
+              }
               if (!raf) {
                 raf = requestAnimationFrame(tick);
                 glowRafs.add(raf);
@@ -417,6 +502,8 @@ const { count = 46, class: className = "" } = Astro.props;
               cancelAnimationFrame(raf);
               glowRafs.delete(raf);
               raf = 0;
+              // Out of sight — allow one fresh scatter before it returns.
+              needsReseed = true;
             }
           }
         });
@@ -426,8 +513,14 @@ const { count = 46, class: className = "" } = Astro.props;
       window.addEventListener(
         "resize",
         () => {
-          resize();
-          seed();
+          const prevW = W;
+          const prevH = H;
+          // No-op when the band didn't actually change (the common case on
+          // mobile, where scrolling fires resize via the URL bar).
+          if (!resize()) return;
+          // Keep the existing particles — see reflow(). Re-seeding here is what
+          // made the field re-scatter on every mobile scroll.
+          reflow(prevW, prevH);
           recomputeTarget();
           if (reduce) {
             light.x = targetX;
