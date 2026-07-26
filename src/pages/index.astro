@@ -639,7 +639,9 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
            drifts the finished card slowly upward (~17% of scroll rate) —
            sub-linear feedback that reads as "passing slowly by the card",
            never a dead frame. Rate discontinuity at unpin reads as release. */
-        transform: translateY(calc(var(--hero-hold, 0) * -4vh));
+        /* svh, not vh: Firefox mobile resizes plain vh with the URL bar, which
+           moved the whole card as the bar collapsed/expanded. */
+        transform: translateY(calc(var(--hero-hold, 0) * -4svh));
       }
       /* Photo condenses in from the right: its soft melt edge travels
          right-to-left as it arrives. */
@@ -1988,6 +1990,13 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         // dir 0 (e.g. resize) falls back to the nearest endpoint by the midpoint.
         const SETTLE_IDLE_MS = 110; // quiet time after last scroll before settling
         const FLICK = 0.12; // dead-zone near an endpoint that resists the flick
+        // The settle is desktop-only. Any programmatic scroll on a mobile
+        // browser re-expands the collapsed URL bar (Brave/Firefox iOS), which
+        // resizes the viewport and visibly shifts the page — far worse than
+        // occasionally resting half-faded. Touch devices keep the free scrub.
+        const mqFinePointer = window.matchMedia(
+          "(hover: hover) and (pointer: fine)",
+        );
         let settleTimer = null;
         let settling = false; // true while OUR programmatic glide is running
         let lastY = window.scrollY;
@@ -2029,6 +2038,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           requestAnimationFrame(check);
         }
         function scheduleSettle() {
+          if (!mqFinePointer.matches) return;
           if (settleTimer != null) clearTimeout(settleTimer);
           settleTimer = window.setTimeout(doSettle, SETTLE_IDLE_MS);
         }
@@ -2043,7 +2053,14 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         function metrics() {
           const headerH =
             (stage && parseFloat(getComputedStyle(stage).top)) || 4.5 * 16;
-          const pinned = window.innerHeight - headerH;
+          // Pinned height comes from the STAGE, not window.innerHeight: the
+          // stage is sized in svh/lvh (stable units), while innerHeight
+          // tracks the mobile URL bar and oscillates DURING a scroll gesture.
+          // Deriving the scrub length from innerHeight remapped scrollY →
+          // progress on every bar frame — the hero-card jitter on iOS.
+          const pinned = stage
+            ? stage.offsetHeight
+            : window.innerHeight - headerH;
           const travel = Math.max(1, section.offsetHeight - pinned);
           const scrub = Math.max(1, travel * (1 - HOLD_FRACTION));
           const sectionTop =
@@ -2101,6 +2118,13 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           lastY = y;
           if (raf == null) raf = requestAnimationFrame(update);
         }
+        // Resize only re-renders — it must NEVER schedule a settle. On mobile
+        // the URL bar firing resize at gesture end otherwise queued a
+        // programmatic scroll, which re-shows the bar → another resize → the
+        // sudden page shift reported on Brave/Firefox iOS.
+        function onResize() {
+          if (raf == null) raf = requestAnimationFrame(update);
+        }
 
         // Real input intent (wheel/touch/keyboard) ALWAYS interrupts an in-flight
         // settle so the user can grab the scroll back mid-glide — without this the
@@ -2113,7 +2137,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           settling = false;
         };
         window.addEventListener("scroll", onScroll, { passive: true });
-        window.addEventListener("resize", onScroll);
+        window.addEventListener("resize", onResize);
         window.addEventListener("wheel", cancelSettle, { passive: true });
         window.addEventListener("touchstart", cancelSettle, { passive: true });
         window.addEventListener("keydown", cancelSettle);
@@ -2127,7 +2151,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
 
         const cleanup = () => {
           window.removeEventListener("scroll", onScroll);
-          window.removeEventListener("resize", onScroll);
+          window.removeEventListener("resize", onResize);
           window.removeEventListener("wheel", cancelSettle);
           window.removeEventListener("touchstart", cancelSettle);
           window.removeEventListener("keydown", cancelSettle);
