@@ -110,6 +110,61 @@ const numberedBody = numberCitations(renderedBody);
         text-align: justify;
         hyphens: auto;
       }
+      /* --- Subheadings (article prose only) ---------------------------------
+			   h2 is the section heading and is styled globally (2rem serif + the
+			   hot rule); it is deliberately NOT touched here. Below it the levels
+			   descend by WEIGHT, CASE and COLOR rather than by size, so no subhead
+			   ever competes with an h2 or reads as a second section break.
+
+			   These are scoped to .prose so they apply to blog posts only — every
+			   other h3 on the site (project cards, the 404 list, the footer modal,
+			   the home rails) carries its own component-scoped styling and must
+			   keep it.
+
+			   Note the inherited theme styling these replace: h3 was 1.5rem in
+			   --color-accent, i.e. link blue at nearly h2's size, which read as a
+			   large inline link inside body copy. Subheads are structure, not
+			   interaction, so the accent color is reserved for links here. */
+      .prose :global(h3) {
+        font-size: 1.3rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        /* MUST be restated: the global `h3 { color: var(--color-accent) }` rule
+				   would otherwise still apply (this selector doesn't outrank it on
+				   color), leaving subheads link-blue — the exact thing being fixed. */
+        color: var(--color-text-main);
+        margin-top: 2.25rem;
+        margin-bottom: 0.5rem;
+      }
+      /* Sans + uppercase micro-label — the same eyebrow treatment used on the
+			   Journal index, so a level-4 subhead reads as a label rather than a
+			   heading and can never be mistaken for a section break. */
+      .prose :global(h4) {
+        font-family: var(--font-sans);
+        font-size: 0.82rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+        margin-top: 1.9rem;
+        margin-bottom: 0.45rem;
+      }
+      .prose :global(h5) {
+        font-size: 1.02rem;
+        font-weight: 400;
+        font-style: italic;
+        color: var(--color-text-muted);
+        margin-top: 1.6rem;
+        margin-bottom: 0.3rem;
+      }
+      /* A subhead immediately after its parent heading shouldn't inherit the
+			   full stacked top margin — the pair reads as one unit. */
+      .prose :global(h2 + h3),
+      .prose :global(h3 + h4),
+      .prose :global(h4 + h5) {
+        margin-top: 1rem;
+      }
+
       .prose :global(ul),
       .prose :global(ol) {
         margin: 0 0 1.5rem;
@@ -556,16 +611,16 @@ const numberedBody = numberCitations(renderedBody);
         border-radius: 12px;
         box-shadow: var(--shadow-sm);
       }
-      /* Generic prose <details> (collapsibles). The TOC dropdown is also a
+      /* Generic prose <details> (collapsibles). The TOC bar is also a
 			   <details> but styles itself, so exclude it to avoid double padding. */
-      .prose :global(details:not(.toc-mobile-details)) {
+      .prose :global(details:not(.toc-bar__sheet)) {
         margin: 1.5rem 0;
         padding: 1rem 1.25rem;
         border: 1px solid var(--color-border);
         border-radius: 12px;
         background: var(--color-bg-offset);
       }
-      .prose :global(summary:not(.toc-mobile-summary)) {
+      .prose :global(summary:not(.toc-bar__button)) {
         cursor: pointer;
         font-weight: 700;
         color: var(--color-text-main);
@@ -844,7 +899,11 @@ const numberedBody = numberCitations(renderedBody);
               {
                 toc !== false && headings.length > 0 && (
                   <>
-                    <TableOfContents headings={headings} mobile={true} />
+                    <TableOfContents
+                      headings={headings}
+                      mobile={true}
+                      title={titleText}
+                    />
                     <TableOfContents headings={headings} mobile={false} />
                   </>
                 )
