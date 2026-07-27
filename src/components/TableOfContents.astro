@@ -102,7 +102,16 @@ const toc = headings.filter(
     .toc-rail {
       display: block;
       position: absolute;
-      top: 0;
+      /* Start the rail at the top of the PAGE, not the top of the prose column.
+         A sticky child can never rise above its containing block, so while the
+         rail began at the prose wrapper (~120px down) the outline rendered that
+         far below its centered resting place and visibly slid up as the reader
+         scrolled in. Extending the containing block upward — and adding the same
+         amount back to the height so the bottom edge is unchanged — means the
+         centered position is already reachable at scroll 0, so the outline is
+         simply *there* on load. Measured in JS (--toc-rail-lift): the title
+         block's height varies per post. */
+      top: calc(-1 * var(--toc-rail-lift, 0px));
       /* Left gutter: sit just outside the prose column. The gutter is
          (100vw - 760px)/2 ≥ 220px at this breakpoint, so a labelled outline
          fits without crowding the text. */
@@ -110,18 +119,42 @@ const toc = headings.filter(
       /* Wide enough that a long heading still fits on one line at the BOLD
          (active) weight — bold is ~8% wider than the resting weight. */
       width: min(230px, calc((100vw - 760px) / 2 - 32px));
-      height: 100%;
+      height: calc(100% + var(--toc-rail-lift, 0px));
       margin-right: 1.5rem;
+      /* The sticky box spans the full viewport height so its contents can be
+         centered; without this it would swallow clicks and text selection
+         across the entire left margin. Only the links opt back in. */
+      pointer-events: none;
+    }
+    .toc-tick a {
+      pointer-events: auto;
     }
 
+    /* Vertically CENTERED in the viewport rather than pinned under the navbar.
+       Top-left is where the eye lands first, so an outline parked there competes
+       with the <h1> and the opening paragraph; floating it to the middle of the
+       margin keeps it findable without claiming that attention.
+
+       Implemented by making the sticky box span the viewport and centering the
+       list inside it — `top: 50%` + a translate would fight position:sticky,
+       which needs a resolved offset to stick against. Full 100vh (not offset by
+       the navbar) so the content lands on the TRUE vertical middle; offsetting
+       would push it half the navbar's height low. */
     .toc-inner {
       position: sticky;
-      top: 7rem;
-      max-height: calc(100vh - 10rem);
-      overflow-y: auto;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
       text-align: right;
       /* No rule/eyebrow at rest — the ticks alone imply the margin. A border
          here reads as a panel edge and pulls focus toward the gutter. */
+    }
+    .toc-ticks {
+      /* A very long outline still scrolls rather than overflowing the viewport. */
+      max-height: calc(100vh - 9rem);
+      overflow-y: auto;
     }
   }
 
@@ -331,9 +364,31 @@ const toc = headings.filter(
 
 <script>
   let observer: IntersectionObserver | undefined;
+  let cleanup: (() => void) | undefined;
 
   function initTOC() {
     observer?.disconnect();
+    cleanup?.();
+    cleanup = undefined;
+
+    // How far the prose column starts below the top of the page. The rail's
+    // containing block is extended upward by this much (--toc-rail-lift) so its
+    // sticky child can already sit at its centered resting position at scroll 0
+    // instead of starting low and sliding up as the reader scrolls in. Measured
+    // rather than hardcoded: the title block's height varies per post (title
+    // length, category badges, optional hero image).
+    const railEl = document.querySelector<HTMLElement>(".toc-rail");
+    const measureLift = () => {
+      if (!railEl) return;
+      const wrapper = railEl.closest<HTMLElement>(".prose-wrapper");
+      if (!wrapper) return;
+      const lift = wrapper.getBoundingClientRect().top + window.scrollY;
+      railEl.style.setProperty("--toc-rail-lift", `${Math.max(0, lift)}px`);
+    };
+    measureLift();
+
+    window.addEventListener("resize", measureLift, { passive: true });
+    cleanup = () => window.removeEventListener("resize", measureLift);
 
     const observerCallback = (entries: IntersectionObserverEntry[]) => {
       entries.forEach((entry) => {
