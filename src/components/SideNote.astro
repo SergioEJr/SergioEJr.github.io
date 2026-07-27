@@ -17,10 +17,9 @@
 // Use this for notes that are too long or too important to relegate to the
 // margin (e.g. a framing paragraph).
 //
-// On wide screens the right gutter is shared with the sticky Table of Contents,
-// so a small script fades each floating note out as it scrolls up into the ToC's
-// band, keeping things from overlapping awkwardly. Inline notes are exempt (they
-// never enter the gutter, so there's nothing to overlap).
+// Notes own the RIGHT gutter outright: the Table of Contents sits in the LEFT
+// gutter, so the two never compete. (This used to require a scroll-driven
+// fade-out that dimmed notes whenever they met the ToC.)
 
 interface Props {
   label?: string;
@@ -118,68 +117,3 @@ const { label = "Note", inline = false } = Astro.props;
   }
 </style>
 
-<script is:inline data-astro-rerun>
-  // Fade a side note as it scrolls up toward the ToC. Opacity reaches 0 exactly
-  // when the note's TOP edge meets the ToC's BOTTOM edge — so the note is gone the
-  // instant it would start overlapping the ToC. It fades over the GAP px just below
-  // the ToC bottom; everything is measured live, so it adapts to ToC height and
-  // screen size.
-  // (Inline so it's reliably emitted even when this component is used in MDX.)
-  (function () {
-    var GAP = 10; // px below the ToC bottom over which the note fades out
-    var ticking = false;
-    var notes = [];
-    var tocInner = null;
-    var wide;
-
-    function update() {
-      ticking = false;
-      if (!tocInner || !wide.matches) {
-        for (var i = 0; i < notes.length; i++) notes[i].style.opacity = "";
-        return;
-      }
-      // The visible ToC box, measured every frame (it's sticky, so it moves).
-      var toc = tocInner.getBoundingClientRect();
-      for (var j = 0; j < notes.length; j++) {
-        var note = notes[j].getBoundingClientRect();
-        // How far the note's TOP sits below the ToC's BOTTOM edge. Large positive =
-        // note is well clear below the ToC (opacity 1). Opacity reaches 0 exactly
-        // when the note's top reaches the ToC bottom, so the note is gone before it
-        // overlaps the ToC. Fade happens over the GAP px just below the ToC bottom.
-        var distance = note.top - toc.bottom;
-        var opacity = distance / GAP;
-        if (opacity < 0) opacity = 0;
-        if (opacity > 1) opacity = 1;
-        notes[j].style.opacity = String(opacity);
-      }
-    }
-    function onScroll() {
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(update);
-      }
-    }
-
-    function setup() {
-      // Only the FLOATING notes need fading; inline notes (data-sidenote="inline")
-      // stay in-column and never overlap the ToC, so exclude them.
-      notes = Array.prototype.slice.call(
-        document.querySelectorAll('[data-sidenote]:not([data-sidenote="inline"])'),
-      );
-      if (notes.length === 0) return;
-      // Only fade when a sticky ToC actually shares the right gutter: rendered
-      // (pages with a ToC) and visible (>=1200px). Otherwise notes overlap nothing.
-      tocInner = document.querySelector(".toc-inner");
-      wide = window.matchMedia("(min-width: 1200px)");
-      update();
-    }
-
-    if (!window.__sidenoteFadeBound) {
-      window.addEventListener("scroll", onScroll, { passive: true });
-      window.addEventListener("resize", onScroll, { passive: true });
-      window.__sidenoteFadeBound = true;
-    }
-    setup();
-    document.addEventListener("astro:page-load", setup);
-  })();
-</script>

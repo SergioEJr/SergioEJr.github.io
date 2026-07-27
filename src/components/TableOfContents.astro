@@ -19,16 +19,34 @@ const toc = headings.filter(
 );
 ---
 
-{/* Desktop Sidebar */}
+{/* ---------------------------------------------------------------------------
+   Desktop: a quiet outline in the LEFT gutter.
+
+   Why left: <SideNote> margin notes are anchored prose — they must sit beside
+   the sentence they annotate, and the right gutter is where the eye exits a
+   line, so notes keep it. The ToC is global navigation with no per-sentence
+   anchor, so it is positionally free; left is also the conventional home for a
+   document outline. Splitting the two gutters means neither has to yield, and
+   side notes no longer have to fade out on collision.
+
+   Why so understated: left-aligned type in the left margin is the first thing
+   the eye lands on, so weight that reads as "subtle" on the right reads as
+   frontline on the left. At rest this is a column of ticks with faint labels —
+   the article's shape, not a menu competing with the <h1>. The whole outline
+   comes forward on hover/focus, and the current section stays legible
+   throughout so position never depends on hovering.
+--------------------------------------------------------------------------- */}
 {
   !mobile && toc.length > 0 && (
-    <nav class="toc-container">
+    <nav class="toc-rail" aria-label="Table of contents">
       <div class="toc-inner">
-        <h2 class="toc-title">Table of Contents</h2>
-        <ul class="toc-list">
+        <ul class="toc-ticks">
           {toc.map((heading) => (
-            <li class={`toc-item depth-${heading.depth}`}>
-              <a href={`#${heading.slug}`}>{heading.text}</a>
+            <li class={`toc-tick depth-${heading.depth}`}>
+              <a href={`#${heading.slug}`}>
+                <span class="toc-tick__mark" aria-hidden="true" />
+                <span class="toc-tick__label">{heading.text}</span>
+              </a>
             </li>
           ))}
         </ul>
@@ -37,7 +55,7 @@ const toc = headings.filter(
   )
 }
 
-{/* Mobile Inline Details */}
+{/* Mobile Inline Details — unchanged for now; replaced in a later stage. */}
 {
   mobile && toc.length > 0 && (
     <details class="toc-mobile-details" {...(open ? { open: true } : {})}>
@@ -73,90 +91,148 @@ const toc = headings.filter(
 }
 
 <style>
-  /* Desktop Styles */
-  .toc-container {
-    display: none; /* Hidden by default */
-    margin-top: 1.5rem;
+  /* ======================================================================
+     DESKTOP — left-gutter outline
+     ====================================================================== */
+  .toc-rail {
+    display: none;
   }
 
   @media (min-width: 1200px) {
-    .toc-container {
+    .toc-rail {
       display: block;
       position: absolute;
       top: 0;
-      left: 100%;
+      /* Left gutter: sit just outside the prose column. The gutter is
+         (100vw - 760px)/2 ≥ 220px at this breakpoint, so a labelled outline
+         fits without crowding the text. */
+      right: 100%;
+      /* Wide enough that a long heading still fits on one line at the BOLD
+         (active) weight — bold is ~8% wider than the resting weight. */
+      width: min(230px, calc((100vw - 760px) / 2 - 32px));
       height: 100%;
-      width: 250px;
-      margin-left: 2rem;
+      margin-right: 1.5rem;
     }
 
     .toc-inner {
       position: sticky;
-      top: 6.5rem;
-      padding-left: 1rem;
-      border-left: 1px solid var(--color-border);
-      max-height: calc(100vh - 8rem);
+      top: 7rem;
+      max-height: calc(100vh - 10rem);
       overflow-y: auto;
+      text-align: right;
+      /* No rule/eyebrow at rest — the ticks alone imply the margin. A border
+         here reads as a panel edge and pulls focus toward the gutter. */
     }
   }
 
-  .toc-title {
-    font-weight: 700;
-    font-size: 0.82rem;
-    margin-top: 0;
-    margin-bottom: 0.45rem;
-    color: var(--color-text-main);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-  /* Suppress the global h2::after rule mark — this is a small eyebrow label, not
-     a section heading, and the mark is sized for the larger h2 type scale. */
-  .toc-title::after {
-    content: none;
-  }
-
-  .toc-list {
+  .toc-ticks {
+    list-style: none;
+    /* Both !important: this list lives inside .prose, whose global `ul` rule
+       (`margin: 0 0 1.5rem; padding-left: 1.5rem`) otherwise wins. The bottom
+       margin would be counted by later layout work, and the left padding inset
+       every row 24px from the rail edge, leaving a dead strip beside the links. */
+    padding: 0 !important;
+    margin: 0 !important;
     display: flex;
     flex-direction: column;
-    gap: 0.02rem;
-    font-size: 0.86rem;
-    line-height: 1.22;
-    list-style: none;
-    padding: 0;
-    margin: 0;
+    /* No flex gap: a gap is dead space between rows, so the pointer falls
+       through the cracks. The rhythm comes from each link's own padding
+       instead, which IS part of the hit area. */
   }
 
-  .toc-item {
-    margin: 0;
+  .toc-tick {
+    /* !important beats the global `.prose li { margin: 0.45rem 0 }` — that
+       7.2px above and below each row was pure dead space between hit targets. */
+    margin: 0 !important;
   }
 
-  .toc-item a {
-    display: block;
-    border-left: 2px solid transparent;
-    padding-top: 0.06rem;
-    padding-bottom: 0.06rem;
-    padding-left: 1rem;
-    color: var(--color-text-muted);
+  /* Full-width row = generous hit target, always present (no hover-to-reveal:
+     hidden labels made the small ticks the only target, a precise pointer game
+     that lost its own menu when you reached for a title). */
+  .toc-tick a {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    /* Spans the full rail width so the hit area reaches the rail's left edge. */
+    width: 100%;
+    /* Tight rhythm as PADDING rather than margins/gaps, so the space between
+       labels is hoverable. Rows end up contiguous. */
+    padding: 0.28rem 0;
     text-decoration: none;
-    margin-left: -1.05rem;
-    transition: color 0.2s ease, border-color 0.2s ease;
+    /* Quiet at rest: faint enough to read as marginalia rather than a menu. */
+    color: color-mix(in srgb, var(--color-text-muted) 55%, transparent);
+    transition: color 0.2s ease;
   }
 
-  .toc-item a:hover {
+  .toc-tick__label {
+    display: block;
+    font-size: 0.78rem;
+    line-height: 1.3;
+    /* Breaks an over-long unbroken word rather than letting it escape the rail. */
+    overflow-wrap: anywhere;
+  }
+
+  /* Tick doubles as depth cue and position marker; it is not the hit target. */
+  .toc-tick__mark {
+    flex: none;
+    order: 2; /* after the label in the right-aligned row */
+    width: 9px;
+    height: 2px;
+    border-radius: 1px;
+    background: color-mix(in srgb, var(--color-border) 85%, transparent);
+    transform: translateY(-0.25em);
+    transition:
+      background-color 0.2s ease,
+      width 0.2s ease;
+  }
+
+  .toc-tick.depth-3 .toc-tick__label {
+    font-size: 0.72rem;
+  }
+  .toc-tick.depth-3 .toc-tick__mark {
+    width: 5px;
+  }
+
+  /* The whole outline comes forward when the reader engages with it. */
+  .toc-rail:hover .toc-tick a,
+  .toc-rail:focus-within .toc-tick a {
+    color: var(--color-text-muted);
+  }
+
+  /* Scoped under .toc-rail so this outranks the rule above (0,3,1) — otherwise
+     the rail-wide "bring everything forward" colour wins and the row you are
+     actually pointing at never goes accent. */
+  .toc-rail .toc-tick a:hover,
+  .toc-rail .toc-tick a:focus-visible {
     color: var(--color-accent);
   }
-
-  .toc-item.active a {
-    color: var(--color-accent);
-    border-color: var(--color-accent);
-    font-weight: 500;
+  .toc-rail .toc-tick a:hover .toc-tick__mark,
+  .toc-rail .toc-tick a:focus-visible .toc-tick__mark {
+    background: var(--color-accent);
   }
 
-  .toc-item.depth-3 {
-    margin-left: 0.75rem;
+  /* Reading position: legible at rest without shouting — the tick carries the
+     accent, the label steps up to normal muted weight. */
+  .toc-tick.active a {
+    color: var(--color-text-muted);
+    font-weight: 600;
+  }
+  .toc-rail:hover .toc-tick.active a,
+  .toc-rail:focus-within .toc-tick.active a {
+    color: var(--color-text-main);
+  }
+  .toc-tick.active .toc-tick__mark {
+    background: var(--color-accent);
+    width: 16px;
+  }
+  .toc-tick.active.depth-3 .toc-tick__mark {
+    width: 10px;
   }
 
-  /* Mobile Inline Styles */
+  /* ======================================================================
+     MOBILE — inline dropdown (replaced in a later stage)
+     ====================================================================== */
   .toc-mobile-details {
     /* Pull up under the title separator, which has ~2em of padding+margin below
        the <hr>; this tightens that gap without touching the global .title block. */
@@ -204,8 +280,7 @@ const toc = headings.filter(
     border-top: 1px solid var(--color-border);
   }
 
-  /* Reset margins inherited from the global .prose ul/li rules, which otherwise
-     add a large bottom margin / item spacing inside the dropdown. */
+  /* Reset margins inherited from the global .prose ul/li rules. */
   .toc-list-mobile {
     display: flex;
     flex-direction: column;
@@ -223,7 +298,7 @@ const toc = headings.filter(
 
   .toc-item-mobile a {
     display: block;
-    padding: 0.28rem 0 0.28rem 0.85rem; /* indent items past the header text */
+    padding: 0.28rem 0 0.28rem 0.85rem;
     color: var(--color-text-muted);
     text-decoration: none;
     transition: color 0.2s ease;
@@ -238,19 +313,19 @@ const toc = headings.filter(
     font-weight: 500;
   }
 
-  /* Sub-items: a guide line that drops from under the parent heading's text.
-     The border sits at the parent's text start (link padding = 0.85rem); the
-     sub-item text is then clearly indented past the line. The !important beats
-     the generic `.toc-item-mobile { margin: 0 !important }` reset above. */
   .toc-item-mobile.depth-3 {
-    /* Parent links are indented 0.85rem (their padding-left), so push the guide
-       line in by the same amount to sit directly under the parent text start.
-       !important beats the generic `.toc-item-mobile { margin: 0 !important }`. */
     margin-left: 0.85rem !important;
     border-left: 1px solid var(--color-border);
   }
   .toc-item-mobile.depth-3 a {
-    padding-left: 1rem; /* sub-text sits one clear level past the guide line */
+    padding-left: 1rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .toc-tick__mark,
+    .toc-tick a {
+      transition: none;
+    }
   }
 </style>
 
@@ -258,59 +333,38 @@ const toc = headings.filter(
   let observer: IntersectionObserver | undefined;
 
   function initTOC() {
-    // 1. Disconnect previous observer to avoid leaks/duplicates
-    if (observer) {
-      observer.disconnect();
-    }
+    observer?.disconnect();
 
-    // 2. Define callback
     const observerCallback = (entries: IntersectionObserverEntry[]) => {
       entries.forEach((entry) => {
         const id = entry.target.getAttribute("id");
-        if (!id) return;
+        if (!id || !entry.isIntersecting) return;
 
-        // We match against the current DOM
-        const desktopLink = document.querySelector(
-          `.toc-item a[href="#${id}"]`,
-        );
+        const railLink = document.querySelector(`.toc-tick a[href="#${id}"]`);
         const mobileLink = document.querySelector(
           `.toc-item-mobile a[href="#${id}"]`,
         );
 
-        if (entry.isIntersecting) {
-          // Remove active class from all
-          document
-            .querySelectorAll(".toc-item")
-            .forEach((item) => item.classList.remove("active"));
-          document
-            .querySelectorAll(".toc-item-mobile")
-            .forEach((item) => item.classList.remove("active"));
+        document
+          .querySelectorAll(".toc-tick, .toc-item-mobile")
+          .forEach((item) => item.classList.remove("active"));
 
-          // Add active class to current
-          desktopLink?.parentElement?.classList.add("active");
-          mobileLink?.parentElement?.classList.add("active");
-        }
+        railLink?.parentElement?.classList.add("active");
+        mobileLink?.parentElement?.classList.add("active");
       });
     };
 
-    // 3. Define options
-    const observerOptions = {
+    observer = new IntersectionObserver(observerCallback, {
       root: null,
       rootMargin: "-100px 0px -60% 0px",
       threshold: 0,
-    };
-
-    // 4. Create and observe
-    observer = new IntersectionObserver(observerCallback, observerOptions);
-
-    document.querySelectorAll("h2, h3").forEach((heading) => {
-      observer?.observe(heading);
     });
+
+    document
+      .querySelectorAll("h2, h3")
+      .forEach((heading) => observer?.observe(heading));
   }
 
-  // Run immediately (initial load)
   initTOC();
-
-  // Run after view transition (page swap)
   document.addEventListener("astro:after-swap", initTOC);
 </script>
