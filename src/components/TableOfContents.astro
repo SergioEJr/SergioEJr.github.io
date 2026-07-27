@@ -198,6 +198,15 @@ const toc = headings.filter(
     transition: color 0.2s ease;
   }
 
+  /* Line breaks are pre-computed at the BOLD width by a script (balanceLabels
+     below) and baked in as explicit <br>s.
+
+     The active row renders at weight 600, ~8% wider than the resting 400 —
+     enough to tip a heading that just fit onto an extra line, reflowing the
+     outline mid-scroll and shifting the other rows under the pointer. Baking
+     the breaks in means the visible text occupies the same lines in either
+     weight, so the weight can still change freely: the full heading is always
+     shown (never truncated), and no line is ever added or removed. */
   .toc-tick__label {
     display: block;
     font-size: 0.78rem;
@@ -387,8 +396,114 @@ const toc = headings.filter(
     };
     measureLift();
 
-    window.addEventListener("resize", measureLift, { passive: true });
-    cleanup = () => window.removeEventListener("resize", measureLift);
+    // --- Freeze each label's line breaks at the BOLD width ------------------
+    // Rather than bold everything (which throws away the active/inactive
+    // distinction) or truncate (which hides the section names a ToC exists to
+    // show), the wrap points are computed once at weight 600 and baked in as
+    // explicit <br>s. The visible text then occupies the same lines in both
+    // weights.
+    const balanceLabels = () => {
+      const labels = document.querySelectorAll<HTMLElement>(".toc-tick__label");
+
+      for (const label of labels) {
+        // Cache the pristine string on first sight; every later run re-breaks
+        // from it, so repeated passes (resize, client-side nav) are idempotent
+        // and can never compound their own inserted breaks. Whitespace is
+        // normalised because <br>s round-trip through textContent as none.
+        const text = (
+          label.dataset.tocText ??
+          label.textContent ??
+          ""
+        ).replace(/\s+/g, " ");
+        label.dataset.tocText = text;
+
+        // Budget = the row minus the tick and the flex gap. Measuring the
+        // label's own box would be a feedback loop: after the first pass it
+        // reports the width of the ALREADY-BROKEN text, so each run would wrap
+        // it tighter until every label collapsed to a narrow column.
+        const link = label.closest("a");
+        const mark = link?.querySelector(".toc-tick__mark");
+        if (!link) continue;
+        const gap = parseFloat(getComputedStyle(link).columnGap) || 0;
+        const width =
+          link.getBoundingClientRect().width -
+          (mark?.getBoundingClientRect().width ?? 0) -
+          gap;
+        if (width <= 0) {
+          label.textContent = text;
+          continue;
+        }
+
+        const probe = document.createElement("span");
+        const cs = getComputedStyle(label);
+        probe.style.cssText = `position:absolute;left:-9999px;top:0;visibility:hidden;white-space:pre;font:${cs.font};font-weight:600;letter-spacing:${cs.letterSpacing}`;
+        document.body.appendChild(probe);
+        const measure = (s: string) => {
+          probe.textContent = s;
+          return probe.getBoundingClientRect().width;
+        };
+
+        // A single word wider than the rail has no space to break at, and CSS
+        // `overflow-wrap` would then break it at a weight-dependent point —
+        // reintroducing the reflow. Split such words here so every break is
+        // ours and therefore weight-independent. Each token records whether a
+        // space precedes it, so a split word rejoins without gaining one.
+        const tokens: { text: string; space: boolean }[] = [];
+        for (const word of text.split(/\s+/).filter(Boolean)) {
+          if (measure(word) <= width) {
+            tokens.push({ text: word, space: true });
+            continue;
+          }
+          let chunk = "";
+          let first = true;
+          for (const ch of word) {
+            if (chunk && measure(chunk + ch) > width) {
+              tokens.push({ text: chunk, space: first });
+              first = false;
+              chunk = ch;
+            } else {
+              chunk += ch;
+            }
+          }
+          if (chunk) tokens.push({ text: chunk, space: first });
+        }
+
+        // Greedy line-breaking at the bold width — the same algorithm the
+        // browser would apply, but pinned to weight 600 regardless of state.
+        const lines: string[] = [];
+        let line = "";
+        for (const token of tokens) {
+          const sep = line && token.space ? " " : "";
+          const candidate = line + sep + token.text;
+          if (line && measure(candidate) > width) {
+            lines.push(line);
+            line = token.text;
+          } else {
+            line = candidate;
+          }
+        }
+        if (line) lines.push(line);
+        probe.remove();
+
+        label.textContent = "";
+        lines.forEach((l, i) => {
+          if (i) label.appendChild(document.createElement("br"));
+          label.appendChild(document.createTextNode(l));
+        });
+      }
+    };
+    balanceLabels();
+    // Exposed so the rail can be re-balanced after anything that changes the
+    // available width or the heading text (also used by the visual tests).
+    (window as unknown as { __tocBalance?: () => void }).__tocBalance =
+      balanceLabels;
+
+    const onResize = () => {
+      measureLift();
+      balanceLabels();
+    };
+    window.addEventListener("resize", onResize, { passive: true });
+    cleanup = () => window.removeEventListener("resize", onResize);
 
     const observerCallback = (entries: IntersectionObserverEntry[]) => {
       entries.forEach((entry) => {
