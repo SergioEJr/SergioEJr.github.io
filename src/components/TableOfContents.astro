@@ -3,9 +3,11 @@ export interface Props {
   headings: { depth: number; slug: string; text: string }[];
   mobile?: boolean;
   open?: boolean;
+  /** Post title — shown in the mobile bar that trades places with the navbar. */
+  title?: string;
 }
 
-const { headings, mobile = false, open = false } = Astro.props;
+const { headings, mobile = false, open = false, title = '' } = Astro.props;
 
 // Filter headings to only include h2 and h3, and exclude the auto-generated
 // GFM footnotes heading (slug "footnote-label") — Footnotes and References
@@ -55,38 +57,50 @@ const toc = headings.filter(
   )
 }
 
-{/* Mobile Inline Details — unchanged for now; replaced in a later stage. */}
+{/* ---------------------------------------------------------------------------
+   Mobile / single-column: a bar that trades places with the navbar.
+
+   Scrolling DOWN (reading forward) retracts the navbar and reveals this: the
+   article's tick scale plus its title, so the ToC costs no permanent screen
+   space. Scrolling UP — the "where am I / take me back" gesture — restores the
+   navbar and retracts this. Tapping opens the section list.
+
+   The current heading is deliberately NOT repeated here: it is on screen in the
+   prose, and the lit tick already reports position.
+
+   Why `fixed` and not `sticky`: <main> sets `overflow-x: clip` to contain the
+   negative-margin side notes. An overflow clip on ANY ancestor of a *sticky*
+   element demotes iOS sticky to the main thread and makes it jitter against the
+   composited scroll (see AGENTS.md — the 2026-07 hero bug). `fixed` is
+   unaffected by that clip, so this sidesteps the trap instead of risking it.
+--------------------------------------------------------------------------- */}
 {
   mobile && toc.length > 0 && (
-    <details class="toc-mobile-details" {...(open ? { open: true } : {})}>
-      <summary class="toc-mobile-summary">
-        Table of Contents
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="icon icon-tabler icon-tabler-chevron-down"
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          stroke-width="2"
-          stroke="currentColor"
-          fill="none"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </summary>
-      <nav class="toc-mobile-content">
-        <ul class="toc-list-mobile">
-          {toc.map((heading) => (
-            <li class={`toc-item-mobile depth-${heading.depth}`}>
-              <a href={`#${heading.slug}`}>{heading.text}</a>
-            </li>
-          ))}
-        </ul>
-      </nav>
-    </details>
+    <div class="toc-bar" data-toc-bar>
+      <details class="toc-bar__sheet" {...(open ? { open: true } : {})}>
+        <summary class="toc-bar__button" aria-label="Table of contents">
+          <span class="toc-bar__scale" aria-hidden="true">
+            {toc.map((heading) => (
+              <span class={`toc-bar__seg depth-${heading.depth}`} />
+            ))}
+          </span>
+          <span class="toc-bar__title">{title}</span>
+          <span class="toc-bar__chevron" aria-hidden="true" />
+        </summary>
+        <nav class="toc-bar__panel">
+          <ul class="toc-bar__list">
+            {toc.map((heading) => (
+              <li class={`toc-bar__item depth-${heading.depth}`}>
+                <a href={`#${heading.slug}`}>
+                  <span class="toc-bar__bar" aria-hidden="true" />
+                  <span>{heading.text}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </details>
+    </div>
   )
 }
 
@@ -273,97 +287,170 @@ const toc = headings.filter(
   }
 
   /* ======================================================================
-     MOBILE — inline dropdown (replaced in a later stage)
+     MOBILE — bar that trades places with the navbar
      ====================================================================== */
-  .toc-mobile-details {
-    /* Pull up under the title separator, which has ~2em of padding+margin below
-       the <hr>; this tightens that gap without touching the global .title block. */
-    margin-top: -0.5rem;
-    margin-bottom: 1.5rem;
-    border-radius: var(--radius);
-    border: 1px solid var(--color-border);
-    background: var(--color-bg-offset);
+  .toc-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    /* Under the header's z-index (100): when both are mid-transition the navbar
+       wins, so the site chrome is never occluded by the article's ToC. */
+    z-index: 90;
+    background: var(--color-bg-header);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--color-border);
+    /* Hidden by default: the navbar holds the slot until the reader scrolls
+       down. translate keeps it off the compositor's critical path. */
+    transform: translateY(-100%);
+    transition: transform 0.28s ease;
+  }
+
+  .toc-bar[data-toc-shown] {
+    transform: translateY(0);
   }
 
   @media (min-width: 1200px) {
-    .toc-mobile-details {
+    .toc-bar {
       display: none;
     }
   }
 
-  .toc-mobile-summary {
+  .toc-bar__sheet {
+    max-width: var(--max-width, 1200px);
+    margin: 0 auto;
+  }
+
+  .toc-bar__button {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0.55rem 0.85rem;
-    font-size: 0.82rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--color-text-main);
+    justify-content: center;
+    gap: 0.6rem;
+    /* Matches the navbar's own height so the swap reads as one element
+       replacing another, not as the page shifting. */
+    height: 3.25rem;
+    padding: 0 1rem;
     cursor: pointer;
     list-style: none;
   }
-
-  .toc-mobile-summary::-webkit-details-marker {
+  .toc-bar__button::-webkit-details-marker {
     display: none;
   }
 
-  .toc-mobile-summary svg {
-    transition: transform 0.3s ease;
+  /* The article's shape in miniature; the lit segment is your position. */
+  .toc-bar__scale {
+    flex: none;
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 13px;
+  }
+  .toc-bar__seg {
+    width: 2px;
+    border-radius: 1px;
+    background: var(--color-border);
+    transition: background-color 0.2s ease;
+  }
+  .toc-bar__seg.depth-2 {
+    height: 13px;
+  }
+  .toc-bar__seg.depth-3 {
+    height: 7px;
+  }
+  .toc-bar__seg.active {
+    background: var(--color-accent);
   }
 
-  .toc-mobile-details[open] .toc-mobile-summary svg {
-    transform: rotate(180deg);
+  .toc-bar__title {
+    min-width: 0;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--color-text-main);
+    /* One line — the bar must not change height as you scroll. This is the post
+       TITLE, not a section heading, and the full section list is one tap away. */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .toc-mobile-content {
-    padding: 0.5rem 0.85rem;
+  .toc-bar__chevron {
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-right: 1.5px solid var(--color-text-muted);
+    border-bottom: 1.5px solid var(--color-text-muted);
+    transform: translateY(-2px) rotate(45deg);
+    transition: transform 0.22s ease;
+  }
+  .toc-bar__sheet[open] .toc-bar__chevron {
+    transform: translateY(1px) rotate(-135deg);
+  }
+
+  .toc-bar__panel {
     border-top: 1px solid var(--color-border);
+    padding: 0.35rem 1rem 0.7rem;
+    max-height: min(60vh, 24rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   /* Reset margins inherited from the global .prose ul/li rules. */
-  .toc-list-mobile {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    font-size: 0.86rem;
-    line-height: 1.3;
+  .toc-bar__list {
     list-style: none;
     padding: 0 !important;
     margin: 0 !important;
+    display: flex;
+    flex-direction: column;
   }
-
-  .toc-item-mobile {
+  .toc-bar__item {
     margin: 0 !important;
   }
 
-  .toc-item-mobile a {
-    display: block;
-    padding: 0.28rem 0 0.28rem 0.85rem;
+  .toc-bar__item a {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.45rem 0;
+    font-size: 0.9rem;
+    line-height: 1.35;
     color: var(--color-text-muted);
     text-decoration: none;
-    transition: color 0.2s ease;
+  }
+  .toc-bar__bar {
+    flex: none;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--color-border);
+  }
+  .toc-bar__item.depth-2 .toc-bar__bar {
+    width: 14px;
+  }
+  .toc-bar__item.depth-3 .toc-bar__bar {
+    width: 7px;
+  }
+  /* Sub-sections step in from the text edge too, so hierarchy reads from more
+     than the tick length alone. */
+  .toc-bar__item.depth-3 a {
+    padding-left: 1.4rem;
+    font-size: 0.85rem;
   }
 
-  .toc-item-mobile a:hover {
+  .toc-bar__item a:hover {
     color: var(--color-accent);
   }
-
-  .toc-item-mobile.active a {
+  .toc-bar__item.active a {
     color: var(--color-accent);
-    font-weight: 500;
+    font-weight: 600;
   }
-
-  .toc-item-mobile.depth-3 {
-    margin-left: 0.85rem !important;
-    border-left: 1px solid var(--color-border);
-  }
-  .toc-item-mobile.depth-3 a {
-    padding-left: 1rem;
+  .toc-bar__item.active .toc-bar__bar {
+    background: var(--color-accent);
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .toc-bar,
+    .toc-bar__chevron,
+    .toc-bar__seg,
     .toc-tick__mark,
     .toc-tick a {
       transition: none;
@@ -511,16 +598,29 @@ const toc = headings.filter(
         if (!id || !entry.isIntersecting) return;
 
         const railLink = document.querySelector(`.toc-tick a[href="#${id}"]`);
-        const mobileLink = document.querySelector(
-          `.toc-item-mobile a[href="#${id}"]`,
+        const barLink = document.querySelector(
+          `.toc-bar__item a[href="#${id}"]`,
         );
 
         document
-          .querySelectorAll(".toc-tick, .toc-item-mobile")
+          .querySelectorAll(".toc-tick, .toc-bar__item, .toc-bar__seg")
           .forEach((item) => item.classList.remove("active"));
 
         railLink?.parentElement?.classList.add("active");
-        mobileLink?.parentElement?.classList.add("active");
+        const barItem = barLink?.parentElement;
+        barItem?.classList.add("active");
+
+        // Light the matching segment on the collapsed bar's mini scale, so the
+        // bar reports position even while closed.
+        if (barItem?.parentElement) {
+          const index = Array.prototype.indexOf.call(
+            barItem.parentElement.children,
+            barItem,
+          );
+          document
+            .querySelectorAll(".toc-bar__seg")
+            [index]?.classList.add("active");
+        }
       });
     };
 
@@ -533,6 +633,48 @@ const toc = headings.filter(
     document
       .querySelectorAll("h2, h3")
       .forEach((heading) => observer?.observe(heading));
+
+    // --- Occupy the slot the navbar vacates ---------------------------------
+    // The header owns the scroll-direction logic (setupAutoHide in
+    // Header.astro, site-wide on narrow screens). This just mirrors its state,
+    // so the two can never disagree about which is on screen — one source of
+    // truth, and no second scroll listener.
+    const bar = document.querySelector<HTMLElement>("[data-toc-bar]");
+    const header = document.querySelector<HTMLElement>("header.site-header");
+    if (!bar || !header) return;
+    const sheet = bar.querySelector<HTMLDetailsElement>(".toc-bar__sheet");
+
+    const sync = () => {
+      const navHidden = header.hasAttribute("data-nav-hidden");
+      // When the navbar comes back it reclaims the slot, so an open sheet must
+      // close with it — otherwise the panel stays pinned over the article with
+      // the navbar sitting on top of it, and nothing dismisses it.
+      if (!navHidden && sheet?.open) sheet.open = false;
+      bar.toggleAttribute("data-toc-shown", navHidden);
+    };
+
+    const attrObserver = new MutationObserver(sync);
+    attrObserver.observe(header, {
+      attributes: true,
+      attributeFilter: ["data-nav-hidden"],
+    });
+
+    // Tapping a section should land the reader on the content, not behind an
+    // open panel.
+    const onPick = (event: Event) => {
+      if ((event.target as HTMLElement).closest("a") && sheet) {
+        sheet.open = false;
+      }
+    };
+
+    sync();
+    sheet?.addEventListener("click", onPick);
+    const disposeRail = cleanup;
+    cleanup = () => {
+      disposeRail?.();
+      attrObserver.disconnect();
+      sheet?.removeEventListener("click", onPick);
+    };
   }
 
   initTOC();

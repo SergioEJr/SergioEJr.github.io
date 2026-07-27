@@ -291,6 +291,69 @@ const brandLayerSecondary = layerFor("cls-2");
     });
 
     setupNavUnderline(signal);
+    setupAutoHide(signal);
+  }
+
+  // Auto-hiding navbar on narrow screens (site-wide). Scrolling DOWN retracts
+  // the header; scrolling UP brings it back — the familiar mobile-browser
+  // URL-bar behavior. Vertical space is scarce on phones and the nav isn't
+  // needed while reading; on wide screens there is room to spare, so the header
+  // stays pinned and this does nothing.
+  //
+  // Blog posts layer their Table of Contents into the vacated slot (see
+  // TableOfContents.astro), which listens for the same attribute.
+  function setupAutoHide(signal: AbortSignal) {
+    const header = document.querySelector<HTMLElement>("header.site-header");
+    if (!header) return;
+    // Pages with their own sticky bar parked directly under the navbar (the
+    // Journal filter bar) opt out: that bar is offset by the navbar's height,
+    // so retracting the navbar would leave it floating below a gap. Those pages
+    // keep the plain sticky header.
+    if (document.querySelector(".j-filters-bar")) return;
+    const narrow = window.matchMedia("(max-width: 1199px)");
+    // Ignore sub-pixel drift and iOS rubber-banding so it can't flicker.
+    const DEADZONE = 6;
+    // Above this the header always shows: at the top of a page the nav is the
+    // primary affordance, and hiding it there feels broken.
+    const ENGAGE_AT = 260;
+
+    let lastY = window.scrollY;
+    let ticking = false;
+
+    const apply = (hide: boolean) => {
+      // Never retract out from under an open mobile menu — it is anchored to
+      // the header, so hiding the header would strand the panel.
+      const menuOpen = !document
+        .getElementById("mobile-menu")
+        ?.classList.contains("hidden");
+      header.toggleAttribute("data-nav-hidden", hide && !menuOpen);
+    };
+
+    const update = () => {
+      ticking = false;
+      if (!narrow.matches) return apply(false);
+      const y = window.scrollY;
+      const delta = y - lastY;
+      if (Math.abs(delta) < DEADZONE) return;
+      lastY = y;
+      if (y < ENGAGE_AT) return apply(false);
+      apply(delta > 0);
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    };
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true, signal });
+    narrow.addEventListener("change", update, { signal });
+    // Leaving a page mid-retraction would persist the hidden state.
+    signal.addEventListener("abort", () =>
+      header.removeAttribute("data-nav-hidden"),
+    );
   }
 
   // Sliding underline under the active nav link. The `.internal-links`
@@ -424,6 +487,24 @@ const brandLayerSecondary = layerFor("cls-2");
        skips this compositing). Giving the header its own named group lets us
        force its paint order above main's via ::view-transition-group below. */
     view-transition-name: site-header;
+  }
+
+  /* Auto-hide on narrow screens: retracts on scroll-down, returns on scroll-up
+     (set by setupAutoHide above; only ever applied below 1200px). On blog posts
+     the Table of Contents slides into the vacated slot. */
+  header[data-nav-hidden] {
+    transform: translateY(-100%);
+  }
+  header {
+    transition:
+      background-color 0.3s ease,
+      transform 0.28s ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    header {
+      transition: background-color 0.3s ease;
+    }
   }
 
   header::after {
