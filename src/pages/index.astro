@@ -18,6 +18,35 @@ import {
 } from "../utils/posts";
 import { CV_AVAILABLE } from "../utils/cv";
 import { renderInline } from "../utils/inlineText";
+import { ESSAY_SUBJECT_COLORS } from "../utils/categories";
+
+// Subject accent for the "From the Journal" lead rows only — the rail below
+// stays entirely monochrome, so the colour marks the curated picks rather than
+// becoming a second system on the page.
+//
+// Essays carry a `subject` (Science/Math/Ideas); a notebook pick shows its
+// `topic` instead. The colour must key off the CATEGORY, not the label text:
+// "A picture proof of the product rule" is a note with topic "Math", and
+// matching that string against the essay subjects painted it in the Math-essay
+// purple, so a note read as an essay. Notes take the notebook register colour
+// whatever their topic is called. Returns a theme-flipping CSS var, so
+// light/dark are handled by global.css.
+const subjectLabel = (post: {
+  data: { category: string; subject?: string; topic?: string };
+}) =>
+  post.data.category === "essays"
+    ? (post.data.subject ?? null)
+    : (post.data.topic ?? null);
+const subjectColor = (post: {
+  data: { category: string; subject?: string; topic?: string };
+}) => {
+  const subject = post.data.subject;
+  return post.data.category === "essays" &&
+    subject &&
+    ESSAY_SUBJECT_COLORS[subject]
+    ? `var(--subj-${subject})`
+    : `var(--cat-${post.data.category})`;
+};
 
 const allPosts = (await getPublishedPosts()).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
@@ -1253,6 +1282,20 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         font-size: 0.78rem;
         letter-spacing: 0.04em;
       }
+      /* Subject/topic accent in the meta line. Colour is the only thing that
+         distinguishes it — same size, tracking and case as the date beside it,
+         so it reads as part of the metadata rather than as a badge.
+         Held back to 75%: at full strength three saturated words down the
+         column pulled harder than the titles they belong to. The hue still
+         identifies the register/subject; it just stops shouting. */
+      .home-row-subject {
+        font-weight: 700;
+        opacity: 0.75;
+      }
+      .home-row-sep {
+        margin: 0 0.45rem;
+        opacity: 0.45;
+      }
       /* Section more-links: same editorial treatment as the hero card's. */
       .home-more {
         position: relative;
@@ -1662,6 +1705,23 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
                         )}
                         <p class="home-row-desc">{post.data.description}</p>
                         <div class="home-row-meta home-row-date">
+                          {/* Subject in its own color, ahead of the date —
+                              the same signal the Journal's Essays view leads
+                              with, kept quiet here: one word, no uppercase
+                              weight beyond the meta line's own. */}
+                          {subjectLabel(post) && (
+                            <>
+                              <span
+                                class="home-row-subject"
+                                style={`color:${subjectColor(post)}`}
+                              >
+                                {subjectLabel(post)}
+                              </span>
+                              <span class="home-row-sep" aria-hidden="true">
+                                ·
+                              </span>
+                            </>
+                          )}
                           {post.data.pubDate.toLocaleDateString("en-us", {
                             year: "numeric",
                             month: "short",
@@ -1852,7 +1912,9 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
                         )}
                         <div class="home-row-meta home-row-date">
                           {/* Notes are evergreen — their topic says more than
-                              a date would. */}
+                              a date would. Deliberately NOT coloured: the rail
+                              is the quiet column, and the subject accent is
+                              reserved for the "From the Journal" lead rows. */}
                           {post.data.topic ??
                             post.data.pubDate.toLocaleDateString("en-us", {
                               year: "numeric",
