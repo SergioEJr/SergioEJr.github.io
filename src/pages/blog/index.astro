@@ -559,11 +559,20 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         position: sticky;
         top: 4.5rem; /* height of the navbar */
         z-index: 30; /* above the page content/title, below navbar (100) and mobile menu (200) */
-        /* Same translucent bg + blur as the navbar so content frosts behind it. */
+        /* Same translucent bg + blur as the navbar so content frosts behind it.
+           backdrop-filter only blurs what is behind this element's OWN box, so
+           the bar must span the full viewport like the navbar does — otherwise
+           page content scrolls sharply through the gutter beside it (236px of
+           uncovered strip each side at 1400px). 100vw centred on the element
+           beats a negative margin: main's gutter changes with viewport width,
+           so any fixed inset is wrong at most sizes. The padding restores the
+           inner alignment so the pills stay lined up with the list below. */
+        width: 100vw;
+        margin-inline: calc(50% - 50vw);
         background-color: var(--color-bg-header);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
-        padding: 0.85rem 0;
+        padding: 0.85rem calc(50vw - 50%);
         margin-bottom: 2.25rem;
         border-bottom: 1px solid var(--color-border);
         /* Match the navbar/body theme transition so the frosted bg eases in sync
@@ -775,14 +784,12 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         #j-title {
           font-size: 2.2rem;
         }
-        /* No bottom rule on mobile, and a tighter gap below the bar. Extend the
-           blurred bar edge-to-edge past main's 1rem gutter so scrolling content
-           doesn't peek beside it; pad back in to keep the pills aligned. */
+        /* No bottom rule on mobile, and a tighter gap below the bar. (The
+           edge-to-edge bleed lives in the base rule — it must cover every width,
+           not just this breakpoint.) */
         .j-filters-bar {
           border-bottom: none;
           margin-bottom: 0rem;
-          margin-inline: -1rem;
-          padding-inline: 1rem;
         }
         /* On mobile there isn't room for the full row, so drop the "All" button
            and its divider entirely — users return to All by clicking the active
