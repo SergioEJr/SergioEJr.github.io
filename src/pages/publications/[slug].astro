@@ -14,8 +14,18 @@ type Props = CollectionEntry<'research'>;
 
 const entry = Astro.props;
 const { Content, headings } = await render(entry);
-const { title, abstract, date, paper, poster } = entry.data;
+const { title, abstract, date, paper, poster, code, bibtex } = entry.data;
 import { url } from '../../utils/paths';
+import ResourceBar from '../../components/ResourceBar.astro';
+
+// Same set the Publications index offers, so an entry exposes the same
+// resources whether you meet it in the list or on its own page (code and
+// bibtex were previously dropped here).
+const resources = [
+	{ label: 'Paper', href: paper, external: true, event: 'paper-click' },
+	{ label: 'Poster', href: poster ? url(poster) : undefined, external: true, event: 'poster-click' },
+	{ label: 'Code', href: code, external: true, event: 'code-click' },
+].flatMap((item) => (item.href ? [{ ...item, href: item.href }] : []));
 
 // Meta/SEO description: use the abstract if present, else the title.
 const metaDescription = abstract ?? title;
@@ -30,25 +40,7 @@ const metaDescription = abstract ?? title;
 	toc={headings.length > 1}
 	noHero={true}
 >
-	{(paper || poster) && (
-		<div class="research-links">
-			{paper && (
-				<a class="btn" href={paper} target="_blank" rel="noopener noreferrer" data-umami-event="paper-click" data-umami-event-title={title}>Paper ↗</a>
-			)}
-			{poster && (
-				<a class="btn btn-outline" href={url(poster)} target="_blank" rel="noopener noreferrer" data-umami-event="poster-click" data-umami-event-title={title}>Poster ↗</a>
-			)}
-		</div>
-	)}
+	<ResourceBar items={resources} bibtex={bibtex} title={title} />
 	<Content />
 </BlogPost>
 
-<style>
-	.research-links {
-		display: flex;
-		align-items: center;
-		flex-wrap: wrap;
-		gap: 1rem;
-		margin-bottom: 2rem;
-	}
-</style>

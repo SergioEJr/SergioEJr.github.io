@@ -1,0 +1,179 @@
+---
+// Front-matter resource strip for Research / Project detail pages.
+//
+//   <ResourceBar
+//     items={[{ label: 'Paper', href: paper, external: true }, …]}
+//     bibtex={entry.data.bibtex}
+//     title={title}
+//   />
+//
+// Design intent: these are REFERENCE links (the paper, the code, the poster),
+// not calls to action. They previously used the global `.btn` — a solid accent
+// block that shouted louder than the <h1> and sat stranded in the gap between
+// the title rule and the first heading.
+//
+// So they are drawn as article front matter instead: a small labelled strip,
+// bounded by a hairline, using the same outline button language as the
+// Publications index (`.pub-btn`) so a paper looks like itself in both places.
+// The eyebrow gives the row a reason to exist visually; the hairline ties it to
+// the title block above rather than letting it float.
+
+interface Item {
+  label: string;
+  href: string;
+  /** Opens in a new tab and gets the ↗ affordance. */
+  external?: boolean;
+  /** Umami event name; omitted = untracked. */
+  event?: string;
+  /** Optional umami `kind` dimension (e.g. visit vs code on a project). */
+  kind?: string;
+}
+
+interface Props {
+  items: Item[];
+  /** Optional BibTeX — rendered as an inline expandable panel with copy. */
+  bibtex?: string;
+  /** Post title, used for analytics attribution. */
+  title?: string;
+  /** Eyebrow label. */
+  label?: string;
+}
+
+const { items, bibtex, title = '', label = 'Resources' } = Astro.props;
+const shown = items.filter((item) => item.href);
+const hasAny = shown.length > 0 || !!bibtex;
+---
+
+{
+  hasAny && (
+    <aside class="resbar" aria-label={label}>
+      <p class="resbar__eyebrow">{label}</p>
+      <div class="resbar__row">
+        {shown.map((item) => (
+          <a
+            class="pub-btn"
+            href={item.href}
+            {...(item.external
+              ? { target: '_blank', rel: 'noopener noreferrer' }
+              : {})}
+            {...(item.event
+              ? { 'data-umami-event': item.event, 'data-umami-event-title': title }
+              : {})}
+            {...(item.kind ? { 'data-umami-event-kind': item.kind } : {})}
+          >
+            {item.label}
+            {item.external && <span class="resbar__ext" aria-hidden="true">↗</span>}
+          </a>
+        ))}
+
+        {bibtex && (
+          <button
+            type="button"
+            class="pub-btn resbar__toggle"
+            aria-expanded="false"
+            aria-controls="resbar-bibtex"
+          >
+            BibTeX
+          </button>
+        )}
+      </div>
+
+      {bibtex && (
+        <div class="pub-panel pub-panel--bibtex resbar__panel" id="resbar-bibtex" hidden>
+          <button class="copy-bibtex-btn" type="button" data-bibtex={bibtex}>
+            <span class="copy-bibtex-label">Copy</span>
+          </button>
+          <pre>{bibtex}</pre>
+        </div>
+      )}
+    </aside>
+  )
+}
+
+<style>
+  .resbar {
+    /* Sits in the article's front matter: pulled up under the title rule and
+       separated from the body by its own hairline, so it reads as part of the
+       masthead instead of floating in the gap above the first heading. */
+    margin: -0.75rem 0 2.25rem;
+    padding-bottom: 1.1rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .resbar__eyebrow {
+    margin: 0 0 0.55rem;
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  .resbar__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* The ↗ is a separate span so it can sit slightly high and lighter than the
+     label — an affordance, not part of the word. */
+  .resbar__ext {
+    margin-left: 0.3rem;
+    font-size: 0.9em;
+    opacity: 0.7;
+  }
+
+  .resbar__panel {
+    /* Reset the .prose <pre> margins that would otherwise stack here. */
+    margin-top: 0.85rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .resbar :global(.pub-btn) {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  // Local, self-contained toggle + copy so this works on any page that uses the
+  // component (the Publications INDEX has its own equivalent wiring for the
+  // per-entry panels; this one is scoped to .resbar only).
+  function initResourceBar() {
+    const bar = document.querySelector<HTMLElement>('.resbar');
+    if (!bar) return;
+
+    const toggle = bar.querySelector<HTMLButtonElement>('.resbar__toggle');
+    const panel = bar.querySelector<HTMLElement>('.resbar__panel');
+    if (toggle && panel) {
+      toggle.addEventListener('click', () => {
+        const open = toggle.getAttribute('aria-expanded') === 'true';
+        toggle.setAttribute('aria-expanded', String(!open));
+        panel.hidden = open;
+      });
+    }
+
+    const copy = bar.querySelector<HTMLButtonElement>('.copy-bibtex-btn');
+    const labelEl = copy?.querySelector('.copy-bibtex-label');
+    if (copy && labelEl) {
+      copy.addEventListener('click', async () => {
+        const text = copy.getAttribute('data-bibtex');
+        if (!text) return;
+        try {
+          await navigator.clipboard.writeText(text);
+          const previous = labelEl.textContent;
+          labelEl.textContent = 'Copied';
+          window.setTimeout(() => {
+            labelEl.textContent = previous;
+          }, 1600);
+        } catch {
+          // Clipboard denied (insecure context / permissions): leave the label
+          // alone rather than claiming success.
+        }
+      });
+    }
+  }
+
+  initResourceBar();
+  document.addEventListener('astro:after-swap', initResourceBar);
+</script>
