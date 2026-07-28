@@ -10,14 +10,14 @@ frontmatter relative to the post file:
 ```yaml
 ---
 title: My Post
-heroImage: ../../assets/blog/my-post.jpg
+heroImage: /src/assets/blog/my-post.jpg
 ---
 ```
 
 **In-body images** — use a relative Markdown link or an import:
 
 ```md
-![Diagram](../../assets/blog/my-post-diagram.png)
+![Diagram](/src/assets/blog/my-post-diagram.png)
 ```
 
 Recommended hero size: ~1600px wide. Anything large is fine — Astro downscales.
@@ -31,7 +31,7 @@ For diagrams that must work in light _and_ dark mode, use the `Figure` component
    `sed -i '' 's/#000000/currentColor/g; s/#000/currentColor/g' diagram.svg` so it
    inherits the page color and flips with the theme. Put it here; use:
    ```mdx
-   import diagram from '../../assets/blog/diagram.svg?raw';
+   import diagram from '/src/assets/blog/diagram.svg?raw';
    <Figure svg={diagram} alt="..." caption="..." />
    ```
 2. **Light/dark pair** (for colored graphics) — export two images to `public/blog/`:
@@ -63,7 +63,7 @@ One source file per figure in `/figures`, built by one script.
 Then in an `.mdx` post, mode 1 above:
 
 ```mdx
-import fig from '../../assets/blog/product-rule.svg?raw';
+import fig from '/src/assets/blog/product-rule.svg?raw';
 <Figure svg={fig} alt="Product rule as rectangle areas" caption="..." />
 ```
 

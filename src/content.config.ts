@@ -25,9 +25,11 @@ const blog = defineCollection({
       pubDate: z.coerce.date(),
       updatedDate: z.coerce.date().optional(),
       // Optional hero shown at the top of the post (off by default). Lives in
-      // src/assets/blog/ and is referenced relative to the post file, e.g.
-      //   heroImage: ../../assets/blog/my-post.jpg
-      // so Astro can optimize it (resize, webp/avif, hashing).
+      // src/assets/blog/ and is referenced by ROOT-ABSOLUTE path, e.g.
+      //   heroImage: /src/assets/blog/my-post.jpg
+      // so Astro can optimize it (resize, webp/avif, hashing). Root-absolute
+      // rather than relative so a post can be moved between essays/, notes/
+      // and updates/ without rewriting every path inside it.
       heroImage: image().optional(),
       authors: z.array(z.string()).optional(),
       toc: z.boolean().optional(),

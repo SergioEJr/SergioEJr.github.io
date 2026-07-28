@@ -8,7 +8,7 @@ authors:
 toc: false
 tags:
   - talks
-heroImage: ../../../assets/blog/patrons-dinner.jpeg
+heroImage: /src/assets/blog/patrons-dinner.jpeg
 draft: false # set to true to unpublish
 ---
 
