@@ -12,8 +12,15 @@
 // theory or stochastic processes? They're `data-pagefind-ignore`d here so this
 // index page doesn't outrank the note itself when someone clicks one; the
 // note's own detail page carries the indexed copy (see Keywords.astro).
+//
+// NO DATE, unlike the Essay and Update rows. A date carries information in
+// proportion to how time-bound the writing is: for an Update it IS the content
+// (the timeline is nothing else), for an Essay it situates the thinking, but a
+// note is reference material — the product-rule proof is as good in 2023 as in
+// 2026. Printing it here spent the row's most informative slot on the one fact
+// a browsing reader can't act on. Provenance isn't lost: the note's own page
+// still carries the date.
 import type { CollectionEntry } from "astro:content";
-import FormattedDate from "./FormattedDate.astro";
 import Keywords from "./Keywords.astro";
 import { renderInline } from "../utils/inlineText";
 import { postLink } from "../utils/posts";
@@ -52,19 +59,16 @@ const keywords = post.data.tags ?? [];
     {showTopic && post.data.topic && <span class="j-chip">{post.data.topic}</span>}
   </h3>
   <p class="j-note-desc">{post.data.description}</p>
-  <div class="j-note-meta">
-    <FormattedDate date={post.data.pubDate} />
-    {
-      !showTopic && keywords.length > 0 && (
-        <>
-          <span class="j-meta-sep" aria-hidden="true">
-            ·
-          </span>
-          <Keywords tags={keywords} ignore />
-        </>
-      )
-    }
-  </div>
+  {
+    /* Rendered only when there's something to say — in the "All" view the topic
+       chip beside the title is the row's label, so the meta line is absent
+       entirely rather than sitting empty. */
+    !showTopic && keywords.length > 0 && (
+      <div class="j-note-meta">
+        <Keywords tags={keywords} ignore />
+      </div>
+    )
+  }
 </article>
 
 <style>
@@ -154,20 +158,9 @@ const keywords = post.data.tags ?? [];
     font-size: 0.95rem;
     max-width: 66ch;
   }
+  /* Holds the keyword strip and nothing else — Keywords.astro supplies its own
+     flex layout, size and color, so this is just the row's bottom slot. */
   .j-note-meta {
-    font-size: 0.78rem;
     color: var(--color-text-muted);
-    font-style: italic;
-    /* Flex so the date, separator and keyword strip share one baseline and wrap
-       together on narrow widths. */
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.15rem 0;
-  }
-  .j-meta-sep {
-    font-style: normal;
-    opacity: 0.55;
-    margin: 0 0.45rem;
   }
 </style>
