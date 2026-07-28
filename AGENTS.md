@@ -14,6 +14,17 @@ npm run preview  # serve the production build
 
 Always finish a change with `npm run build` and confirm it's clean.
 
+**A clean build is not the CI gate.** `.github/workflows/ci.yml` runs on every
+push to a non-`main` branch and also checks types and formatting, neither of
+which `astro build` does — a green local build can still fail CI on a stray
+line break. Run all three before pushing:
+
+```sh
+npm run build         # + Pagefind index
+npm run check         # astro check (types)
+npm run format:check  # prettier --check .
+```
+
 ## Conventions & non-obvious facts
 
 - Commit only when asked; don't push
