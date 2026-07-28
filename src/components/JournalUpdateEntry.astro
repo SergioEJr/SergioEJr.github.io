@@ -1,0 +1,227 @@
+---
+// Journal update entry — one stop on the timeline.
+//
+// Two sizes, same spine: `compact` is the rail entry on the Journal's front
+// page (date + title only); the full size is the dedicated Updates view (serif
+// title, description, and the hero photo when the post has one).
+//
+// Label rule (see JournalEssayRow): an update never shows the word "Updates" —
+// its date is the label, and the timeline spine supplies the register.
+// Link-less updates (`noLink`) render as plain text with a hollow dot, so the
+// row never advertises a click that goes nowhere.
+import type { CollectionEntry } from "astro:content";
+import { Image } from "astro:assets";
+import { renderInline } from "../utils/inlineText";
+import { url } from "../utils/paths";
+import { postLink } from "../utils/posts";
+
+interface Props {
+  post: CollectionEntry<"blog">;
+  compact?: boolean;
+}
+const { post, compact = false } = Astro.props;
+const link = postLink(post);
+const hero = post.data.heroImage;
+
+const dateLabel = post.data.pubDate.toLocaleDateString("en-US", {
+  month: "short",
+  day: "numeric",
+  timeZone: "UTC",
+});
+---
+
+<div class:list={["j-stop", { "is-compact": compact, "is-linked": !!link.href }]}>
+  <div class="j-stop-date">{dateLabel}</div>
+  {
+    link.href ? (
+      <p class="j-stop-title">
+        <a
+          href={link.href}
+          {...(link.external
+            ? { target: "_blank", rel: "noopener noreferrer" }
+            : {})}
+          data-track-journal
+          data-track-title={post.data.title}
+          data-track-category={post.data.category}
+          data-track-external={link.external ? "true" : "false"}
+        >
+          <span class="j-t" set:html={renderInline(post.data.title)} />
+          {link.external && (
+            <svg
+              class="j-ext"
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M7 17 17 7" />
+              <path d="M7 7h10v10" />
+            </svg>
+          )}
+        </a>
+      </p>
+    ) : (
+      <p class="j-stop-title" set:html={renderInline(post.data.title)} />
+    )
+  }
+  {!compact && <p class="j-stop-desc">{post.data.description}</p>}
+  {
+    !compact && hero && (
+      <div class="j-stop-photo">
+        {typeof hero === "string" ? (
+          <img src={url(hero)} alt={post.data.description} loading="lazy" decoding="async" />
+        ) : (
+          <Image
+            src={hero}
+            width={680}
+            densities={[1, 2]}
+            quality={80}
+            alt={post.data.description}
+            loading="lazy"
+          />
+        )}
+      </div>
+    )
+  }
+</div>
+
+<style>
+  /* A stop hangs off the timeline spine drawn by .j-timeline (in the page). The
+     dot is positioned relative to this box, in the spine's gutter. */
+  .j-stop {
+    position: relative;
+    padding: 1.05rem 0;
+  }
+  .j-stop::before {
+    content: "";
+    position: absolute;
+    left: calc(-1 * var(--j-tl-gutter) + 1px);
+    top: 1.72em;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    /* Hollow dot by default (link-less update); filled when the entry goes
+       somewhere. Both sit on a ring of page background so the spine doesn't
+       show through the middle. */
+    background: var(--color-bg);
+    box-shadow: 0 0 0 2px var(--color-bg);
+    border: 2px solid var(--color-border);
+    transition:
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      box-shadow 0.3s ease;
+  }
+  .j-stop.is-linked::before {
+    background: var(--cat-updates);
+    border-color: var(--cat-updates);
+  }
+  .j-stop.is-compact {
+    padding: 0.32rem 0;
+  }
+  .j-stop.is-compact::before {
+    top: 0.78em;
+  }
+
+  .j-stop-date {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .j-stop.is-compact .j-stop-date {
+    font-size: 0.72rem;
+  }
+
+  .j-stop-title {
+    font-family: var(--font-serif);
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.25;
+    margin: 0.1rem 0 0.3rem;
+    color: var(--color-text-main);
+  }
+  /* The rail entry is a list item, not a headline: sans, small, tight. */
+  .j-stop.is-compact .j-stop-title {
+    font-family: var(--font-sans);
+    font-size: 0.93rem;
+    font-weight: 600;
+    line-height: 1.35;
+    margin: 0;
+  }
+  .j-stop-title a {
+    color: var(--color-text-main);
+    text-decoration: none;
+  }
+  .j-stop-title a:hover {
+    opacity: 1;
+  }
+  .j-stop-title a::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+  .j-t {
+    position: relative;
+    display: inline;
+  }
+  .j-t::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.12em;
+    height: 2px;
+    background: var(--cat-updates);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .j-stop:hover .j-t::after {
+    transform: scaleX(1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .j-t::after {
+      transition: none;
+    }
+  }
+  .j-ext {
+    width: 0.7em;
+    height: 0.7em;
+    margin-left: 0.3rem;
+    vertical-align: baseline;
+    opacity: 0.55;
+  }
+  .j-stop:hover .j-ext {
+    opacity: 1;
+  }
+
+  .j-stop-desc {
+    color: var(--color-text-muted);
+    margin: 0;
+    max-width: 60ch;
+  }
+  .j-stop-photo {
+    margin-top: 0.85rem;
+    max-width: 340px;
+  }
+  .j-stop-photo :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    transition: border-color 0.3s ease;
+  }
+  @media (max-width: 600px) {
+    .j-stop-title {
+      font-size: 1.2rem;
+    }
+  }
+</style>

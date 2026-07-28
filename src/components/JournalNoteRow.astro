@@ -1,0 +1,139 @@
+---
+// Journal note row — compact reference entry for the Notebook register.
+//
+// Label rule (see JournalEssayRow): the row never says "Notebook". In the "All"
+// view the note's TOPIC rides beside the title as a chip; in the dedicated
+// Notebook view the topic group header already states it, so `showTopic` is off
+// and the chip disappears.
+import type { CollectionEntry } from "astro:content";
+import FormattedDate from "./FormattedDate.astro";
+import { renderInline } from "../utils/inlineText";
+import { postLink } from "../utils/posts";
+
+interface Props {
+  post: CollectionEntry<"blog">;
+  showTopic?: boolean;
+}
+const { post, showTopic = false } = Astro.props;
+const link = postLink(post);
+---
+
+<article class="j-note" data-topic={post.data.topic ?? ""}>
+  <h3 class="j-note-title">
+    {
+      link.href ? (
+        <a
+          href={link.href}
+          {...(link.external
+            ? { target: "_blank", rel: "noopener noreferrer" }
+            : {})}
+          data-track-journal
+          data-track-title={post.data.title}
+          data-track-category={post.data.category}
+          data-track-external={link.external ? "true" : "false"}
+        >
+          <span class="j-t" set:html={renderInline(post.data.title)} />
+        </a>
+      ) : (
+        <span set:html={renderInline(post.data.title)} />
+      )
+    }
+    {showTopic && post.data.topic && <span class="j-chip">{post.data.topic}</span>}
+  </h3>
+  <p class="j-note-desc">{post.data.description}</p>
+  <div class="j-note-meta"><FormattedDate date={post.data.pubDate} /></div>
+</article>
+
+<style>
+  .j-note {
+    padding: 1.05rem 0;
+    border-bottom: 1px solid var(--color-border);
+    position: relative;
+    transition: border-color 0.2s ease;
+  }
+  /* Inside the dedicated Notebook view the topic group headers do the dividing,
+     so the rows themselves are borderless and a touch roomier. */
+  :global(.j-nb-group) .j-note {
+    border-bottom: none;
+    padding: 1.05rem 0;
+  }
+  .j-note-title {
+    font-family: var(--font-serif);
+    font-size: 1.18rem;
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 0 0 0.25rem;
+    color: var(--color-text-main);
+    /* Chip sits on the title's baseline row and wraps with it. */
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+  :global(.j-nb-group) .j-note-title {
+    font-size: 1.3rem;
+  }
+  .j-note-title a {
+    color: var(--color-text-main);
+    text-decoration: none;
+  }
+  .j-note-title a:hover {
+    opacity: 1;
+  }
+  .j-note-title a::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+  .j-t {
+    position: relative;
+    display: inline;
+  }
+  .j-t::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.12em;
+    height: 2px;
+    background: var(--cat-notebook);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .j-note:hover .j-t::after {
+    transform: scaleX(1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .j-t::after {
+      transition: none;
+    }
+  }
+  .j-chip {
+    font-family: var(--font-sans);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    background: var(--color-bg-offset);
+    border: 1px solid var(--color-border);
+    padding: 0.08rem 0.55rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    transition:
+      border-color 0.3s ease,
+      background-color 0.3s ease;
+  }
+  .j-note-desc {
+    color: var(--color-text-muted);
+    margin: 0 0 0.4rem;
+    font-size: 0.95rem;
+    max-width: 66ch;
+  }
+  .j-note-meta {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+</style>

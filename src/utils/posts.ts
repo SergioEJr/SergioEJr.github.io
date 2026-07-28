@@ -55,3 +55,42 @@ export function postLink(post: CollectionEntry<"blog">): PostLink {
 export function postHasDetailPage(post: CollectionEntry<"blog">): boolean {
   return postLink(post).hasPage;
 }
+
+// Rough read time in minutes, from the raw Markdown body, for the Journal's
+// essay rows. Returns null when there's no usable body — pointer/link-less posts
+// carry no prose, and stub bodies (a placeholder line or two) would otherwise
+// advertise a misleading "1 min read". Code fences, math, HTML/JSX tags, and
+// link URLs are stripped first so they don't inflate the count.
+const WORDS_PER_MINUTE = 200;
+const MIN_WORDS_FOR_READ_TIME = 60;
+
+export function readingMinutes(post: CollectionEntry<"blog">): number | null {
+  const body = post.body;
+  if (!body) return null;
+  const prose = body
+    .replace(/```[\s\S]*?```/g, " ") // fenced code
+    .replace(/`[^`\n]*`/g, " ") // inline code
+    .replace(/\$\$[\s\S]*?\$\$/g, " ") // display math
+    .replace(/\$[^$\n]*\$/g, " ") // inline math
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ") // images
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1") // links → their text
+    .replace(/<[^>]+>/g, " ") // HTML / JSX tags
+    .replace(/^\s*(import|export)\s.+$/gm, " ") // MDX module lines
+    .replace(/[#>*_~`|-]+/g, " "); // Markdown punctuation
+  const words = prose.split(/\s+/).filter(Boolean).length;
+  if (words < MIN_WORDS_FOR_READ_TIME) return null;
+  return Math.max(1, Math.round(words / WORDS_PER_MINUTE));
+}
+
+// Host of an external pointer post, e.g. "emorywheel.com" — shown in the
+// Journal's essay meta line in place of a read time, since the piece lives
+// somewhere else. Null for every non-external post.
+export function externalHost(post: CollectionEntry<"blog">): string | null {
+  const href = post.data.externalUrl;
+  if (!href) return null;
+  try {
+    return new URL(href).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}

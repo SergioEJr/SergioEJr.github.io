@@ -5,12 +5,11 @@ import Footer from "../../components/Footer.astro";
 import { SITE_TITLE } from "../../consts";
 import { pageFade } from "../../utils/pageTransition";
 import { getPublishedPosts } from "../../utils/posts";
-import JournalPost from "../../components/JournalPost.astro";
+import JournalEssayRow from "../../components/JournalEssayRow.astro";
+import JournalNoteRow from "../../components/JournalNoteRow.astro";
+import JournalUpdateEntry from "../../components/JournalUpdateEntry.astro";
 import JournalGlowField from "../../components/JournalGlowField.astro";
-import {
-  BLOG_CATEGORY_LABELS,
-  ESSAY_SUBJECT_COLORS,
-} from "../../utils/categories";
+import { BLOG_CATEGORY_LABELS } from "../../utils/categories";
 
 type Cat = "all" | "updates" | "essays" | "notebook";
 
@@ -50,79 +49,52 @@ const CATS: Record<
     subtitle: "Updates, essays, and a living notebook.",
   },
 };
-// The three registers render as pills; "All" renders separately as the text-style
-// button on the right (it's the unfiltered view, not a register).
-const FILTER_ORDER: Cat[] = ["updates", "essays", "notebook"];
+// Pills run in front-page order (Essays → Notebook → Updates), matching the
+// weight each register gets in the "All" view. "All" renders separately as the
+// text-style button on the right — it's the unfiltered view, not a register.
+const FILTER_ORDER: Cat[] = ["essays", "notebook", "updates"];
 
-// Oldest → newest, with a stable id tiebreak so posts that share a pubDate keep
-// a consistent order. This is the canonical chronological order.
-const byDate = (await getPublishedPosts()).sort(
+// How much of each register the front page shows before deferring to that
+// register's own view. Everything currently fits; this is what keeps "All" a
+// front page rather than a dump as the Journal grows.
+const FRONT_ESSAYS = 5;
+const FRONT_NOTES = 5;
+const FRONT_UPDATES = 6;
+
+// Newest first everywhere, with a stable id tiebreak so posts sharing a pubDate
+// keep a consistent order between builds.
+const posts = (await getPublishedPosts()).sort(
   (a, b) =>
-    a.data.pubDate.valueOf() - b.data.pubDate.valueOf() ||
+    b.data.pubDate.valueOf() - a.data.pubDate.valueOf() ||
     a.id.localeCompare(b.id),
 );
 
-// Chronological post number for the NUMBERED rows only. Numbers show on Updates +
-// Essays rows (notebook rows render without one), and the "All" view counts only
-// those same non-notebook posts. So number over that SAME set — otherwise notebook
-// posts occupy indices and the visible numbers skip past / exceed the piece count
-// (e.g. 5 pieces but rows numbered up to 11). Oldest non-notebook post is #1.
-const postNumber = new Map<string, number>();
-byDate
-  .filter((p) => p.data.category !== "notebook")
-  .forEach((p, i) => postNumber.set(p.id, i + 1));
+const essays = posts.filter((p) => p.data.category === "essays");
+const notes = posts.filter((p) => p.data.category === "notebook");
+const updates = posts.filter((p) => p.data.category === "updates");
 
-// Display newest-first, which is exactly the chronological order reversed — so the
-// numbering and the display order always agree, even on shared dates.
-const posts = [...byDate].reverse();
-
-const counts: Record<string, number> = {
-  all: 0,
-  updates: 0,
-  essays: 0,
-  notebook: 0,
+const counts: Record<Cat, number> = {
+  all: posts.length,
+  essays: essays.length,
+  notebook: notes.length,
+  updates: updates.length,
 };
-for (const p of posts) {
-  counts[p.data.category] = (counts[p.data.category] || 0) + 1;
-  // "All" now genuinely includes every post (timeline + notebook), so it counts
-  // all of them. Notebook still renders in its own section within All (below the
-  // Updates/Essays timeline), not interleaved into it.
-  counts.all++;
-}
 
-// Topics for the Notebook view
+// Topics for the Notebook sidebar, alphabetical.
 const topicCounts = new Map<string, number>();
-for (const p of posts) {
-  if (p.data.category === "notebook" && p.data.topic) {
-    topicCounts.set(p.data.topic, (topicCounts.get(p.data.topic) || 0) + 1);
-  }
+for (const p of notes) {
+  const t = p.data.topic;
+  if (t) topicCounts.set(t, (topicCounts.get(t) || 0) + 1);
 }
 const topics = [...topicCounts.entries()].sort((a, b) =>
   a[0].localeCompare(b[0]),
 );
 
-// Non-notebook posts (Updates + Essays) keep their reverse-chronological order.
-const blogPosts = posts.filter((p) => p.data.category !== "notebook");
-
-// "All"-view ordering (via CSS `order`, scoped to [data-view="all"] so the grouped
-// Notebook view is untouched). The list flows: timeline posts first, in their
-// existing reverse-chronological order, THEN notebook posts as a flat continuation
-// sorted newest-first — so the whole "All" stream reads newest→oldest throughout.
-// `posts` is already newest-first. Timeline posts get low order values (their rank);
-// notes get NOTE_ORDER_BASE + their newest-first rank so they always follow.
-const NOTE_ORDER_BASE = 1000;
-const allOrder = new Map<string, number>();
-blogPosts.forEach((p, i) => allOrder.set(p.id, i));
-posts
-  .filter((p) => p.data.category === "notebook")
-  .forEach((p, i) => allOrder.set(p.id, NOTE_ORDER_BASE + i));
-
-// Notebook posts grouped by topic. `posts` is newest-first, so the first time a
+// Notebook posts grouped by topic. `notes` is newest-first, so the first time a
 // topic appears is its newest post — that order is also the group order
 // (newest-group-first). Posts within a group stay newest-first.
-const noteGroupMap = new Map<string, typeof posts>();
-for (const p of posts) {
-  if (p.data.category !== "notebook") continue;
+const noteGroupMap = new Map<string, typeof notes>();
+for (const p of notes) {
   const t = p.data.topic ?? "Other";
   if (!noteGroupMap.has(t)) noteGroupMap.set(t, []);
   noteGroupMap.get(t)!.push(p);
@@ -133,26 +105,21 @@ const noteGroups = [...noteGroupMap.entries()].map(([topic, ps]) => ({
   posts: ps,
 }));
 
-const catLabel = (c: string) => (CATS as any)[c]?.label ?? c;
-// Per-row dot/underline color. Essays rows take their `subject` color; Updates
-// and Notebook take the register color. Returns a theme-flipping CSS var (the
-// --cat-* / --subj-* vars live in global.css).
-const rowColor = (post: { data: { category: string; subject?: string } }) => {
-  if (
-    post.data.category === "essays" &&
-    post.data.subject &&
-    ESSAY_SUBJECT_COLORS[post.data.subject]
-  ) {
-    return `var(--subj-${post.data.subject})`;
+// Updates grouped by year for the timeline spine. The list is newest-first, so
+// the years come out newest-first too. UTC to match FormattedDate — frontmatter
+// dates parse as UTC midnight, and a build machine behind UTC would otherwise
+// file a Jan 1 post under the previous year.
+function groupByYear(list: typeof updates) {
+  const m = new Map<number, typeof updates>();
+  for (const p of list) {
+    const y = p.data.pubDate.getUTCFullYear();
+    if (!m.has(y)) m.set(y, []);
+    m.get(y)!.push(p);
   }
-  return `var(--cat-${post.data.category})`;
-};
-// Per-row eyebrow label. Essays rows show their subject (Science / Math / Ideas)
-// instead of the register word "Essays"; other registers show the register label.
-const rowLabel = (post: { data: { category: string; subject?: string } }) =>
-  post.data.category === "essays" && post.data.subject
-    ? post.data.subject
-    : catLabel(post.data.category);
+  return [...m.entries()].map(([year, ps]) => ({ year, posts: ps }));
+}
+const updateYears = groupByYear(updates);
+const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
 ---
 
 <!doctype html>
@@ -223,68 +190,151 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         </div>
       </div>
 
-      <div class="j-body">
-        <!-- Notes topics sidebar (shown only in Notes view) -->
-        {
-          topics.length > 0 && (
-            <aside id="j-notes-side" class="j-notes-side" hidden>
-              <div class="j-side-label">Topics</div>
-              <button class="j-topic active" data-topic="all" aria-pressed="true">
-                All <span>{counts.notebook}</span>
-              </button>
-              {topics.map(([t, n]) => (
-                <button class="j-topic" data-topic={t} aria-pressed="false">
-                  {t} <span>{n}</span>
-                </button>
-              ))}
-            </aside>
-          )
-        }
+      {
+        /* Four structurally different views, each rendered once and toggled with
+           `hidden`. They are NOT one list reflowed by CSS: a timeline entry, a
+           feature row, and a reference row want different markup, and morphing
+           one into the others is what made the old single-list version fight
+           itself (the CSS `order` hack, notes pretending to be timeline rows). */
+      }
+      <div class="j-views">
+        {/* ---------- ALL: the Journal's front page ---------- */}
+        <section class="j-view j-front" data-view="all">
+          <div class="j-front-main">
+            {
+              essays.length > 0 && (
+                <section class="j-shelf">
+                  <div class="j-shelf-head">
+                    <h2 class="j-shelf-name">
+                      Essays<span class="j-shelf-count">{counts.essays}</span>
+                    </h2>
+                    <a class="j-shelf-link" href="#essays" data-goto="essays">
+                      Read all <span aria-hidden="true">&rarr;</span>
+                    </a>
+                  </div>
+                  {essays.slice(0, FRONT_ESSAYS).map((post) => (
+                    <JournalEssayRow post={post} />
+                  ))}
+                </section>
+              )
+            }
 
-        <div class="j-list">
+            {
+              notes.length > 0 && (
+                <section class="j-shelf">
+                  <div class="j-shelf-head">
+                    <h2 class="j-shelf-name">
+                      From the notebook
+                      <span class="j-shelf-count">{counts.notebook}</span>
+                    </h2>
+                    <a class="j-shelf-link" href="#notebook" data-goto="notebook">
+                      Browse by topic <span aria-hidden="true">&rarr;</span>
+                    </a>
+                  </div>
+                  {notes.slice(0, FRONT_NOTES).map((post) => (
+                    <JournalNoteRow post={post} showTopic />
+                  ))}
+                </section>
+              )
+            }
+          </div>
+
           {
-            blogPosts.map((post) => (
-              <JournalPost
-                post={post}
-                number={postNumber.get(post.id) ?? 0}
-                catColor={rowColor(post)}
-                catLabel={rowLabel(post)}
-                allOrder={allOrder.get(post.id) ?? 0}
-              />
-            ))
-          }
-          {
-            /* In "All", notebook posts continue after the timeline as a flat list
-              (no section title, no topic-group headers — the JS hides those below).
-              Each renders as a normal bordered row with a note icon in the gutter,
-              so they read as a continuation of the timeline. The topic-group headers
-              stay in the DOM for the dedicated Notebook filter view. */
-          }
-          {
-            noteGroups.map((g) => (
-              <Fragment>
-                <div class="j-group-header" data-group-topic={g.topic}>
-                  <span class="j-group-name">{g.topic}</span>
-                  <span class="j-group-count">{g.count}</span>
+            updates.length > 0 && (
+              <aside class="j-rail">
+                <div class="j-shelf-head j-rail-head">
+                  <h2 class="j-shelf-name">
+                    The story so far
+                    <span class="j-shelf-count">{counts.updates}</span>
+                  </h2>
                 </div>
-                {g.posts.map((post) => (
-                  <JournalPost
-                    post={post}
-                    number={postNumber.get(post.id) ?? 0}
-                    catColor={rowColor(post)}
-                    catLabel={rowLabel(post)}
-                    allOrder={allOrder.get(post.id) ?? 0}
-                  />
-                ))}
-              </Fragment>
-            ))
+                <div class="j-timeline">
+                  {railYears.map((y) => (
+                    <Fragment>
+                      <div class="j-tl-year">{y.year}</div>
+                      {y.posts.map((post) => (
+                        <JournalUpdateEntry post={post} compact />
+                      ))}
+                    </Fragment>
+                  ))}
+                </div>
+                <p class="j-rail-more">
+                  <a class="j-shelf-link" href="#updates" data-goto="updates">
+                    Full timeline <span aria-hidden="true">&rarr;</span>
+                  </a>
+                </p>
+              </aside>
+            )
           }
-        </div>
+        </section>
+
+        {/* ---------- ESSAYS ---------- */}
+        <section class="j-view j-essays" data-view="essays" hidden>
+          {essays.map((post) => <JournalEssayRow post={post} />)}
+        </section>
+
+        {/* ---------- NOTEBOOK ---------- */}
+        <section class="j-view j-nb" data-view="notebook" hidden>
+          {
+            topics.length > 0 && (
+              <aside class="j-nb-side">
+                <div class="j-side-label">Topics</div>
+                <button
+                  class="j-topic active"
+                  data-topic="all"
+                  aria-pressed="true"
+                >
+                  All <span>{counts.notebook}</span>
+                </button>
+                {topics.map(([t, n]) => (
+                  <button class="j-topic" data-topic={t} aria-pressed="false">
+                    {t} <span>{n}</span>
+                  </button>
+                ))}
+              </aside>
+            )
+          }
+          <div class="j-nb-main">
+            {
+              noteGroups.map((g) => (
+                <section
+                  class="j-nb-group"
+                  data-topic={g.topic}
+                  data-count={g.count}
+                >
+                  <div class="j-nb-group-head">
+                    <span class="j-nb-group-name">{g.topic}</span>
+                    <span class="j-nb-group-count">{g.count}</span>
+                  </div>
+                  {g.posts.map((post) => (
+                    <JournalNoteRow post={post} />
+                  ))}
+                </section>
+              ))
+            }
+          </div>
+        </section>
+
+        {/* ---------- UPDATES ---------- */}
+        <section class="j-view j-updates" data-view="updates" hidden>
+          <div class="j-timeline j-timeline--big">
+            {
+              updateYears.map((y) => (
+                <Fragment>
+                  <div class="j-tl-year">{y.year}</div>
+                  {y.posts.map((post) => (
+                    <JournalUpdateEntry post={post} />
+                  ))}
+                </Fragment>
+              ))
+            }
+          </div>
+        </section>
       </div>
     </main>
     <Footer />
 
-    <script is:inline define:vars={{ cats: CATS }}>
+    <script is:inline define:vars={{ cats: CATS, counts }}>
       function initJournalFilters() {
         const root = document.getElementById("journal");
         if (!root || root.dataset.filtersInitialized === "true") return;
@@ -294,14 +344,12 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         const subEl = document.getElementById("j-subtitle");
         const eyeLabel = document.getElementById("j-eyebrow-label");
         const eyeCount = document.getElementById("j-eyebrow-count");
-        const side = document.getElementById("j-notes-side");
-        const posts = Array.from(document.querySelectorAll(".j-post"));
-        const groupHeaders = Array.from(
-          document.querySelectorAll(".j-group-header"),
-        );
+        const box = document.querySelector(".j-views");
+        const views = Array.from(document.querySelectorAll(".j-view"));
+        const groups = Array.from(document.querySelectorAll(".j-nb-group"));
         const filters = Array.from(document.querySelectorAll(".j-filter"));
         const topicBtns = Array.from(document.querySelectorAll(".j-topic"));
-        const list = document.querySelector(".j-list");
+        const bar = document.querySelector(".j-filters-bar");
 
         const validCats = filters.map((b) => b.getAttribute("data-filter"));
         const validTopics = topicBtns.map((b) => b.getAttribute("data-topic"));
@@ -371,37 +419,27 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
           titleEl.textContent = meta.title;
           subEl.textContent = meta.subtitle;
           eyeLabel.textContent = meta.label;
-          // Expose the active view so CSS can style notes differently in "All"
-          // (flat, bordered rows like the timeline) vs the dedicated Notebook view
-          // (topic-grouped, borderless).
           root.setAttribute("data-view", activeCat);
 
-          if (side) side.hidden = activeCat !== "notebook";
-
-          let visible = 0;
-          posts.forEach((el) => {
-            const cat = el.getAttribute("data-category");
-            const topic = el.getAttribute("data-topic");
-            // "All" shows everything (timeline + notebook); a single filter shows
-            // only that category.
-            let show = activeCat === "all" ? true : cat === activeCat;
-            if (show && activeCat === "notebook" && activeTopic !== "all") {
-              show = topic === activeTopic;
-            }
-            el.style.display = show ? "" : "none";
-            if (show) visible++;
+          views.forEach((v) => {
+            v.hidden = v.getAttribute("data-view") !== activeCat;
           });
 
-          // Topic group headers appear ONLY in the dedicated Notebook view. In "All"
-          // the notes are a flat continuation of the timeline (no grouping), so the
-          // headers stay hidden there.
-          groupHeaders.forEach((h) => {
-            const t = h.getAttribute("data-group-topic");
-            const show =
-              activeCat === "notebook" &&
-              (activeTopic === "all" || t === activeTopic);
-            h.style.display = show ? "" : "none";
-          });
+          // Topic filter inside the Notebook view. The eyebrow count follows the
+          // selection, so "Notebook · 2 pieces" matches what's on screen.
+          let visible = counts[activeCat];
+          if (activeCat === "notebook" && activeTopic !== "all") {
+            visible = 0;
+            groups.forEach((g) => {
+              const show = g.getAttribute("data-topic") === activeTopic;
+              g.style.display = show ? "" : "none";
+              if (show) visible += Number(g.getAttribute("data-count")) || 0;
+            });
+          } else {
+            groups.forEach((g) => {
+              g.style.display = "";
+            });
+          }
 
           // Publish the count via data-count; the count-up module script
           // observes this attribute and rolls the odometer to the new value.
@@ -409,27 +447,145 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
           eyeCount.setAttribute("data-count", String(visible));
         }
 
+        // ---- Frost vs. glow ----
+        // The bar's frost would otherwise cut the glow field down to whatever
+        // its tint lets through, producing a hard horizontal step in the light
+        // exactly at the bar's top edge. But while the glow band still reaches
+        // the bar there is nothing behind the bar to frost — only the glow — so
+        // the frost is simply not needed yet.
+        //
+        // The trigger is CONTENT, not the glow band: the frost comes off only
+        // while nothing has reached the back of the bar yet, and goes on the
+        // instant the first row would pass behind it. Keying it to the band
+        // instead left a ~19px window where the list was already sliding under
+        // an unfrosted bar and you could read it through the pills.
+        //
+        // A plain box comparison in VIEWPORT space — no scroll arithmetic, no
+        // stick-point bookkeeping, and still correct when the header changes
+        // height between views or the pills wrap on mobile.
+        //
+        // It's a switch, not a dimmer. Anything in between both dims the light
+        // (the step this exists to remove) and leaves the bar a backdrop root,
+        // which is what painted the rectangle across it. The switch lands where
+        // the content edge is flush with the bar's bottom, so at that moment the
+        // bar covers nothing but flat page background — and frosting flat
+        // background is a no-op, since --color-bg-header IS --color-bg at 0.8
+        // alpha and blurring one flat color returns it unchanged.
+        let lastLit = null;
+        function updateFrost() {
+          const b = document.querySelector(".j-filters-bar");
+          const content = document.querySelector(".j-views");
+          if (!b || !content) return;
+          const br = b.getBoundingClientRect();
+          if (br.height === 0) return;
+          // Small lead so the frost is already on before the first row reaches
+          // the bar: this runs rAF-coalesced, and without it a fast scroll can
+          // show a frame of content under a bare bar. The lead is spent on empty
+          // margin, where frosting is invisible anyway.
+          const lit = content.getBoundingClientRect().top >= br.bottom + 10;
+          if (lit === lastLit) return;
+          lastLit = lit;
+          // Instant, not eased. The bar carries a 0.3s background-color
+          // transition so the frost keeps pace with the theme toggle — but
+          // easing it HERE would leave content sliding under a half-strength
+          // tint for 300ms, which is exactly the "I can almost read it" state
+          // this switch exists to prevent. Suppress the transition across the
+          // toggle, commit it, then hand the stylesheet's transition back.
+          b.style.transition = "none";
+          b.toggleAttribute("data-lit", lit);
+          // Mirrored onto #journal so CSS can put the glow field away with it.
+          root.toggleAttribute("data-lit", lit);
+          void b.offsetHeight;
+          b.style.transition = "";
+        }
+
+        // rAF-coalesced: scroll fires far more often than we need to repaint.
+        let frostQueued = false;
+        function queueFrost() {
+          if (frostQueued) return;
+          frostQueued = true;
+          requestAnimationFrame(() => {
+            frostQueued = false;
+            updateFrost();
+          });
+        }
+        if (!window.__journalFrostBound) {
+          window.__journalFrostBound = true;
+          // Bound once on window (which outlives #journal across client-side
+          // navigations); the handler re-resolves the live elements each call,
+          // so it can't hold a detached bar from a previous visit.
+          const onFrost = () => {
+            const r = document.getElementById("journal");
+            if (r && r.__queueFrost) r.__queueFrost();
+          };
+          window.addEventListener("scroll", onFrost, { passive: true });
+          window.addEventListener("resize", onFrost, { passive: true });
+        }
+        root.__queueFrost = queueFrost;
+
+        // Re-check whenever the boxes the trigger depends on change size — the
+        // header is taller in some views, and the pill row wraps on mobile.
+        // Owned by #journal so it's collected with the page on a client-side nav
+        // rather than leaking a detached element.
+        if (typeof ResizeObserver === "function") {
+          if (root.__frostRO) root.__frostRO.disconnect();
+          const ro = new ResizeObserver(queueFrost);
+          if (bar) ro.observe(bar);
+          const content = document.querySelector(".j-views");
+          if (content) ro.observe(content);
+          root.__frostRO = ro;
+        }
+
+        // Views differ a lot in height, so a reader deep in the timeline who
+        // switches to Essays would otherwise land past the end of the new view.
+        // This only ever pulls UP to the filter bar; it never pushes down.
+        function keepFiltersInView() {
+          if (!box || !bar) return;
+          const target =
+            box.getBoundingClientRect().top +
+            window.scrollY -
+            bar.offsetHeight -
+            72; /* navbar height */
+          if (window.scrollY > target) {
+            window.scrollTo({ top: Math.max(0, target), behavior: "instant" });
+          }
+        }
+
         function fadeApply() {
-          if (!list) {
+          if (!box) {
             apply();
             return;
           }
-          list.style.opacity = "0";
+          box.style.opacity = "0";
           setTimeout(() => {
             apply();
+            keepFiltersInView();
+            queueFrost(); // header height changes per view, so re-measure
             // iOS WebKit (Safari — and Chrome/Firefox on iOS, which are also
-            // WebKit) can leave a now-hidden post's title painted as a ghost
-            // over the new content when children's `display` is toggled while
-            // the list is mid opacity-transition. Tear down and rebuild the
-            // list's own box so its paint is recreated from scratch. Opacity is
-            // 0 here, so the toggle isn't visible; the reflow reads commit each
-            // step and let the fade-in animate from 0.
-            list.style.display = "none";
-            void list.offsetHeight;
-            list.style.display = "";
-            void list.offsetHeight;
-            list.style.opacity = "";
+            // WebKit) can leave a now-hidden row's title painted as a ghost over
+            // the new content when `display` is toggled mid opacity-transition.
+            // Tear down and rebuild the box's own paint. Opacity is 0 here, so
+            // the toggle isn't visible; the reflow reads commit each step and
+            // let the fade-in animate from 0.
+            box.style.display = "none";
+            void box.offsetHeight;
+            box.style.display = "";
+            void box.offsetHeight;
+            box.style.opacity = "";
           }, 160);
+        }
+
+        function goTo(cat) {
+          activeCat = cat;
+          filters.forEach((b) =>
+            setActive(b, b.getAttribute("data-filter") === activeCat),
+          );
+          activeTopic = "all";
+          topicBtns.forEach((b) =>
+            setActive(b, b.getAttribute("data-topic") === "all"),
+          );
+          writeHash();
+          fadeApply();
         }
 
         filters.forEach((btn) => {
@@ -438,18 +594,20 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
             // Clicking the already-active register pill deselects it back to All.
             // (This is the only way back to All on mobile, where the All button is
             // hidden; on desktop it's a harmless second path alongside the button.)
-            const next =
-              clicked !== "all" && clicked === activeCat ? "all" : clicked;
-            activeCat = next;
-            filters.forEach((b) =>
-              setActive(b, b.getAttribute("data-filter") === activeCat),
-            );
-            activeTopic = "all";
-            topicBtns.forEach((b) =>
-              setActive(b, b.getAttribute("data-topic") === "all"),
-            );
-            writeHash();
-            fadeApply();
+            goTo(clicked !== "all" && clicked === activeCat ? "all" : clicked);
+          });
+        });
+
+        // The front page's section links ("Read all", "Browse by topic", "Full
+        // timeline") are the same navigation as the pills. They're real anchors
+        // to the view's hash so ⌘/middle-click opens the filtered Journal in a
+        // new tab; handled here we preventDefault and switch in place, keeping
+        // the replaceState rule (a plain click must not stack a Back step).
+        document.querySelectorAll("[data-goto]").forEach((el) => {
+          el.addEventListener("click", (e) => {
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+            e.preventDefault();
+            goTo(el.getAttribute("data-goto"));
           });
         });
 
@@ -481,6 +639,10 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
 
         readHash();
         apply();
+        // Two passes: now, and after the glow field has sized its canvas on the
+        // next frame (until then there's no band to measure against).
+        updateFrost();
+        queueFrost();
       }
 
       initJournalFilters();
@@ -524,10 +686,65 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
       document.addEventListener("astro:page-load", initCountUp);
     </script>
 
+    <script>
+      // Journal-post click analytics, fired MANUALLY on pointerdown rather than
+      // via umami's declarative `data-umami-event` attributes.
+      //
+      // Why: umami's built-in click tracking hooks the `click` event and sends
+      // its beacon (POST gateway.umami.is/api/send) before the link's navigation
+      // proceeds. In Firefox that send blocks the navigation for a noticeable
+      // beat. pointerdown fires ~before the click that triggers navigation, so
+      // tracking here puts the beacon in flight early and never delays the load.
+      // See the `data-track-*` attrs on the row links (renamed from
+      // data-umami-event so umami's own handler doesn't also fire and
+      // re-introduce the block/double-count).
+      //
+      // One delegated listener on `document`, which survives ClientRouter swaps,
+      // so it's registered exactly once (guarded) and covers every row type.
+      (() => {
+        const w = window as any;
+        if (w.__journalTrackBound) return;
+        w.__journalTrackBound = true;
+        document.addEventListener(
+          "pointerdown",
+          (e) => {
+            const a = (e.target as Element)?.closest?.(
+              "a[data-track-journal]",
+            ) as HTMLElement | null;
+            if (!a || typeof w.umami?.track !== "function") return;
+            w.umami.track("journal-post", {
+              title: a.dataset.trackTitle,
+              category: a.dataset.trackCategory,
+              external: a.dataset.trackExternal,
+            });
+          },
+          // passive: we never preventDefault; lets the browser proceed immediately.
+          { passive: true, capture: true },
+        );
+      })();
+    </script>
+
     <style>
       #journal {
         max-width: var(--max-width);
         background: inherit;
+        /* Drop the view-transition-name that transition:animate puts on <main>.
+           It makes <main> a BACKDROP ROOT, and a backdrop-filter can only sample
+           within its root — so the filter bar's blur ran out of backdrop at
+           <main>'s edges and composited the void as a dark fringe: the seam down
+           the left of the bar, and a matching one on the right. Measured on real
+           Brave at 1280px: a 0.76 luminance step exactly at the root's edge,
+           which flattens to a smooth ramp once the name is gone.
+           Safe to drop here: pageFade is already configured as an INSTANT
+           transition (duration 0, animation none) and global.css force-disables
+           ::view-transition-* animations, so the name was only ever naming
+           something that doesn't move. The swap itself is the router's job and
+           is unaffected.
+           !important because the router re-asserts its own
+           [data-astro-transition-scope] rule after a client-side swap, which
+           otherwise wins and brings the seam back on every nav INTO the Journal
+           (it stays gone on a hard load, which is what makes it easy to miss). */
+        view-transition-name: none !important;
       }
       .j-head {
         padding: 1rem 0 0rem;
@@ -559,27 +776,89 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         position: sticky;
         top: 4.5rem; /* height of the navbar */
         z-index: 30; /* above the page content/title, below navbar (100) and mobile menu (200) */
-        /* Same translucent bg + blur as the navbar so content frosts behind it.
-           backdrop-filter only blurs what is behind this element's OWN box, so
-           the bar must span the full viewport like the navbar does — otherwise
-           page content scrolls sharply through the gutter beside it (236px of
-           uncovered strip each side at 1400px). 100vw centred on the element
-           beats a negative margin: main's gutter changes with viewport width,
-           so any fixed inset is wrong at most sizes. The padding restores the
-           inner alignment so the pills stay lined up with the list below. */
-        width: 100vw;
-        margin-inline: calc(50% - 50vw);
+        padding: 0.85rem 0;
+        margin-bottom: 2.25rem;
+        /* The bar's own box is unchanged: it spans the content column. Both the
+           frost and the separator are drawn by pseudo-elements that bleed wider
+           than it (see ::before and ::after). */
+      }
+      /* The frost, on its own layer so it can bleed to the viewport edges while
+         the bar keeps its column geometry. It has to bleed: a backdrop-filter
+         that stops mid-page draws a visible edge down the content. Out here its
+         edges land on empty page, where a tint over flat background is a no-op.
+         Values are exactly the navbar's; this is only ever fully on or fully off
+         (see [data-lit]). z-index: -1 puts it behind the pills but inside the
+         bar's own stacking context (sticky + z-index: 30), so it cannot slip
+         behind the page. */
+      .j-filters-bar::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        /* Percentages resolve against the bar's padding box (the content
+           column), so this lands exactly on the viewport edges. */
+        left: calc(50% - 50vw);
+        right: calc(50% - 50vw);
+        z-index: -1;
+        pointer-events: none;
         background-color: var(--color-bg-header);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
-        padding: 0.85rem calc(50vw - 50%);
-        margin-bottom: 2.25rem;
-        border-bottom: 1px solid var(--color-border);
-        /* Match the navbar/body theme transition so the frosted bg eases in sync
-           (it was snapping instantly because only border-color transitioned). */
-        transition:
-          border-color 0.3s ease,
-          background-color 0.3s ease;
+        /* Match the navbar/body theme transition so the frosted bg eases in sync. */
+        transition: background-color 0.3s ease;
+      }
+      /* Separator: the navbar's own recipe (header::after) — a hairline that
+         runs the full bleed and fades out at both ends rather than stopping on
+         a hard edge. Bleeds with the frost, so the solid stretch is as long as
+         the bar looks; confining it to the content column made it noticeably
+         stubby. Lighter than the navbar's (0.35 vs 0.6) so this reads as a
+         sub-bar rather than a second navbar. */
+      .j-filters-bar::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: calc(50% - 50vw);
+        right: calc(50% - 50vw);
+        height: 1px;
+        pointer-events: none;
+        background: linear-gradient(
+          90deg,
+          transparent 0%,
+          var(--color-border) 20%,
+          var(--color-border) 80%,
+          transparent 100%
+        );
+        opacity: 0.35;
+      }
+      /* 50vw counts the scrollbar, so the bleed overshoots a few px. `clip`, NOT
+         hidden/auto — those create a scroll container and break the sticky
+         navbar — and on html/body ONLY, since a clip on any other ancestor of a
+         sticky element demotes iOS sticky positioning to the main thread. */
+      :global(html),
+      :global(body) {
+        overflow-x: clip;
+      }
+      /* Once the bar is frosted, the glow field is put away. By then the band is
+         entirely behind the navbar and the bar (the frost only comes on when
+         content is within 10px of the bar's bottom, and the bar's bottom margin
+         is larger than that at every width), so hiding it costs nothing on
+         screen — but it stops the frost from dimming the tail of the glow, which
+         is what drew a seam down the frost's edge: light at full strength
+         outside the bar, cut to a fifth of it inside. */
+      #journal:not([data-lit]) :global(.journal-glow-field) {
+        visibility: hidden;
+      }
+      /* Lit: the glow field still reaches the bar, so the only thing behind the
+         bar is the glow — the frost has nothing to do and comes off entirely.
+         It is never partially applied. A weakened frost both dims the light
+         (the step this was meant to remove) and keeps the bar a backdrop root,
+         where Chromium returns the composited glow canvas wrong and paints a
+         lighter rectangle across the bar. So: off, or exactly the values above.
+         Set by JS; with no JS the bar is simply always frosted. */
+      .j-filters-bar[data-lit]::before {
+        background-color: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
       }
       .j-eyebrow {
         display: inline-block;
@@ -671,24 +950,187 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         font-weight: 800;
       }
 
-      .j-body {
+      /* ---------------- Views ---------------- */
+      .j-views {
+        transition: opacity 0.16s ease;
+      }
+      /* Explicit, because the layout rules below set `display` on these sections
+         and would otherwise beat the `hidden` attribute's UA style. */
+      .j-view[hidden] {
+        display: none;
+      }
+
+      /* Shelf headers ("Essays 4 … Read all →") — the front page's dividers. */
+      .j-shelf + .j-shelf {
+        margin-top: 3rem;
+      }
+      .j-shelf-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 1rem;
+        padding: 0.4rem 0 0.55rem;
+        border-bottom: 1px solid var(--color-border);
+        transition: border-color 0.3s ease;
+      }
+      .j-shelf-name {
+        font-family: var(--font-sans);
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--color-text-main);
+        margin: 0;
+        line-height: 1.4;
+      }
+      /* Suppress the global h2 rule-mark: these are section labels, not article
+         headings. */
+      .j-shelf-name::after {
+        content: none;
+      }
+      .j-shelf-count {
+        font-variant-numeric: tabular-nums;
+        color: var(--color-text-muted);
+        font-weight: 600;
+        margin-left: 0.45rem;
+      }
+      .j-shelf-link {
+        font-family: inherit;
+        font-size: 0.8rem;
+        color: var(--color-text-muted);
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        white-space: nowrap;
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+      /* Cancel the global `a:hover { opacity: 0.8 }` graying — the color lift is
+         the only intended hover cue. */
+      .j-shelf-link:hover {
+        color: var(--color-accent);
+        opacity: 1;
+      }
+
+      /* ---------------- ALL: front page ---------------- */
+      .j-front {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 280px;
+        gap: 3.4rem;
+        align-items: start;
+      }
+      .j-front-main {
+        min-width: 0;
+      }
+      .j-rail {
+        /* Sticks below the navbar + filter bar while the main column scrolls. */
+        position: sticky;
+        top: 9.5rem;
+      }
+      .j-rail-head {
+        border-bottom: none;
+        padding-bottom: 0.9rem;
+      }
+      .j-rail-more {
+        margin: 1.1rem 0 0;
+      }
+
+      /* ---------------- Timeline spine ----------------
+         Shared by the front-page rail and the Updates view. --j-tl-gutter is the
+         left inset the entries hang off; --j-tl-spine-x is the spine's center,
+         which JournalUpdateEntry reads to place its dot. */
+      .j-timeline {
+        --j-tl-gutter: 1.15rem;
+        --j-tl-spine-x: 4px;
+        position: relative;
+        padding-left: var(--j-tl-gutter);
+      }
+      .j-timeline::before {
+        content: "";
+        position: absolute;
+        left: 3px;
+        top: 6px;
+        bottom: 4px;
+        width: 2px;
+        background: var(--color-border);
+        border-radius: 2px;
+        transition: background-color 0.3s ease;
+      }
+      .j-timeline--big {
+        --j-tl-gutter: 1.6rem;
+        --j-tl-spine-x: 5px;
+      }
+      .j-timeline--big::before {
+        left: 4px;
+      }
+      .j-tl-year {
+        position: relative;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        color: var(--color-text-muted);
+        font-variant-numeric: tabular-nums;
+        margin: 1.15rem 0 0.5rem;
+      }
+      .j-tl-year:first-child {
+        margin-top: 0;
+      }
+      /* A tick crossing the spine, so a year reads as a marker on the line
+         rather than a floating label. */
+      .j-tl-year::before {
+        content: "";
+        position: absolute;
+        left: calc(-1 * var(--j-tl-gutter));
+        top: 50%;
+        transform: translateY(-50%);
+        width: 8px;
+        height: 2px;
+        background: var(--color-text-muted);
+        opacity: 0.6;
+      }
+      .j-timeline--big .j-tl-year {
+        font-size: 0.95rem;
+        color: var(--color-text-main);
+        letter-spacing: 0.12em;
+        margin: 2rem 0 0.4rem;
+      }
+      .j-timeline--big .j-tl-year:first-child {
+        margin-top: 0;
+      }
+      .j-timeline--big .j-tl-year::before {
+        width: 10px;
+      }
+
+      /* ---------------- Updates view ---------------- */
+      .j-updates {
+        max-width: 680px;
+      }
+
+      /* ---------------- Essays view ---------------- */
+      .j-essays {
+        max-width: 720px;
+      }
+
+      /* ---------------- Notebook view ---------------- */
+      .j-nb {
         display: grid;
         grid-template-columns: 1fr;
         gap: 2.5rem;
       }
-      .j-notes-side {
+      .j-nb-side {
         align-self: start;
       }
       /* Wide enough for a margin sidebar: topics are a sticky 200px left column
-         of full-width rows (the original look). Below 880px they become a
-         wrapping row of pills above the list (see the max-width block). */
+         of full-width rows. Below 880px they become a wrapping row of pills
+         above the list (see the max-width blocks). */
       @media (min-width: 880px) {
-        .j-body:has(#j-notes-side:not([hidden])) {
+        .j-nb {
           grid-template-columns: 200px 1fr;
         }
-        .j-notes-side {
+        .j-nb-side {
           position: sticky;
-          top: 8.5rem;
+          top: 9.5rem;
         }
       }
       .j-side-label {
@@ -709,11 +1151,13 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         padding: 0.5rem 0.75rem;
         border-radius: 8px;
         font-size: 0.95rem;
+        font-family: inherit;
         text-align: left;
       }
       .j-topic span {
         color: var(--color-text-muted);
         opacity: 0.7;
+        font-variant-numeric: tabular-nums;
       }
       .j-topic:hover {
         background: var(--color-bg-offset);
@@ -724,42 +1168,51 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         color: var(--color-text-main);
         font-weight: 600;
       }
-
-      .j-list {
-        display: flex;
-        flex-direction: column;
-        transition: opacity 0.16s ease;
-      }
-      .j-group-header {
+      .j-nb-group-head {
         display: flex;
         justify-content: space-between;
         align-items: baseline;
-        /* Topic headers run full-width (left edge to right), as section dividers —
-           the entries below stay gutter-aligned, but the grouping band spans the
-           whole column so it reads as a divider, not another indented row. */
+        /* Topic headers run full-width as section dividers — the entries below
+           stay aligned, but the grouping band spans the whole column. */
         padding: 1.5rem 0 0.5rem;
         border-bottom: 1px solid var(--color-border);
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.25rem;
+        transition: border-color 0.3s ease;
       }
-      .j-group-name {
+      .j-nb-group:first-child .j-nb-group-head {
+        padding-top: 0;
+      }
+      .j-nb-group-name {
         font-size: 0.8rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.1em;
         color: var(--color-text-muted);
       }
-      .j-group-count {
+      .j-nb-group-count {
         font-variant-numeric: tabular-nums;
         font-size: 0.8rem;
         color: var(--color-text-muted);
         opacity: 0.6;
       }
+
+      /* ---------------- Responsive ---------------- */
+      @media (max-width: 900px) {
+        /* The rail stops being a margin and becomes the last band of the front
+           page: full width, under the notebook shelf. */
+        .j-front {
+          grid-template-columns: 1fr;
+          gap: 2.6rem;
+        }
+        .j-rail {
+          position: static;
+        }
+      }
       /* MEDIUM screens (below the sidebar breakpoint, above mobile): topics are a
          WRAPPING row above the list, in the same rounded-rectangle style they had
-         as sidebar rows. `:not([hidden])` so this doesn't override the `hidden`
-         attribute in non-Notebook views. */
+         as sidebar rows. */
       @media (max-width: 879px) {
-        .j-notes-side:not([hidden]) {
+        .j-nb-side {
           display: flex;
           flex-wrap: wrap;
           align-items: center;
@@ -784,12 +1237,12 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         #j-title {
           font-size: 2.2rem;
         }
-        /* No bottom rule on mobile, and a tighter gap below the bar. (The
-           edge-to-edge bleed lives in the base rule — it must cover every width,
-           not just this breakpoint.) */
+        /* No separator on mobile, and a tighter gap below the bar. */
         .j-filters-bar {
-          border-bottom: none;
-          margin-bottom: 0rem;
+          margin-bottom: 1.25rem;
+        }
+        .j-filters-bar::after {
+          display: none;
         }
         /* On mobile there isn't room for the full row, so drop the "All" button
            and its divider entirely — users return to All by clicking the active
@@ -798,21 +1251,20 @@ const rowLabel = (post: { data: { category: string; subject?: string } }) =>
         .j-filter-divider {
           display: none;
         }
-        .j-body {
+        .j-nb {
           gap: 1.25rem;
         }
         /* SMALL screens: the topics row scrolls horizontally instead of wrapping,
-           so a long topic list stays a single tidy row. Same rounded-rect topic
-           style as medium; just switch wrap→scroll and bleed to the screen edges
+           so a long topic list stays a single tidy row. Bleed to the screen edges
            (main's 1rem gutter) for a clear "more to scroll" affordance. */
-        .j-notes-side:not([hidden]) {
+        .j-nb-side {
           flex-wrap: nowrap;
           overflow-x: auto;
-          margin: 1rem -1rem 0rem -1rem;
+          margin: 0 -1rem;
           padding: 0 1rem 0.25rem;
           scrollbar-width: none;
         }
-        .j-notes-side::-webkit-scrollbar {
+        .j-nb-side::-webkit-scrollbar {
           display: none;
         }
         .j-topic {

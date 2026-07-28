@@ -190,7 +190,16 @@ const { count = 46, class: className = "" } = Astro.props;
         // .j-head's viewport rect.top, which made it scroll-dependent.
         const bleedUp = Math.min(NAVBAR_BOTTOM, headTopDoc);
         const top = headTopDoc - bleedUp;
-        // Band bottom = the filter bar's UNSTUCK (layout) top.
+        // Band bottom = the filter bar's UNSTUCK (layout) BOTTOM, so the field
+        // runs THROUGH the bar rather than stopping at its top edge. The bar is
+        // translucent (tint + backdrop blur) and paints above this canvas, so
+        // the light reads through the frost and the pills sit in it instead of
+        // the glow dying on the bar's leading edge.
+        //
+        // Nothing here is scroll-aware, and it doesn't need to be: the band is
+        // fixed in DOCUMENT space, so once the page is scrolled far enough that
+        // the stuck bar has moved past the band, there is simply no glow behind
+        // it and it goes back to plain frost on its own.
         //
         // The bar is `position: sticky`, so BOTH its offsetTop and its rect
         // report the CURRENT stuck offset, not the layout position — measured
@@ -211,7 +220,7 @@ const { count = 46, class: className = "" } = Astro.props;
         if (bar instanceof HTMLElement) {
           const prevPos = bar.style.position;
           bar.style.position = "static";
-          bottom = bar.getBoundingClientRect().top + window.scrollY;
+          bottom = bar.getBoundingClientRect().bottom + window.scrollY;
           bar.style.position = prevPos;
         } else {
           bottom = headTopDoc + parent.offsetHeight;

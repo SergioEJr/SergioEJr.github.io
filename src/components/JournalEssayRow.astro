@@ -1,0 +1,196 @@
+---
+// Journal essay row — the feature row of the Journal.
+//
+// Label rule: a row NEVER shows its register ("Essays"); the section it sits in
+// and the filter pills carry that. The eyebrow shows the piece's SUBJECT
+// (Science / Math / Ideas) instead, which is the one label that adds
+// information here. See JournalNoteRow (topic chip) and JournalUpdateEntry
+// (date) for the same rule applied to the other two registers.
+import type { CollectionEntry } from "astro:content";
+import FormattedDate from "./FormattedDate.astro";
+import { renderInline } from "../utils/inlineText";
+import { postLink, readingMinutes, externalHost } from "../utils/posts";
+
+interface Props {
+  post: CollectionEntry<"blog">;
+}
+const { post } = Astro.props;
+
+const link = postLink(post);
+// Essays take their subject color; an essay with no subject falls back to the
+// register color so the row is never colorless.
+const color = post.data.subject
+  ? `var(--subj-${post.data.subject})`
+  : "var(--cat-essays)";
+const label = post.data.subject ?? "Essay";
+
+// Meta line: the date, then either how long the piece is (posts with their own
+// detail page) or where it lives (external pointers). Neither for the rest.
+const minutes = link.hasPage ? readingMinutes(post) : null;
+const host = externalHost(post);
+---
+
+<article class="j-essay" style={`--row-color:${color}`}>
+  <div class="j-essay-eyebrow"><span class="j-dot" aria-hidden="true"></span>{label}</div>
+  {
+    link.href ? (
+      <h2 class="j-essay-title">
+        <a
+          href={link.href}
+          {...(link.external
+            ? { target: "_blank", rel: "noopener noreferrer" }
+            : {})}
+          data-track-journal
+          data-track-title={post.data.title}
+          data-track-category={post.data.category}
+          data-track-external={link.external ? "true" : "false"}
+        >
+          <span class="j-t" set:html={renderInline(post.data.title)} />
+          {link.external && (
+            <svg
+              class="j-ext"
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M7 17 17 7" />
+              <path d="M7 7h10v10" />
+            </svg>
+          )}
+        </a>
+      </h2>
+    ) : (
+      <h2 class="j-essay-title j-essay-title--static" set:html={renderInline(post.data.title)} />
+    )
+  }
+  <p class="j-essay-desc">{post.data.description}</p>
+  <div class="j-essay-meta">
+    <FormattedDate date={post.data.pubDate} />
+    {minutes && <><span class="j-sep">·</span><span>{minutes} min read</span></>}
+    {!minutes && host && <><span class="j-sep">·</span><span>{host}</span></>}
+  </div>
+</article>
+
+<style>
+  .j-essay {
+    padding: 1.6rem 0;
+    border-bottom: 1px solid var(--color-border);
+    /* Containing block for the title link's stretched overlay, so a click
+       anywhere in the row opens the piece. */
+    position: relative;
+    transition: border-color 0.2s ease;
+  }
+  .j-essay-eyebrow {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--row-color);
+    margin-bottom: 0.35rem;
+  }
+  .j-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--row-color);
+    margin-right: 0.4rem;
+    vertical-align: 1px;
+  }
+  .j-essay-title {
+    font-family: var(--font-serif);
+    font-size: 1.55rem;
+    font-weight: 700;
+    line-height: 1.22;
+    margin: 0 0 0.45rem;
+    /* NOT position:relative — that would trap the link's stretched ::after
+       inside the heading instead of over the whole row. The hover underline
+       lives on the inner .j-t span, which sizes to the text. */
+  }
+  /* Suppress the global h2 rule-mark; this heading has its own hover underline. */
+  .j-essay-title::after {
+    content: none;
+  }
+  .j-essay-title a {
+    color: var(--color-text-main);
+    text-decoration: none;
+  }
+  /* Cancel the global `a:hover { opacity: 0.8 }` graying — the underline is the
+     only intended hover cue. */
+  .j-essay-title a:hover {
+    opacity: 1;
+  }
+  .j-essay-title a::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+  .j-essay-title--static {
+    cursor: default;
+  }
+  .j-t {
+    position: relative;
+    display: inline;
+  }
+  .j-t::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.12em;
+    height: 2px;
+    background: var(--row-color);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .j-essay:hover .j-t::after {
+    transform: scaleX(1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .j-t::after {
+      transition: none;
+    }
+  }
+  .j-ext {
+    width: 0.7em;
+    height: 0.7em;
+    margin-left: 0.35rem;
+    vertical-align: baseline;
+    opacity: 0.55;
+    transition: opacity 0.2s ease;
+  }
+  .j-essay:hover .j-ext {
+    opacity: 1;
+  }
+  .j-essay-desc {
+    color: var(--color-text-muted);
+    margin: 0 0 0.7rem;
+    max-width: 66ch;
+  }
+  .j-essay-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    align-items: center;
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+  .j-sep {
+    font-style: normal;
+    opacity: 0.55;
+  }
+  @media (max-width: 600px) {
+    .j-essay-title {
+      font-size: 1.35rem;
+    }
+  }
+</style>
