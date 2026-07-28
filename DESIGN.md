@@ -19,7 +19,7 @@ Values mirror `src/styles/global.css`, which is **authoritative** — if the
 | `--color-accent` | `#003366` | `#60a5fa` | Brand accent. Oxford Blue vs. electric blue. |
 | `--color-accent-light` | `#e6f0fa` | `#1e3a8a` | Accent fill / highlight backgrounds. |
 | `--color-border` | `#eaeaea` | `#334155` | Hairlines, dividers, card borders. |
-| `--fig-red` | `#b91c1c` | `#f87171` | Figure-only red slab/accent (see `src/assets/blog/README.md`). |
+| `--fig-red` | `#b91c1c` | `#f87171` | Figure-only red slab/accent (see `src/assets/journal/README.md`). |
 | `--fig-blue` | `#173f7a` | `#60a5fa` | Figure-only blue (legible on white; dark = the accent blue). |
 | `--fig-orange` | `#c2410c` | `#fb923c` | Figure-only orange for a third distinct slab color. |
 
@@ -47,4 +47,4 @@ show the page canvas through.
 
 Use the `<Figure>` component (`src/components/Figure.astro`) in `.mdx` posts —
 it has three modes (adaptive `currentColor` SVG, light/dark image pair, single
-image on a card). See `src/assets/blog/README.md` for authoring details.
+image on a card). See `src/assets/journal/README.md` for authoring details.

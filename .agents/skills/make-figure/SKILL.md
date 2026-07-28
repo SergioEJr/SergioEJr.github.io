@@ -7,12 +7,12 @@ description: Generate a theme-aware figure for this site from a description and/
 
 Turn a concept — described in words, sketched on paper, or screenshotted — into a
 figure that adapts to the site's light and dark themes. The pipeline and its
-reasons live in `src/assets/blog/README.md` (read it for anything not covered
+reasons live in `src/assets/journal/README.md` (read it for anything not covered
 here); the palette rules live in `DESIGN.md`. This skill is the distilled
 workflow plus the mistakes already made so you don't repeat them.
 
 **Scope: produce and verify the figure, then stop.** Deliverables are
-`figures/<name>.tex` and `src/assets/blog/<name>.svg`. Do NOT wire the figure
+`figures/<name>.tex` and `src/assets/journal/<name>.svg`. Do NOT wire the figure
 into a post (import + `<Figure>` block) unless explicitly asked. Do NOT commit
 unless asked (repo rule).
 
@@ -83,7 +83,7 @@ one-off coordinate won't.
 ## Step 3 — Build, render, and actually look
 
 ```sh
-./fig.sh <name>          # builds figures/<name>.tex → src/assets/blog/<name>.svg
+./fig.sh <name>          # builds figures/<name>.tex → src/assets/journal/<name>.svg
 ```
 
 If the build fails silently (no output), the error is in `build/<name>.log`:
@@ -109,7 +109,7 @@ npm run check:figures    # fails if any theme-locked hex leaked into the SVG
 
 Report to Sergio with: the mapping you chose, both rendered PNGs (Read them into
 the conversation via screenshots already taken), and any judgment calls. Offer —
-don't perform — the commit (`figures/<name>.tex` + `src/assets/blog/<name>.svg`
+don't perform — the commit (`figures/<name>.tex` + `src/assets/journal/<name>.svg`
 together) and the post wiring.
 
 ## Gotchas (each of these cost a real debugging cycle)

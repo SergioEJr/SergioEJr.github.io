@@ -1,7 +1,7 @@
 # AGENTS.md
 
 Guidance for working in this repo. The site is a personal portfolio (research,
-projects, blog/"Journal") built with **Astro** on the Astro Scholar theme,
+projects, Journal) built with **Astro** on the Astro Scholar theme,
 deployed to GitHub Pages via Actions on push to `main`.
 
 ## Commands
@@ -47,14 +47,14 @@ npm run format:check  # prettier --check .
 
 ## Content collections (`src/content.config.ts`)
 
-- **blog** (`src/content/blog/`, `.md`/`.mdx`) — Journal posts. Key fields:
+- **journal** (`src/content/journal/`, `.md`/`.mdx`) — Journal posts. Key fields:
   `category` (`updates`/`essays`/`notebook` — the reader's *register*, not the
   subject), `topic` (groups Notebook posts: Math, Physics, Git, …), `subject`
   (`Science`/`Math`/`Ideas` — Essays dot/underline color), `draft` (excludes
   from everything), `externalUrl`/`linkTo`/`noLink` (pointer/update posts with
   no detail page — link resolution + the has-detail-page rule live in
   `postLink()`/`postHasDetailPage()` in `posts.ts`), `heroImage` (off by
-  default; lives in `src/assets/blog/`), `tags` (**keywords, not routes** — see
+  default; lives in `src/assets/journal/`), `tags` (**keywords, not routes** — see
   below).
 - **projects** (`src/content/projects/`) — `categories` (Technical/Teaching),
   `image` (card thumbnail in `public/projects/`, gets pill overlay),
@@ -66,7 +66,7 @@ npm run format:check  # prettier --check .
 
 ## Tags = keywords (and the Pagefind rules that shape them)
 
-Blog `tags` are **descriptors, not routes**. There are no `/tags/<tag>` pages —
+Journal `tags` are **descriptors, not routes**. There are no `/tags/<tag>` pages —
 they were deleted because 16 of 20 tags sat on exactly one post, so every one
 was a dead end. Tags now do the two jobs they're actually good at: saying what a
 piece covers before the reader commits, and carrying **search terms the prose
@@ -98,10 +98,10 @@ keyword clicks are inert under `npm run dev` — verify on `npm run preview`.
 
 **Listings never compete with what they list.** Every aggregate surface carries
 `data-pagefind-ignore` on its rows, because each row already exists as its own
-indexed page: `.j-views` (`blog/index.astro`), `.home-rows` + `.home-rail-list`
+indexed page: `.j-views` (`journal/index.astro`), `.home-rows` + `.home-rail-list`
 (`index.astro` — there are two kinds of list on the home page, don't fix one and
 miss the other), `.publication-list`, `.projects-grid`. Before this, one search
-for "calculus" returned the note plus `/blog/` twice (Pagefind sub-results split
+for "calculus" returned the note plus `/journal/` twice (Pagefind sub-results split
 it across the Notebook and All views) plus `/` — four hits for one piece of
 writing. Each page still indexes its own headings and prose, so `/` is still
 findable by its bio copy. **When you add a new listing, ignore its rows.**

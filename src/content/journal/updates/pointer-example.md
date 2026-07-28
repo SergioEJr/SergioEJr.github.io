@@ -6,7 +6,7 @@ category: updates
 # Pointer post: links straight to a full article instead of rendering its own page.
 # Use ONE of the following:
 #   externalUrl: https://arxiv.org/abs/2604.01187   # off-site (opens in a new tab)
-linkTo: /publications/expanding-populations/         # another page on this site
+linkTo: /research/expanding-populations/         # another page on this site
 tags:
   - research
 draft: true # unpublished — example/template; set false to publish

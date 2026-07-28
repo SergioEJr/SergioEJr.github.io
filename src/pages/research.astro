@@ -58,7 +58,7 @@ const research = (await getPublishedResearch()).sort(
             <article class="publication-item">
               <a
                 class="pub-title"
-                href={url(`/publications/${entry.id}/`)}
+                href={url(`/research/${entry.id}/`)}
                 style="display: block;"
               >
                 {entry.data.title}
@@ -83,7 +83,7 @@ const research = (await getPublishedResearch()).sort(
               </div>
 
               <div class="pub-links">
-                <a href={url(`/publications/${entry.id}/`)} class="pub-btn">
+                <a href={url(`/research/${entry.id}/`)} class="pub-btn">
                   Overview
                 </a>
 

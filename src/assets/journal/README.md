@@ -1,6 +1,6 @@
-# Blog images
+# Journal images
 
-Put blog-post images here. They are processed by Astro's asset pipeline
+Put Journal images here. They are processed by Astro's asset pipeline
 (resize, webp/avif, cache-busting hashes), so prefer this over `public/` for
 anything inside a post.
 
@@ -10,14 +10,14 @@ frontmatter relative to the post file:
 ```yaml
 ---
 title: My Post
-heroImage: /src/assets/blog/my-post.jpg
+heroImage: /src/assets/journal/my-post.jpg
 ---
 ```
 
 **In-body images** — use a relative Markdown link or an import:
 
 ```md
-![Diagram](/src/assets/blog/my-post-diagram.png)
+![Diagram](/src/assets/journal/my-post-diagram.png)
 ```
 
 Recommended hero size: ~1600px wide. Anything large is fine — Astro downscales.
@@ -31,12 +31,12 @@ For diagrams that must work in light _and_ dark mode, use the `Figure` component
    `sed -i '' 's/#000000/currentColor/g; s/#000/currentColor/g' diagram.svg` so it
    inherits the page color and flips with the theme. Put it here; use:
    ```mdx
-   import diagram from '/src/assets/blog/diagram.svg?raw';
+   import diagram from '/src/assets/journal/diagram.svg?raw';
    <Figure svg={diagram} alt="..." caption="..." />
    ```
-2. **Light/dark pair** (for colored graphics) — export two images to `public/blog/`:
-   `<Figure light="/blog/fig-light.png" dark="/blog/fig-dark.png" caption="..." />`
-3. **Single image on a card** — `<Figure src="/blog/fig.png" caption="..." />`
+2. **Light/dark pair** (for colored graphics) — export two images to `public/journal/`:
+   `<Figure light="/journal/fig-light.png" dark="/journal/fig-dark.png" caption="..." />`
+3. **Single image on a card** — `<Figure src="/journal/fig.png" caption="..." />`
 
 Optional `width` (px) caps the figure. Export raster images at ~2× display size.
 
@@ -56,14 +56,14 @@ One source file per figure in `/figures`, built by one script.
 
 ```sh
 ./fig.sh product-rule          # builds figures/product-rule.tex
-# -> src/assets/blog/product-rule.svg   theme-aware, for the site  (commit this)
+# -> src/assets/journal/product-rule.svg   theme-aware, for the site  (commit this)
 # -> build/product-rule.pdf             cropped, for Overleaf      (gitignored)
 ```
 
 Then in an `.mdx` post, mode 1 above:
 
 ```mdx
-import fig from '/src/assets/blog/product-rule.svg?raw';
+import fig from '/src/assets/journal/product-rule.svg?raw';
 <Figure svg={fig} alt="Product rule as rectangle areas" caption="..." />
 ```
 
@@ -158,7 +158,7 @@ Four non-obvious failures, each of which broke a hand-written SVG:
   forms.
 - **Never bake `#fff`, `#000`, `#1a1a1a`, or `#0f172a` into an SVG.** Such a
   figure looks correct in exactly one theme. This is enforced:
-  `scripts/check-figures.mjs` scans `src/assets/blog/*.svg` for baked theme hexes
+  `scripts/check-figures.mjs` scans `src/assets/journal/*.svg` for baked theme hexes
   and **fails the build** if any slip through (wired as `prebuild`, so it runs
   locally and in CI). Run it directly with `npm run check:figures`.
 

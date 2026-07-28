@@ -1226,7 +1226,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           max-width: none;
         }
         /* Two updates instead of three — shorter road to the CTA. The full
-           list lives at /blog#updates. */
+           list lives at /journal#updates. */
         .home-rail-group--updates .home-rail-item:nth-child(n + 3) {
           display: none;
         }
@@ -1598,7 +1598,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
                     and tools to actually run them.
                   </p>
                   <div class="hero-card-links">
-                    <a href={url("/publications")} class="hero-card-link">
+                    <a href={url("/research")} class="hero-card-link">
                       View research<span class="hero-card-arrow" aria-hidden="true"
                         >&rarr;</span
                       >
@@ -1650,7 +1650,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
                     <div class="home-row-main">
                       <a
                         class="home-row-title"
-                        href={url(`/publications/${entry.id}/`)}
+                        href={url(`/research/${entry.id}/`)}
                       >
                         {entry.data.title}
                       </a>
@@ -1666,7 +1666,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
               <p>No research entries yet.</p>
             )
           }
-          <a href={url("/publications")} class="home-more" style="--i: 3">
+          <a href={url("/research")} class="home-more" style="--i: 3">
             View all research<span class="home-more-arrow" aria-hidden="true"
               >&rarr;</span
             >
@@ -1734,7 +1734,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
                   );
                 })}
               </ol>
-              <a href={url("/blog")} class="home-more" style="--i: 3">
+              <a href={url("/journal")} class="home-more" style="--i: 3">
                 View journal<span class="home-more-arrow" aria-hidden="true"
                   >&rarr;</span
                 >
@@ -1765,7 +1765,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
                 <h3 class="home-rail-label">
                   <a
                     class="home-rail-label-link"
-                    href={url("/blog") + "#updates"}
+                    href={url("/journal") + "#updates"}
                   >
                     <span class="rail-label-all">All&nbsp;</span>Updates<span
                       class="rail-label-arrow"
@@ -1882,7 +1882,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
                 <h3 class="home-rail-label">
                   <a
                     class="home-rail-label-link"
-                    href={url("/blog") + "#notebook"}
+                    href={url("/journal") + "#notebook"}
                   >
                     <span class="rail-label-all">All&nbsp;</span>Notes<span
                       class="rail-label-arrow"

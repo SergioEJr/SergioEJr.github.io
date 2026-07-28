@@ -152,7 +152,7 @@ const { tags, ignore = false, label } = Astro.props;
   // Bound to `document` so it survives ClientRouter swaps, and guarded so that
   // the many component instances on a page (and any module re-execution) bind
   // it exactly once. Mirrors the Journal's analytics listener in
-  // pages/blog/index.astro.
+  // pages/journal/index.astro.
   //
   // `click`, not `pointerdown`: unlike the Journal's analytics beacon there's no
   // navigation to race here.

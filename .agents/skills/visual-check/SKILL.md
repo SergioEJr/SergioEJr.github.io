@@ -54,7 +54,7 @@ Playwright + Chromium are installed (dev-only). The helper is `scripts/shot.mjs`
    npm run build > /tmp/build.log 2>&1
    npm run preview -- --port 4399 > /tmp/preview.log 2>&1 & echo $! > /tmp/shot-dev.pid
    sleep 3
-   PREVIEW_URL=http://localhost:4399 node scripts/shot.mjs /publications/ ...
+   PREVIEW_URL=http://localhost:4399 node scripts/shot.mjs /research/ ...
    ```
    To reproduce the dev/prod gap: load the home page, **click** the nav link to
    the target page (client-side nav), then read the element's computed style —
@@ -78,17 +78,17 @@ measuring the element edge instead of where the text actually begins.)
 
 ```sh
 # TOC dropdown, expanded, on a sub-1200px width (in-column mode)
-node scripts/shot.mjs /blog/physics-entropy-equation/ \
+node scripts/shot.mjs /journal/physics-entropy-equation/ \
   --sel .toc-mobile-details --open .toc-mobile-details --width 1000
 
 # Navbar still stuck + no overflow after scrolling, at the width that broke before
-node scripts/shot.mjs /blog/physics-entropy-equation/ --width 1150 --scroll 1600
+node scripts/shot.mjs /journal/physics-entropy-equation/ --width 1150 --scroll 1600
 
 # Mobile home page, light mode
 node scripts/shot.mjs / --width 390 --theme l --out /tmp/home.png
 
 # Side note floating in the gutter (needs >=1200px)
-node scripts/shot.mjs /blog/physics-entropy-equation/ --width 1400 --sel '[data-sidenote]'
+node scripts/shot.mjs /journal/physics-entropy-equation/ --width 1400 --sel '[data-sidenote]'
 
 # Override the dev-server port if it isn't 4322
 PREVIEW_URL=http://localhost:4323 node scripts/shot.mjs /

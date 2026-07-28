@@ -15,9 +15,9 @@
 //   --full              full-page screenshot (default: just the viewport)
 //
 // Examples:
-//   node scripts/shot.mjs /blog/physics-entropy-equation/ --sel .toc-mobile-details --open .toc-mobile-details
+//   node scripts/shot.mjs /journal/physics-entropy-equation/ --sel .toc-mobile-details --open .toc-mobile-details
 //   node scripts/shot.mjs / --width 390 --out /tmp/home-mobile.png
-//   node scripts/shot.mjs /blog/foo/ --scroll 1600   # check navbar stays stuck
+//   node scripts/shot.mjs /journal/foo/ --scroll 1600   # check navbar stays stuck
 
 import { chromium } from "playwright";
 

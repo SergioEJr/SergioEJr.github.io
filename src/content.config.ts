@@ -5,15 +5,15 @@ type SchemaContext = { image: () => any };
 
 // Journal posts. `category` drives the color-coded filters on the Journal page;
 // `topic` sub-groups posts within the Notes category.
-const blog = defineCollection({
+const journal = defineCollection({
   loader: glob({
-    base: "./src/content/blog",
+    base: "./src/content/journal",
     pattern: "**/*.{md,mdx}",
     // Posts are filed on disk by register — essays/, notes/, updates/ — purely
     // so the folder is navigable. That folder must NOT reach the URL: a post's
     // register is mutable metadata (a note can be promoted to an essay) and a
     // permalink shouldn't encode something that can change under it. So the id
-    // is the file's basename alone, and every post stays at /blog/<slug>/
+    // is the file's basename alone, and every post stays at /journal/<slug>/
     // regardless of which folder it lives in.
     generateId: ({ entry }) =>
       entry
@@ -28,8 +28,8 @@ const blog = defineCollection({
       pubDate: z.coerce.date(),
       updatedDate: z.coerce.date().optional(),
       // Optional hero shown at the top of the post (off by default). Lives in
-      // src/assets/blog/ and is referenced by ROOT-ABSOLUTE path, e.g.
-      //   heroImage: /src/assets/blog/my-post.jpg
+      // src/assets/journal/ and is referenced by ROOT-ABSOLUTE path, e.g.
+      //   heroImage: /src/assets/journal/my-post.jpg
       // so Astro can optimize it (resize, webp/avif, hashing). Root-absolute
       // rather than relative so a post can be moved between essays/, notes/
       // and updates/ without rewriting every path inside it.
@@ -53,7 +53,7 @@ const blog = defineCollection({
       // "Pointer" posts: a Journal entry whose title/description are timeline-friendly
       // and that links straight to a full article instead of rendering its own page.
       // `externalUrl` → off-site link (opens in a new tab);
-      // `linkTo` → another page on this site (e.g. /blog/full-post/ or /projects/foo/).
+      // `linkTo` → another page on this site (e.g. /journal/full-post/ or /projects/foo/).
       // Leave both unset for a normal standalone post with its own detail page.
       externalUrl: z.string().url().optional(),
       linkTo: z.string().optional(),
@@ -101,7 +101,7 @@ const projects = defineCollection({
   }),
 });
 
-// Research projects. Each has a blog-like overview page plus an optional link to
+// Research projects. Each has a article-like overview page plus an optional link to
 // the paper (arXiv/journal) and a BibTeX entry shown in a dropdown.
 const research = defineCollection({
   loader: glob({ base: "./src/content/research", pattern: "**/*.{md,mdx}" }),
@@ -123,4 +123,4 @@ const research = defineCollection({
   }),
 });
 
-export const collections = { blog, projects, research };
+export const collections = { journal, projects, research };

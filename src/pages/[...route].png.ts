@@ -30,21 +30,21 @@ export async function getStaticPaths() {
       props: { title: "Projects", subtitle: SITE_TITLE },
     },
     {
-      params: { route: "publications" },
+      params: { route: "research" },
       props: { title: "Publications", subtitle: SITE_TITLE },
     },
     {
-      params: { route: "blog" },
-      props: { title: "Blog", subtitle: SITE_TITLE },
+      params: { route: "journal" },
+      props: { title: "Journal", subtitle: SITE_TITLE },
     },
   ];
 
-  // Dynamic blog posts — only those with a real detail page. Skips pointer
+  // Dynamic Journal posts — only those with a real detail page. Skips pointer
   // posts (externalUrl/linkTo) AND link-less update posts (noLink), matching
-  // the blog detail route so we never emit an OG image for a page that 404s.
-  const blogPages = posts.filter(postHasDetailPage).map((post) => ({
-    params: { route: `blog/${post.id}` },
-    props: { title: stripInline(post.data.title), subtitle: "Blog Post" },
+  // the Journal detail route so we never emit an OG image for a page that 404s.
+  const journalPages = posts.filter(postHasDetailPage).map((post) => ({
+    params: { route: `journal/${post.id}` },
+    props: { title: stripInline(post.data.title), subtitle: "Journal" },
   }));
 
   const projectPages = projects.map((project) => {
@@ -65,11 +65,11 @@ export async function getStaticPaths() {
   });
 
   const researchPages = research.map((entry) => ({
-    params: { route: `publications/${entry.id}` },
+    params: { route: `research/${entry.id}` },
     props: { title: entry.data.title, subtitle: "Research" },
   }));
 
-  return [...staticPages, ...blogPages, ...projectPages, ...researchPages];
+  return [...staticPages, ...journalPages, ...projectPages, ...researchPages];
 }
 
 export const GET: APIRoute = async ({ props }) => {

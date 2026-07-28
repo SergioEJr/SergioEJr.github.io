@@ -31,7 +31,7 @@ def random_walk(n, steps):
 
 Of course, there is also support for images:
 
-![Sample image](/src/assets/blog/intro-pic.jpeg)
+![Sample image](/src/assets/journal/intro-pic.jpeg)
 
 For more advanced projects, I am also excited to test out JSX integration with .mdx files. I am super excited to see where this goes!
 

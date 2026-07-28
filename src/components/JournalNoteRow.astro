@@ -26,12 +26,12 @@ import { renderInline } from "../utils/inlineText";
 import { postLink } from "../utils/posts";
 
 interface Props {
-  post: CollectionEntry<"blog">;
+  post: CollectionEntry<"journal">;
   showTopic?: boolean;
 }
 const { post, showTopic = false } = Astro.props;
 const link = postLink(post);
-// Blog `tags` is optional() in the schema (unlike projects/research, which
+// Journal `tags` is optional() in the schema (unlike projects/research, which
 // default to []), so normalize before reading .length.
 const keywords = post.data.tags ?? [];
 ---

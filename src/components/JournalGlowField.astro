@@ -38,7 +38,7 @@ const { count = 46, class: className = "" } = Astro.props;
   const MAX_N = 60;
 
   // Per-nav teardown. Under ClientRouter a fresh canvas is swapped in on each
-  // visit to /blog; without cleanup every visit leaked two window listeners
+  // visit to /journal; without cleanup every visit leaked two window listeners
   // (resize, hashchange), an IntersectionObserver, and a MutationObserver — all
   // closing over the detached canvas — plus a rAF loop kept alive only by the IO
   // happening to report the removal. Track everything and release on

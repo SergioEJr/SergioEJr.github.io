@@ -405,7 +405,7 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
         // track history position. Passing null (the old bug) wiped it, so a later
         // Back TO this filtered entry misfired the router — it skipped the document
         // swap entirely (only popstate fired, no astro:after-swap), leaving the
-        // previous page's content (e.g. an article) stuck under the /blog/#filter
+        // previous page's content (e.g. an article) stuck under the /journal/#filter
         // URL. Spreading history.state keeps the router's bookkeeping intact.
         function writeHash() {
           let hash = "";

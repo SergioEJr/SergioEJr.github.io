@@ -52,9 +52,9 @@ const brandLayerSecondary = layerFor("cls-2");
 
     <div class="internal-links" transition:persist="internal-links">
       <HeaderLink href={url("/")}>Home</HeaderLink>
-      <HeaderLink href={url("/publications")}>Research</HeaderLink>
+      <HeaderLink href={url("/research")}>Research</HeaderLink>
       <HeaderLink href={url("/projects")}>Projects</HeaderLink>
-      <HeaderLink href={url("/blog")}>Journal</HeaderLink>
+      <HeaderLink href={url("/journal")}>Journal</HeaderLink>
       <HeaderLink href={url("/about")}>About</HeaderLink>
       <span class="nav-underline" aria-hidden="true"></span>
     </div>
@@ -219,9 +219,9 @@ const brandLayerSecondary = layerFor("cls-2");
       </button>
     </div>
     <a href={url("/")}>Home</a>
-    <a href={url("/publications")}>Research</a>
+    <a href={url("/research")}>Research</a>
     <a href={url("/projects")}>Projects</a>
-    <a href={url("/blog")}>Journal</a>
+    <a href={url("/journal")}>Journal</a>
     <a href={url("/about")}>About</a>
     {
       cvHref && (
@@ -300,7 +300,7 @@ const brandLayerSecondary = layerFor("cls-2");
   // needed while reading; on wide screens there is room to spare, so the header
   // stays pinned and this does nothing.
   //
-  // Blog posts layer their Table of Contents into the vacated slot (see
+  // Journal posts layer their Table of Contents into the vacated slot (see
   // TableOfContents.astro), which listens for the same attribute.
   function setupAutoHide(signal: AbortSignal) {
     const header = document.querySelector<HTMLElement>("header.site-header");
@@ -374,7 +374,7 @@ const brandLayerSecondary = layerFor("cls-2");
     const here = normalize(location.pathname);
 
     // Find the link matching the current URL (longest matching prefix wins so
-    // e.g. /blog/some-post highlights "Journal").
+    // e.g. /journal/some-post highlights "Journal").
     let active: HTMLAnchorElement | null = null;
     let bestLen = -1;
     for (const a of links) {
@@ -490,7 +490,7 @@ const brandLayerSecondary = layerFor("cls-2");
   }
 
   /* Auto-hide on narrow screens: retracts on scroll-down, returns on scroll-up
-     (set by setupAutoHide above; only ever applied below 1200px). On blog posts
+     (set by setupAutoHide above; only ever applied below 1200px). On Journal posts
      the Table of Contents slides into the vacated slot. */
   header[data-nav-hidden] {
     transform: translateY(-100%);

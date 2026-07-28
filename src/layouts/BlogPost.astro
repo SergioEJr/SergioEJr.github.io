@@ -13,15 +13,15 @@ import { renderInline, stripInline } from "../utils/inlineText";
 import { numberCitations } from "../utils/numberCitations";
 
 type CategoryBadge = { label: string; color: string };
-// Blog-collection fields are optional here because this layout is also reused by
-// the Projects and Research detail pages, which don't supply blog-only fields.
-type Props = Partial<CollectionEntry<"blog">["data"]> & {
+// Journal-collection fields are optional here because this layout is also reused by
+// the Projects and Research detail pages, which don't supply Journal-only fields.
+type Props = Partial<CollectionEntry<"journal">["data"]> & {
   title: string;
   description: string;
   pubDate: Date;
-  // Blog posts pass optimized ImageMetadata; simple pages (e.g. About) may pass
+  // Journal posts pass optimized ImageMetadata; simple pages (e.g. About) may pass
   // a plain path string to a file in /public.
-  heroImage?: CollectionEntry<"blog">["data"]["heroImage"] | string;
+  heroImage?: CollectionEntry<"journal">["data"]["heroImage"] | string;
   id?: string;
   headings?: { depth: number; slug: string; text: string }[];
   toc?: boolean;
@@ -42,7 +42,7 @@ const {
   noHero,
   showDate = true,
   categoryBadges = [],
-  // Blog-only. The Projects and Research detail pages pass explicit props (no
+  // Journal-only. The Projects and Research detail pages pass explicit props (no
   // frontmatter spread), so they never supply tags and never render the strip.
   tags = [],
 } = Astro.props;
@@ -86,7 +86,7 @@ const numberedBody = numberCitations(renderedBody);
         height: auto;
       }
 
-      .blog-container {
+      .article-container {
         position: relative;
         max-width: 1200px;
         margin: 0 auto;
@@ -120,7 +120,7 @@ const numberedBody = numberCitations(renderedBody);
 			   descend by WEIGHT, CASE and COLOR rather than by size, so no subhead
 			   ever competes with an h2 or reads as a second section break.
 
-			   These are scoped to .prose so they apply to blog posts only — every
+			   These are scoped to .prose so they apply to Journal posts only — every
 			   other h3 on the site (project cards, the 404 list, the footer modal,
 			   the home rails) carries its own component-scoped styling and must
 			   keep it.
@@ -765,7 +765,7 @@ const numberedBody = numberCitations(renderedBody);
       .last-updated-on {
         font-style: italic;
       }
-      .blog-authors {
+      .article-authors {
         display: flex;
         gap: 0.5rem;
         justify-content: center;
@@ -774,7 +774,7 @@ const numberedBody = numberCitations(renderedBody);
         font-size: 0.9rem;
         color: var(--color-text-muted);
       }
-      .blog-authors span {
+      .article-authors span {
         font-size: 0.9rem;
       }
       @media (max-width: 768px) {
@@ -872,7 +872,7 @@ const numberedBody = numberCitations(renderedBody);
             )
           )
         }
-        <div class="blog-container" style="position: relative;">
+        <div class="article-container" style="position: relative;">
           <div class="prose-wrapper">
             <div class="prose">
               <div class="title">
@@ -905,7 +905,7 @@ const numberedBody = numberCitations(renderedBody);
                 }
                 {
                   authors && authors.length > 0 && (
-                    <div class="blog-authors">
+                    <div class="article-authors">
                       {authors.map((authorId, i) => (
                         <span>
                           <AuthorLink nameOrSlug={authorId} />

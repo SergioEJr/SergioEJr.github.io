@@ -19,11 +19,11 @@ GitHub Pages via GitHub Actions.
 | Author profile(s) | `src/data/authors.json` |
 | Projects (one file per project) | `src/content/projects/*.mdx` |
 | Publications / research (one file per entry) | `src/content/research/*.mdx` |
-| Journal posts (one file per post) | `src/content/blog/*.{md,mdx}` |
+| Journal posts (one file per post) | `src/content/journal/*.{md,mdx}` |
 | Navigation | `src/components/Header.astro` |
 | Home hero portrait | `public/about/profile.jpeg` |
 
-Content collections (projects, research, blog) are defined in
+Content collections (projects, research, journal) are defined in
 `src/content.config.ts`; see `AGENTS.md` for the field reference.
 
 ## Develop locally

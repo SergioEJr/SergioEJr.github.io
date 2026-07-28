@@ -1,6 +1,6 @@
 # build output
 dist/
-# figure build scratch (fig.sh: dvi/aux/log/pdf/svg proofs); themed SVG lands in src/assets/blog/
+# figure build scratch (fig.sh: dvi/aux/log/pdf/svg proofs); themed SVG lands in src/assets/journal/
 build/
 # generated types
 .astro/

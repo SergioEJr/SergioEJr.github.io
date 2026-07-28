@@ -1,19 +1,19 @@
 ---
-// A figure for blog diagrams that renders well in both light and dark mode.
+// A figure for Journal diagrams that renders well in both light and dark mode.
 // Three modes (pick whichever fits the graphic), all with an optional caption:
 //
 // 1) Adaptive SVG — one SVG whose strokes/text use `currentColor`, so it inherits
 //    the page text color and flips with the theme automatically. Best for line-art
 //    physics diagrams. Pass the SVG markup as a raw import:
-//      import diagram from '/src/assets/blog/diagram.svg?raw';
+//      import diagram from '/src/assets/journal/diagram.svg?raw';
 //      <Figure svg={diagram} caption="..." />
 //
 // 2) Light/dark image pair — two exports, swapped by theme. Best for richly
 //    colored graphics. Use /public paths:
-//      <Figure light="/blog/fig-light.png" dark="/blog/fig-dark.png" caption="..." />
+//      <Figure light="/journal/fig-light.png" dark="/journal/fig-dark.png" caption="..." />
 //
 // 3) Single image on a card — one export with its own neutral panel + border:
-//      <Figure src="/blog/fig.png" caption="..." />
+//      <Figure src="/journal/fig.png" caption="..." />
 //
 // `width` (px) optionally caps the figure width; otherwise it fills the column.
 //
