@@ -1641,7 +1641,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           <h2 style="margin-top: 0;">Research</h2>
           {
             selectedResearch.length > 0 ? (
-              <ol class="home-rows">
+              <ol class="home-rows" data-pagefind-ignore>
                 {selectedResearch.map((entry, i) => (
                   <li class="home-row" style={`--i: ${i}`}>
                     <span class="home-row-num" aria-hidden="true">
@@ -1677,7 +1677,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           journalLead.length > 0 && (
             <section data-reveal>
               <h2 style="margin-top: 0;">From the Journal</h2>
-              <ol class="home-rows">
+              <ol class="home-rows" data-pagefind-ignore>
                 {journalLead.map((post, i) => {
                   const link = postLink(post);
                   return (
@@ -1773,7 +1773,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
                     >
                   </a>
                 </h3>
-                <ol class="home-rail-list">
+                <ol data-pagefind-ignore class="home-rail-list">
                   {updatePosts.map((post, i) => {
                     const link = postLink(post);
                     return (
@@ -1840,7 +1840,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
                     >
                   </a>
                 </h3>
-                <ol class="home-rail-list home-rail-list--proj">
+                <ol data-pagefind-ignore class="home-rail-list home-rail-list--proj">
                   {projects.map((project, i) => (
                     <li class="home-rail-item" style={`--i: ${i}`}>
                       <a
@@ -1890,7 +1890,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
                     >
                   </a>
                 </h3>
-                <ol class="home-rail-list">
+                <ol data-pagefind-ignore class="home-rail-list">
                   {notebookPosts.map((post, i) => {
                     const link = postLink(post);
                     return (

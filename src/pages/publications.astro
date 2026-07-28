@@ -52,7 +52,7 @@ const research = (await getPublishedResearch()).sort(
         overview, click a title to read it.
       </p>
 
-      <div class="publication-list">
+      <div class="publication-list" data-pagefind-ignore>
         {
           research.map((entry) => (
             <article class="publication-item">

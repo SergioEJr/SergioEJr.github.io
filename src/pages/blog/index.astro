@@ -197,7 +197,15 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
            one into the others is what made the old single-list version fight
            itself (the CSS `order` hack, notes pretending to be timeline rows). */
       }
-      <div class="j-views">
+      {
+        /* data-pagefind-ignore: this is a LISTING, and every row here also
+           exists as its own indexed page. Without it a search for "calculus"
+           returns the note, plus this page twice (Pagefind sub-results split it
+           across the Notebook and All views), plus the home page's Journal
+           picks — four hits, one piece of content. Listings shouldn't compete
+           with what they list. The page still indexes its own heading/intro. */
+      }
+      <div class="j-views" data-pagefind-ignore>
         {/* ---------- ALL: the Journal's front page ---------- */}
         <section class="j-view j-front" data-view="all">
           <div class="j-front-main">

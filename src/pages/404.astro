@@ -174,7 +174,11 @@ import ParticleField from "../components/ParticleField.astro";
     </style>
   </head>
 
-  <body>
+  {/* data-pagefind-ignore on <body>: keep this page out of the search index
+      entirely. Pagefind walks every .html in dist, so without it "Journal" (or
+      any nav word) returns the 404 page as a result — an error page is never a
+      useful destination for a search. */}
+  <body data-pagefind-ignore>
     <Header />
     <main transition:animate={pageFade}>
       <section class="nf">

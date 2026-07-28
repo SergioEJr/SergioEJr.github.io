@@ -85,6 +85,24 @@ Three Pagefind facts that this markup depends on — **all measured, don't
 Search is **production-only** (`Search.astro` renders a placeholder in DEV), so
 keyword clicks are inert under `npm run dev` — verify on `npm run preview`.
 
+**Listings never compete with what they list.** Every aggregate surface carries
+`data-pagefind-ignore` on its rows, because each row already exists as its own
+indexed page: `.j-views` (`blog/index.astro`), `.home-rows` + `.home-rail-list`
+(`index.astro` — there are two kinds of list on the home page, don't fix one and
+miss the other), `.publication-list`, `.projects-grid`. Before this, one search
+for "calculus" returned the note plus `/blog/` twice (Pagefind sub-results split
+it across the Notebook and All views) plus `/` — four hits for one piece of
+writing. Each page still indexes its own headings and prose, so `/` is still
+findable by its bio copy. **When you add a new listing, ignore its rows.**
+
+Pagefind walks **every** `.html` in `dist`, including pages that are not
+destinations — `404.astro` carries `data-pagefind-ignore` on its `<body>` to
+stay out of the index entirely (20 pages indexed, not 21).
+
+Still open: the navbar is indexed on all 20 pages, so "Journal"/"Research"/
+"Projects" each return everything. One `data-pagefind-ignore` on the `<nav>` in
+`Header.astro` would fix it, at the cost of those words no longer finding the
+listing pages at all.
 
 ## Authoring helpers (use these; don't reinvent)
 
