@@ -19,6 +19,26 @@ export const CONTACT = {
   emails: ["sergioerasojr@gmail.com"],
 };
 
+// "Suggest a topic" — the last pill in the Journal's Notebook topic strip. The
+// site is static (GitHub Pages), so there is nothing to POST to; a prefilled
+// mailto needs no backend, no third-party form service, and no account on the
+// reader's part, and the address is already public in the footer.
+//
+// The body is guidance the sender deletes, so it stays short and lowers the bar
+// rather than reading like a form. Newlines are real here and get percent-
+// encoded below — do not collapse them.
+export const TOPIC_REQUEST_SUBJECT = "Notebook topic suggestion";
+export const TOPIC_REQUEST_BODY = `I'd like to see a note about:
+
+
+(A sentence is plenty. If something specific tripped you up,
+that's the most useful thing you can tell me.)`;
+
+export const TOPIC_REQUEST_MAILTO =
+  `mailto:${CONTACT.emails[0]}` +
+  `?subject=${encodeURIComponent(TOPIC_REQUEST_SUBJECT)}` +
+  `&body=${encodeURIComponent(TOPIC_REQUEST_BODY)}`;
+
 export type SocialIcon =
   "website" | "scholar" | "email" | "github" | "linkedin" | "twitter";
 

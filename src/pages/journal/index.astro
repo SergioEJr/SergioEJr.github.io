@@ -2,7 +2,7 @@
 import BaseHead from "../../components/BaseHead.astro";
 import Header from "../../components/Header.astro";
 import Footer from "../../components/Footer.astro";
-import { SITE_TITLE } from "../../consts";
+import { SITE_TITLE, TOPIC_REQUEST_MAILTO } from "../../consts";
 import { pageFade } from "../../utils/pageTransition";
 import { getPublishedPosts } from "../../utils/posts";
 import JournalEssayRow from "../../components/JournalEssayRow.astro";
@@ -282,11 +282,32 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
         </section>
 
         {/* ---------- NOTEBOOK ---------- */}
-        <section class="j-view j-nb" data-view="notebook" hidden>
+        <section
+          class="j-view j-nb"
+          data-view="notebook"
+          data-marker="rule"
+          hidden
+        >
           {
+            /* Topics are a STRIP, not a sidebar. The group headers below are
+               already a vertical index of the same topic names with the same
+               counts, so a vertical rail beside them read as a duplicate index
+               rather than a control. As a row it reads as what it is, and it's
+               the same pill idiom as the register filters above — deliberately
+               subordinate to them (sentence case and lighter, where those are
+               uppercase and bold).
+               role="group" + aria-label rather than leaning on .j-side-label:
+               that label is display:none below 600px, which would leave the
+               group unnamed on exactly the screens where it matters most. */
             topics.length > 0 && (
-              <aside class="j-nb-side">
-                <div class="j-side-label">Topics</div>
+              <div
+                class="j-nb-side"
+                role="group"
+                aria-label="Filter notes by topic"
+              >
+                <div class="j-side-label" aria-hidden="true">
+                  Topics
+                </div>
                 <button
                   class="j-topic active"
                   data-topic="all"
@@ -299,7 +320,17 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
                     {t} <span>{n}</span>
                   </button>
                 ))}
-              </aside>
+                {/* The topic that doesn't exist yet. An <a>, not a button — it
+                    navigates (mailto). Dashed border carries that meaning
+                    literally rather than decoratively; no count, because there
+                    is nothing to count and a "0" would be a loud number. */}
+                <a class="j-topic j-topic--ask" href={TOPIC_REQUEST_MAILTO}>
+                  <span class="j-ask-plus" aria-hidden="true">
+                    +
+                  </span>
+                  Suggest a topic
+                </a>
+              </div>
             )
           }
           <div class="j-nb-main">
@@ -559,12 +590,20 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
           }
         }
 
-        function fadeApply() {
-          if (!box) {
+        // `fadeBox` is WHAT FADES, and it is not always the whole view box.
+        // A register switch replaces everything, so it fades .j-views. A topic
+        // switch only re-filters the note list, so it fades .j-nb-main alone —
+        // the topic strip is the control doing the filtering and must not blink
+        // when you press it. It has to be excluded by CHOOSING A NARROWER
+        // TARGET rather than by exempting the strip: opacity applies to the
+        // whole subtree, so a descendant cannot opt out of an ancestor's fade.
+        function fadeApply(fadeBox) {
+          const el = fadeBox || box;
+          if (!el) {
             apply();
             return;
           }
-          box.style.opacity = "0";
+          el.style.opacity = "0";
           setTimeout(() => {
             apply();
             keepFiltersInView();
@@ -575,11 +614,11 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
             // Tear down and rebuild the box's own paint. Opacity is 0 here, so
             // the toggle isn't visible; the reflow reads commit each step and
             // let the fade-in animate from 0.
-            box.style.display = "none";
-            void box.offsetHeight;
-            box.style.display = "";
-            void box.offsetHeight;
-            box.style.opacity = "";
+            el.style.display = "none";
+            void el.offsetHeight;
+            el.style.display = "";
+            void el.offsetHeight;
+            el.style.opacity = "";
           }, 160);
         }
 
@@ -619,12 +658,14 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
           });
         });
 
+        const nbMain = document.querySelector(".j-nb-main");
         topicBtns.forEach((btn) => {
           btn.addEventListener("click", () => {
             topicBtns.forEach((b) => setActive(b, b === btn));
             activeTopic = btn.getAttribute("data-topic");
             writeHash();
-            fadeApply();
+            // Fade the note list only — never the strip you just clicked.
+            fadeApply(nbMain);
           });
         });
 
@@ -1124,57 +1165,86 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
       .j-nb {
         display: grid;
         grid-template-columns: 1fr;
-        gap: 2.5rem;
+        gap: 1.4rem;
       }
+      /* One control at every width — no sidebar branch. See the markup comment
+         for why this is a strip rather than a rail. */
       .j-nb-side {
-        align-self: start;
-      }
-      /* Wide enough for a margin sidebar: topics are a sticky 200px left column
-         of full-width rows. Below 880px they become a wrapping row of pills
-         above the list (see the max-width blocks). */
-      @media (min-width: 880px) {
-        .j-nb {
-          grid-template-columns: 200px 1fr;
-        }
-        .j-nb-side {
-          position: sticky;
-          top: 9.5rem;
-        }
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.45rem;
       }
       .j-side-label {
         font-size: 0.75rem;
         text-transform: uppercase;
         letter-spacing: 0.08em;
         color: var(--color-text-muted);
-        margin-bottom: 0.75rem;
+        margin-right: 0.35rem;
       }
+      /* The site's pill recipe (cf. .j-filter here and .proj-filter on Projects),
+         one step down: sentence case at 0.85rem/500 against the register pills'
+         uppercase 0.8rem/700. The CASE change is what makes it read as
+         subordinate, so the topics don't compete with the registers above. */
       .j-topic {
-        display: flex;
-        justify-content: space-between;
-        width: 100%;
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.35rem;
         background: transparent;
-        border: none;
-        cursor: pointer;
-        color: var(--color-text-muted);
-        padding: 0.5rem 0.75rem;
-        border-radius: 8px;
-        font-size: 0.95rem;
+        border: 1px solid var(--color-border);
+        border-radius: 999px;
+        padding: 0.3rem 0.85rem;
         font-family: inherit;
-        text-align: left;
+        font-size: 0.85rem;
+        font-weight: 500;
+        line-height: 1.4;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        white-space: nowrap;
+        text-decoration: none;
+        transition:
+          color 0.2s ease,
+          border-color 0.2s ease,
+          background-color 0.2s ease;
       }
       .j-topic span {
-        color: var(--color-text-muted);
-        opacity: 0.7;
         font-variant-numeric: tabular-nums;
+        opacity: 0.6;
       }
       .j-topic:hover {
-        background: var(--color-bg-offset);
-        color: var(--color-text-main);
+        color: var(--cat-notebook);
+        border-color: var(--cat-notebook);
       }
+      /* Selected: the register's amber on the BORDER over a faint wash, NOT a
+         solid fill. A solid amber pill would read as a second register pill
+         40px under the real one, and white on --cat-notebook measures ~3.2:1 at
+         this size (under AA). Keeping --color-text-main as the ink puts it near
+         14:1 in both themes, and the border still carries the register color.
+         color-mix against `transparent` (not --color-bg) so the wash rides over
+         whatever is behind it, including the glow field. */
       .j-topic.active {
-        background: var(--color-accent-light);
+        border-color: var(--cat-notebook);
+        background: color-mix(in srgb, var(--cat-notebook) 14%, transparent);
         color: var(--color-text-main);
         font-weight: 600;
+      }
+      .j-topic.active span {
+        opacity: 0.75;
+      }
+      /* The topic that doesn't exist yet: dashed where the real topics are
+         solid. Cancels the global a:hover opacity fade — the color lift is the
+         only intended cue. */
+      .j-topic--ask {
+        border-style: dashed;
+      }
+      .j-topic--ask:hover {
+        opacity: 1;
+        text-decoration: none;
+      }
+      .j-ask-plus {
+        font-weight: 600;
+        opacity: 0.75;
       }
       .j-nb-group-head {
         display: flex;
@@ -1204,6 +1274,85 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
         opacity: 0.6;
       }
 
+      /* ---------------- Margin markers (VARIANTS — keep one) ----------------
+         Essays mark every row (subject dot + eyebrow) and Updates mark every
+         entry (dot on a spine); the Notebook marked nothing, so it read flat
+         next to them. Each variant below restores a left-margin mark; they are
+         switched with data-marker on .j-nb so they can be compared side by
+         side. All three also colour the group name, which is the cheapest way
+         to get persistent register colour below the fold. */
+      /* The gutter lives on the GRID CONTAINER, not on .j-nb-main, so the topic
+         strip and the list indent together — putting it on main alone left the
+         "Topics" label 19px to the left of the group names it sits above, which
+         is the same misalignment the old sidebar had. Markers then hang at
+         exactly the column's left edge via calc(-1 * gutter). */
+      .j-nb {
+        --j-nb-gutter: 0rem;
+        padding-left: var(--j-nb-gutter);
+      }
+      .j-nb[data-marker] {
+        --j-nb-gutter: 1.15rem;
+      }
+      /* Matches .j-views. A topic switch fades this alone (see fadeApply), so
+         the strip that triggered it stays put. */
+      .j-nb-main {
+        transition: opacity 0.16s ease;
+      }
+      .j-nb[data-marker] .j-nb-group-name {
+        color: var(--cat-notebook);
+        position: relative;
+      }
+
+      /* A — TAB: a tick crossing into the margin at the group label, echoing
+         .j-tl-year::before on the Updates timeline. Marks the FILING, which is
+         what the Notebook is organised by. */
+      .j-nb[data-marker="tab"] .j-nb-group-name::before {
+        content: "";
+        position: absolute;
+        left: calc(-1 * var(--j-nb-gutter));
+        top: 50%;
+        transform: translateY(-50%);
+        width: 8px;
+        height: 2px;
+        border-radius: 1px;
+        background: var(--cat-notebook);
+      }
+
+      /* B — RULE: a short amber hairline down each topic group. Reads as a
+         tabbed divider, and the per-group segmentation distinguishes it from
+         the Updates spine (one continuous blue line, dotted, spanning the
+         whole view). */
+      .j-nb[data-marker="rule"] .j-nb-group {
+        position: relative;
+      }
+      .j-nb[data-marker="rule"] .j-nb-group::before {
+        content: "";
+        position: absolute;
+        left: calc(-1 * var(--j-nb-gutter));
+        top: 1.65rem;
+        bottom: 1.05rem;
+        width: 2px;
+        border-radius: 2px;
+        background: var(--cat-notebook);
+        opacity: 0.45;
+      }
+      .j-nb[data-marker="rule"] .j-nb-group:first-child::before {
+        top: 0.15rem;
+      }
+
+      /* C — DOT: one amber dot per note, at Essays parity. .j-note is already
+         position:relative (JournalNoteRow), so this anchors to the row. */
+      .j-nb[data-marker="dot"] :global(.j-nb-group .j-note::before) {
+        content: "";
+        position: absolute;
+        left: calc(-1 * var(--j-nb-gutter));
+        top: 1.75em;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--cat-notebook);
+      }
+
       /* ---------------- Responsive ---------------- */
       @media (max-width: 900px) {
         /* The rail stops being a margin and becomes the last band of the front
@@ -1214,31 +1363,6 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
         }
         .j-rail {
           position: static;
-        }
-      }
-      /* MEDIUM screens (below the sidebar breakpoint, above mobile): topics are a
-         WRAPPING row above the list, in the same rounded-rectangle style they had
-         as sidebar rows. */
-      @media (max-width: 879px) {
-        .j-nb-side {
-          display: flex;
-          flex-wrap: wrap;
-          align-items: center;
-          gap: 0.5rem;
-          margin-top: 0.25rem;
-        }
-        .j-side-label {
-          margin-bottom: 0;
-          margin-right: 0.25rem;
-        }
-        .j-topic {
-          width: auto;
-          justify-content: flex-start;
-          gap: 0.4rem;
-          border-radius: 8px;
-          background: var(--color-bg-offset);
-          padding: 0.4rem 0.85rem;
-          font-size: 0.85rem;
         }
       }
       @media (max-width: 600px) {
@@ -1265,19 +1389,18 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
         /* SMALL screens: the topics row scrolls horizontally instead of wrapping,
            so a long topic list stays a single tidy row. Bleed to the screen edges
            (main's 1rem gutter) for a clear "more to scroll" affordance. */
+        /* Bleed the SCROLL CONTAINER to both screen edges while keeping the
+           first pill on the list's indent — so the marker gutter doesn't push
+           the strip out of alignment or eat into the bleed affordance. */
         .j-nb-side {
           flex-wrap: nowrap;
           overflow-x: auto;
-          margin: 0 -1rem;
-          padding: 0 1rem 0.25rem;
+          margin: 0 -1rem 0 calc(-1rem - var(--j-nb-gutter));
+          padding: 0 1rem 0.25rem calc(1rem + var(--j-nb-gutter));
           scrollbar-width: none;
         }
         .j-nb-side::-webkit-scrollbar {
           display: none;
-        }
-        .j-topic {
-          flex: 0 0 auto;
-          white-space: nowrap;
         }
         /* Hide the "Topics" label on the narrowest screens to save room. */
         .j-side-label {
