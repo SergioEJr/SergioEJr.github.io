@@ -45,6 +45,39 @@ npm run format:check  # prettier --check .
 - The MDX VS Code language server is **disabled** (`mdx.server.enable: false`)
   because it false-flags KaTeX braces. See README "Editor notes".
 
+## Big rename, 2026-07-28 — older docs reference paths that no longer exist
+
+Routes, directories and the content collection were renamed so the URL, the
+nav label and the collection name all agree. **`docs/superpowers/plans/` and
+`docs/superpowers/specs/` still use the old names on purpose** — they are dated
+records of work already done, and editing them to match would falsify what the
+tree looked like at the time. Read them for *intent*, never for current paths;
+about 19 of them mention something below. Same for older git commit messages.
+
+| Old | New |
+| --- | --- |
+| `/publications/`, `src/pages/publications{.astro,/}` | `/research/`, `src/pages/research{.astro,/}` |
+| `/blog/`, `src/pages/blog/` | `/journal/`, `src/pages/journal/` |
+| `src/content/blog/` (flat) | `src/content/journal/{essays,notes,updates}/` |
+| `src/assets/blog/` | `src/assets/journal/` |
+| collection `blog` (`getCollection`, `CollectionEntry<>`) | `journal` |
+
+Deleted outright — do not try to restore or "fix" references to them:
+
+- `/tags/<tag>` pages and `src/pages/tags/[tag].astro` (see the tags section below)
+- `src/components/JournalPost.astro`, the pre-redesign one-size-fits-all row
+
+Post slugs also changed, so `/blog/note-astro/` → `/journal/what-is-astro/`,
+`physics-entropy-equation` → `entropy-arrow-of-time`, `physics-why-ice-melts` →
+`why-ice-melts`, `note-product-rule` → `product-rule`, `sample-physics` →
+`random-walks-sqrt-t`, `essay-i-love-you-bro` → `i-love-you-bro`, and the
+`news-` prefixes are gone. Nothing external linked to the old URLs, so there are
+deliberately **no redirects**; old paths 404.
+
+Still named for the old scheme, deliberately: `src/layouts/BlogPost.astro` is the
+shared article layout for About, Projects, Research *and* Journal, so its name is
+a separate misnomer from this rename (its internal classes are `.article-*`).
+
 ## Content collections (`src/content.config.ts`)
 
 - **journal** (`src/content/journal/`, `.md`/`.mdx`) — Journal posts. Key fields:
