@@ -28,11 +28,12 @@ export const CONTACT = {
 // rather than reading like a form. Newlines are real here and get percent-
 // encoded below — do not collapse them.
 export const TOPIC_REQUEST_SUBJECT = "Notebook topic suggestion";
-export const TOPIC_REQUEST_BODY = `I'd like to see a note about:
+export const TOPIC_REQUEST_BODY = `Hi Sergio,
 
+I'd like to see you write a note about:
 
 (A sentence is plenty. If something specific tripped you up,
-that's the most useful thing you can tell me.)`;
+I would love to hear about it.)`;
 
 export const TOPIC_REQUEST_MAILTO =
   `mailto:${CONTACT.emails[0]}` +

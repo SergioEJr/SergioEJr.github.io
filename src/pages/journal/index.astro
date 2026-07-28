@@ -308,15 +308,25 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
                 <div class="j-side-label" aria-hidden="true">
                   Topics
                 </div>
+                {/* data-label carries the pill's exact visible text so the CSS
+                    can reserve its BOLD width at every weight — see the ::after
+                    phantom. It must match the rendered text character for
+                    character, including the single space before the count. */}
                 <button
                   class="j-topic active"
                   data-topic="all"
+                  data-label={`All ${counts.notebook}`}
                   aria-pressed="true"
                 >
                   All <span>{counts.notebook}</span>
                 </button>
                 {topics.map(([t, n]) => (
-                  <button class="j-topic" data-topic={t} aria-pressed="false">
+                  <button
+                    class="j-topic"
+                    data-topic={t}
+                    data-label={`${t} ${n}`}
+                    aria-pressed="false"
+                  >
                     {t} <span>{n}</span>
                   </button>
                 ))}
@@ -1188,9 +1198,16 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
          subordinate, so the topics don't compete with the registers above. */
       .j-topic {
         flex: 0 0 auto;
-        display: inline-flex;
-        align-items: baseline;
-        gap: 0.35rem;
+        /* inline-block, NOT inline-flex. Two reasons, and they're linked:
+           1. Flex drops whitespace-only anonymous items, so the space between
+              the label and the count vanishes and has to be re-added as `gap`.
+           2. The ::after phantom below reserves the pill's bold width from
+              attr(data-label) — a single text run. It can only match the real
+              content exactly if that content is also one text run with a real
+              space in it, not two flex items separated by a gap.
+           As a block-level child of an inline-block, the phantom contributes
+           its width to the shrink-to-fit box while taking no height. */
+        display: inline-block;
         background: transparent;
         border: 1px solid var(--color-border);
         border-radius: 999px;
@@ -1207,6 +1224,30 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
           color 0.2s ease,
           border-color 0.2s ease,
           background-color 0.2s ease;
+      }
+      /* Reserves the ACTIVE (600) width at every weight, so selecting a pill
+         no longer resizes it. A hidden copy of the same characters at the bold
+         weight sets the shrink-to-fit width; the visible text — lighter, so
+         narrower — then never exceeds it. height:0 + overflow:hidden keeps it
+         off-screen without display:none, which would remove it from layout and
+         defeat the whole point. */
+      .j-topic::after {
+        content: attr(data-label);
+        display: block;
+        height: 0;
+        overflow: hidden;
+        visibility: hidden;
+        font-weight: 600;
+        /* MUST match .j-topic span, or the phantom reserves a PROPORTIONAL
+           digit while the real count renders a TABULAR one. In Atkinson the
+           two differ most for "1", which measured 2.5px of leftover jitter on
+           the single-note topics while "4" and "2" barely moved. */
+        font-variant-numeric: tabular-nums;
+        pointer-events: none;
+      }
+      /* The ask pill never activates, so it has no bold state to reserve. */
+      .j-topic--ask::after {
+        content: none;
       }
       .j-topic span {
         font-variant-numeric: tabular-nums;
