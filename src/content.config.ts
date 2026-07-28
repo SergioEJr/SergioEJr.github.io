@@ -16,7 +16,10 @@ const blog = defineCollection({
     // is the file's basename alone, and every post stays at /blog/<slug>/
     // regardless of which folder it lives in.
     generateId: ({ entry }) =>
-      entry.split("/").pop()!.replace(/\.mdx?$/, ""),
+      entry
+        .split("/")
+        .pop()!
+        .replace(/\.mdx?$/, ""),
   }),
   schema: ({ image }: SchemaContext) =>
     z.object({
