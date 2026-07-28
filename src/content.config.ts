@@ -6,7 +6,18 @@ type SchemaContext = { image: () => any };
 // Journal posts. `category` drives the color-coded filters on the Journal page;
 // `topic` sub-groups posts within the Notes category.
 const blog = defineCollection({
-  loader: glob({ base: "./src/content/blog", pattern: "**/*.{md,mdx}" }),
+  loader: glob({
+    base: "./src/content/blog",
+    pattern: "**/*.{md,mdx}",
+    // Posts are filed on disk by register — essays/, notes/, updates/ — purely
+    // so the folder is navigable. That folder must NOT reach the URL: a post's
+    // register is mutable metadata (a note can be promoted to an essay) and a
+    // permalink shouldn't encode something that can change under it. So the id
+    // is the file's basename alone, and every post stays at /blog/<slug>/
+    // regardless of which folder it lives in.
+    generateId: ({ entry }) =>
+      entry.split("/").pop()!.replace(/\.mdx?$/, ""),
+  }),
   schema: ({ image }: SchemaContext) =>
     z.object({
       title: z.string(),
