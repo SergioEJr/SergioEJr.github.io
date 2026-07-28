@@ -42,19 +42,19 @@ If logarithms are a distant memory, don't worry. The log is just a convenient wa
   svg={coinMacrostates}
   width={400}
   alt="Coin-flip sequences on the left funnel into two macrostate bins on the right: a single all-heads sequence is the only arrow into the 1,000 heads bin, while many sequences pour into the 500 heads bin."
-  caption="Entropy essentially counts the number of arrows going into each bin. Only one sequence lands in the all-heads bin, so its entropy is zero; an astronomical number land near five hundred heads, so that is the state you actually see."
+  caption="Entropy essentially counts the number of arrows going into each bin. Only one sequence lands in the all-heads bin, so its entropy is zero; an astronomical number land near five hundred heads, so this macrostate has a very large entropy."
 />
 
 ## Majority rule
 
-Even though each sequence of heads and tails is equally likely -- they each have a probability of $1/2^{1000}$ -- there is only one single sequence that produces exactly $1,000$ heads. With only one possibility, the entropy is as low as it gets: $S(\#H = 1000) = \log 1 = 0$.  
-On the other hand, there are more ways to get $500$ heads than there are atoms in the entire observable universe! <SideNote label="aside"> The number of ways to get $500$ heads from our box is $\binom{1000}{500} \approx 10^{299} $ giving an entropy of $S(\#H = 500) \approx 299 \log 10$. There are only about $10^{80}$ atoms in the entire observable universe. </SideNote> Therefore, after shaking the box, our system naturally favors the outcome with the most possiblities and on-average we see sequences with close to $500$ heads. This is the essence of the second law.
+Even though each sequence of heads and tails is equally likely, there is only one single sequence that produces exactly $1,000$ heads. With only one possibility, the entropy is as low as it gets: $S(\#H = 1000) = \log 1 = 0$.  
+On the other hand, there are more sequences with $500$ heads than there are atoms in the entire observable universe! <SideNote label="aside"> The number of ways to get $500$ heads from our box is $\binom{1000}{500} \approx 10^{299} $ giving an entropy of $S(\#H = 500) \approx 299 \log 10$. There are only about $10^{80}$ atoms in the entire observable universe. </SideNote> Therefore, after shaking the box, our system naturally favors the outcome with the most possiblities and on-average we see sequences with close to $500$ heads. This is the essence of the second law.
 
 ## The arrow of time
 
 Much like our coins, the atoms in a room are constantly being jiggled around by thermal fluctuations, and there are far more ways to arrange them evenly across the room than crammed into one corner. This is why smoke released in a corner spreads until it fills the whole room, almost every rearrangement produces that configuration. The second law of thermodynamics is simply this observation, that physical systems drift toward their most likely state. It is also why entropy is often called a measure of disorder: the disordered arrangements are usually, but not always, the ones that can be realized in the most ways.
 
-Now, record a video of the smoke starting from the corner of the room and play the movie backwards. A clip of two air molecules colliding like two billiard balls looks perfectly fine in reverse; the microscopic laws of physics are symmetric under the reversal of time. Yet, the smoke gathering itself back into one corner of the room looks absurd, and you would spot it in a second. Where does the difference come from? Not from the laws of motion, but from the counting we just did. There are overwhelmingly more ways for smoke to fill a room than to huddle in a corner, so the direction we call _forward in time_ is simply the direction in which arrangements become more likely. The arrow of time is statistics.[^time]
+Now, record a video of the smoke starting from the corner of the room and play the movie backwards. A clip of two air molecules colliding like two billiard balls looks perfectly fine in reverse; the microscopic laws of physics are symmetric under the reversal of time. Yet, the smoke gathering itself back into one corner of the room looks absurd, and you would spot it in a second. Where does the difference come from? Not from the laws of motion, but from the counting we just did. There are overwhelmingly more ways for smoke to fill a room than to huddle in a corner, so the direction we call _forward in time_ is simply the direction in which arrangements become more likely. The arrow of time _emerges_ from statistics.[^time]
 
 ## Entropy is counting
 
