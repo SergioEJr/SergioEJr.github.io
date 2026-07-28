@@ -5,8 +5,16 @@
 // view the note's TOPIC rides beside the title as a chip; in the dedicated
 // Notebook view the topic group header already states it, so `showTopic` is off
 // and the chip disappears.
+//
+// The row therefore shows the most specific label its context does NOT already
+// supply — and inside a topic group that's the KEYWORDS, which answer the
+// Notebook's real pre-click question: it's filed under Physics, but is it field
+// theory or stochastic processes? They're `data-pagefind-ignore`d here so this
+// index page doesn't outrank the note itself when someone clicks one; the
+// note's own detail page carries the indexed copy (see Keywords.astro).
 import type { CollectionEntry } from "astro:content";
 import FormattedDate from "./FormattedDate.astro";
+import Keywords from "./Keywords.astro";
 import { renderInline } from "../utils/inlineText";
 import { postLink } from "../utils/posts";
 
@@ -16,6 +24,9 @@ interface Props {
 }
 const { post, showTopic = false } = Astro.props;
 const link = postLink(post);
+// Blog `tags` is optional() in the schema (unlike projects/research, which
+// default to []), so normalize before reading .length.
+const keywords = post.data.tags ?? [];
 ---
 
 <article class="j-note" data-topic={post.data.topic ?? ""}>
@@ -41,7 +52,19 @@ const link = postLink(post);
     {showTopic && post.data.topic && <span class="j-chip">{post.data.topic}</span>}
   </h3>
   <p class="j-note-desc">{post.data.description}</p>
-  <div class="j-note-meta"><FormattedDate date={post.data.pubDate} /></div>
+  <div class="j-note-meta">
+    <FormattedDate date={post.data.pubDate} />
+    {
+      !showTopic && keywords.length > 0 && (
+        <>
+          <span class="j-meta-sep" aria-hidden="true">
+            ·
+          </span>
+          <Keywords tags={keywords} ignore />
+        </>
+      )
+    }
+  </div>
 </article>
 
 <style>
@@ -135,5 +158,16 @@ const link = postLink(post);
     font-size: 0.78rem;
     color: var(--color-text-muted);
     font-style: italic;
+    /* Flex so the date, separator and keyword strip share one baseline and wrap
+       together on narrow widths. */
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.15rem 0;
+  }
+  .j-meta-sep {
+    font-style: normal;
+    opacity: 0.55;
+    margin: 0 0.45rem;
   }
 </style>

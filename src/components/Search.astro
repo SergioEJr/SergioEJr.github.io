@@ -40,6 +40,12 @@ import "@pagefind/default-ui/css/ui.css";
 
 <script>
   let searchAbort: AbortController | null = null;
+  // The live PagefindUI instance, held so a keyword click can push a query into
+  // a UI that's already been built (see Keywords.astro). Module scope, not
+  // per-setup: setupSearch() re-runs on every ClientRouter swap, but the module
+  // itself is evaluated once. Reset below whenever the panel container comes
+  // back empty — that's a swap having replaced the DOM this instance drives.
+  let pfui: { triggerSearch?: (term: string) => void } | null = null;
 
   function setupSearch() {
     if (searchAbort) searchAbort.abort();
@@ -80,19 +86,44 @@ import "@pagefind/default-ui/css/ui.css";
       }
     }
 
-    function openSearch() {
+    // Push a search term into the box. Prefers PagefindUI's own triggerSearch
+    // (it sets the Svelte store directly, so the input and the results stay in
+    // sync); falls back to writing the input and firing `input` if we somehow
+    // don't hold the instance.
+    function applyQuery(query: string) {
+      if (pfui?.triggerSearch) {
+        pfui.triggerSearch(query);
+        return;
+      }
+      const input = overlay.querySelector<HTMLInputElement>(".pagefind-ui__search-input");
+      if (!input) return;
+      input.value = query;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
+    function openSearch(e?: Event) {
+      // Keyword buttons (Keywords.astro) pass a term to search for; the header's
+      // search button and the "/" shortcut pass nothing and just open the box.
+      const query = (e as CustomEvent | undefined)?.detail?.query as
+        | string
+        | undefined;
+
       lastFocused = document.activeElement;
       overlay.classList.remove("hidden");
       document.body.style.overflow = "hidden";
 
       const searchContainer = document.getElementById("pagefind__search");
       const needsInit = searchContainer && searchContainer.children.length === 0;
+      // An empty container means this is a fresh mount (first open, or a
+      // ClientRouter swap replaced the panel), so any instance we're holding
+      // drives detached DOM.
+      if (needsInit) pfui = null;
 
       if (needsInit && !import.meta.env.DEV) {
         const onIdle = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
         onIdle(async () => {
           const { PagefindUI } = await import("@pagefind/default-ui");
-          new PagefindUI({
+          pfui = new PagefindUI({
             baseUrl: import.meta.env.BASE_URL,
             bundlePath: import.meta.env.BASE_URL.replace(/\/$/, "") + "/pagefind/",
             element: "#pagefind__search",
@@ -103,6 +134,7 @@ import "@pagefind/default-ui/css/ui.css";
           if (searchInput) {
             searchInput.focus();
           }
+          if (query) applyQuery(query);
         });
       } else {
         requestAnimationFrame(() => {
@@ -110,6 +142,7 @@ import "@pagefind/default-ui/css/ui.css";
           if (searchInput) {
             searchInput.focus();
           }
+          if (query) applyQuery(query);
         });
       }
     }

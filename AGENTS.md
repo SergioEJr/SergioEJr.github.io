@@ -43,7 +43,8 @@ Always finish a change with `npm run build` and confirm it's clean.
   from everything), `externalUrl`/`linkTo`/`noLink` (pointer/update posts with
   no detail page — link resolution + the has-detail-page rule live in
   `postLink()`/`postHasDetailPage()` in `posts.ts`), `heroImage` (off by
-  default; lives in `src/assets/blog/`).
+  default; lives in `src/assets/blog/`), `tags` (**keywords, not routes** — see
+  below).
 - **projects** (`src/content/projects/`) — `categories` (Technical/Teaching),
   `image` (card thumbnail in `public/projects/`, gets pill overlay),
   `articleImage` (in-article, no overlay), `order` (optional manual override;
@@ -51,6 +52,39 @@ Always finish a change with `npm run build` and confirm it's clean.
 - **research** (`src/content/research/`) — `abstract` (inline dropdown, supports
   LaTeX), `paper`/`poster`/`code` (button links), `bibtex` (inline dropdown).
   Sorted reverse-chronological; **no `order` field**.
+
+## Tags = keywords (and the Pagefind rules that shape them)
+
+Blog `tags` are **descriptors, not routes**. There are no `/tags/<tag>` pages —
+they were deleted because 16 of 20 tags sat on exactly one post, so every one
+was a dead end. Tags now do the two jobs they're actually good at: saying what a
+piece covers before the reader commits, and carrying **search terms the prose
+never spells out** ("thermodynamics" appears zero times in the body of *Why does
+ice melt?*). Clicking one opens the site search prefilled — the result set is
+live, so it's a superset of what a tag page could have listed.
+
+Rendered by **`src/components/Keywords.astro`**: in the post-detail footer (all
+registers, indexed) and on Notebook rows inside a topic group (`ignore` →
+`data-pagefind-ignore`, so the index page doesn't outrank the post for its own
+keywords). Essays and Updates rows deliberately show none.
+
+Three Pagefind facts that this markup depends on — **all measured, don't
+"simplify" them away**:
+
+1. Pagefind **drops `<button>` subtrees** from the index. The clickable keyword
+   is a `<span role="button" tabindex="0">` with hand-wired Enter/Space; a native
+   button makes the term invisible to the search it opens.
+2. Pagefind **drops `<footer>` elements** wholesale (this is also why the site
+   footer's text appears in no page's index). The strip's wrapper is a `<div>`.
+3. Pagefind reads the DOM, so **CSS-generated separators create no word
+   boundary**. With the `·` coming from `::before`, the strip indexed as one
+   run-on token (`Keywordscalculusderivativesvisual proofs`). Real whitespace
+   text nodes sit between the terms; `.kw` is flex, so they cost nothing
+   visually (whitespace-only anonymous flex items aren't rendered).
+
+Search is **production-only** (`Search.astro` renders a placeholder in DEV), so
+keyword clicks are inert under `npm run dev` — verify on `npm run preview`.
+
 
 ## Authoring helpers (use these; don't reinvent)
 

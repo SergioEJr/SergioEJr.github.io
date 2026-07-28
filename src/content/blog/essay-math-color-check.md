@@ -6,8 +6,7 @@ category: essays
 subject: Math
 authors:
   - sergio-eraso
-tags:
-  - draft
+tags: []
 draft: true # unpublished — exists only to verify the Math essay subject color
 ---
 

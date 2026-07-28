@@ -7,7 +7,6 @@ authors:
   - sergio-eraso
 toc: false
 tags:
-  - update
   - talks
 heroImage: ../../assets/blog/patrons-dinner.jpeg
 draft: false # set to true to unpublish

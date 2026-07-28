@@ -6,6 +6,7 @@ import AuthorLink from "../components/AuthorLink.astro";
 import Footer from "../components/Footer.astro";
 import FormattedDate from "../components/FormattedDate.astro";
 import Header from "../components/Header.astro";
+import Keywords from "../components/Keywords.astro";
 import TableOfContents from "../components/TableOfContents.astro";
 import { url } from "../utils/paths";
 import { renderInline, stripInline } from "../utils/inlineText";
@@ -41,6 +42,9 @@ const {
   noHero,
   showDate = true,
   categoryBadges = [],
+  // Blog-only. The Projects and Research detail pages pass explicit props (no
+  // frontmatter spread), so they never supply tags and never render the strip.
+  tags = [],
 } = Astro.props;
 // Plain text (markers stripped) for metadata/alt; HTML form is used for the visible <h1>.
 const titleText = stripInline(title);
@@ -397,6 +401,24 @@ const numberedBody = numberCitations(renderedBody);
       }
       .prose :global(.cite-ref-link:hover) {
         text-decoration: underline;
+      }
+      /* Keywords — the last end-of-article section, after any footnotes and
+			   references (it's rendered outside `numberedBody`, so source order
+			   already puts it last). Takes the same top rule as those two blocks so
+			   the article's closing sections read as one family, but stays a single
+			   inline row: keywords are metadata and shouldn't carry the same visual
+			   weight as a reference list. */
+      .post-keywords {
+        margin-top: 2.5rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--color-border);
+      }
+      /* A footnotes or references block directly above already supplies a rule
+			   and a gap; widen this one to match the References-after-footnotes
+			   spacing rather than stacking two tight borders. */
+      .prose :global(section[data-footnotes]) + .post-keywords,
+      .prose :global(.cite-references) + .post-keywords {
+        margin-top: 3rem;
       }
       .prose :global(code) {
         font-family:
@@ -909,6 +931,13 @@ const numberedBody = numberCitations(renderedBody);
                 )
               }
               <Fragment set:html={numberedBody} />
+              {
+                tags.length > 0 && (
+                  <div class="post-keywords">
+                    <Keywords tags={tags} label="Keywords" />
+                  </div>
+                )
+              }
             </div>
           </div>
         </div>

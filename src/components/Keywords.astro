@@ -1,0 +1,189 @@
+---
+// Keyword strip — a post's `tags`, rendered as DESCRIPTORS rather than links.
+//
+// Tags used to be routes (/tags/<tag>). With 16 of 20 tags sitting on exactly
+// one post, those pages were dead ends, so they're gone. What tags are actually
+// good at is two things a route was the wrong shape for:
+//
+//   1. Telling a reader what a piece covers before they commit to it — the
+//      Notebook's real question ("it's filed under Physics, but is it field
+//      theory or stochastic processes?").
+//   2. Carrying SEARCH terms the prose never spells out. "thermodynamics" and
+//      "chemistry" appear zero times in the body of "Why does ice melt?", so
+//      without the keyword line they are unfindable.
+//
+// Clicking a keyword therefore opens the site search prefilled instead of
+// navigating (see the delegated listener below + Search.astro's `open-search`
+// handler). The result set is computed live, so it's a superset of what a tag
+// page could list: searching "thermodynamics" surfaces the entropy essay on its
+// prose alone, even though that essay isn't tagged with it.
+//
+// `ignore` stamps `data-pagefind-ignore` on the strip. Use it wherever an INDEX
+// page repeats keywords: without it, clicking "symmetry" in the Notebook
+// returns the Notebook page you're already standing on as a top hit. The post's
+// own detail page carries the indexed copy, so the term still finds the post.
+//
+// TWO markup constraints, both learned the hard way — don't "clean these up":
+//
+//   1. The clickable element is a <span role="button">, NOT a <button>.
+//      Pagefind strips <button> subtrees from the index as UI chrome, so a
+//      native button makes the keyword invisible to the very search it opens —
+//      measured: "Keywords" (a <span>) matched all 9 tagged posts while
+//      "thermodynamics"/"webdev" matched none of the posts carrying them.
+//      Keyboard activation is therefore wired by hand in the script below.
+//   2. The wrapper is a <div>, NOT a <footer>. Pagefind drops <footer>
+//      elements wholesale (which is also why this site's own footer text
+//      appears in no page's index).
+//
+// Also deliberately not a <ul>: on a post page this renders inside `.prose`,
+// where `.prose :global(ul)` (BlogPost.astro) sets margin + padding-left at a
+// specificity this component's scoped styles can't beat. No global rule targets
+// div/span there, so this shape needs no cascade fight.
+interface Props {
+  tags: string[];
+  /** Exclude from the Pagefind index — for index pages, not detail pages. */
+  ignore?: boolean;
+  /** Optional eyebrow (post footer uses "Keywords"; inline meta lines don't). */
+  label?: string;
+}
+const { tags, ignore = false, label } = Astro.props;
+---
+
+{
+  tags.length > 0 && (
+    <div class="kw" {...(ignore ? { "data-pagefind-ignore": "" } : {})}>
+      {label && <span class="kw-label">{label}</span>}
+      {tags.map((t, i) => (
+        <>
+          {/* A REAL space between terms, not just the CSS "·" separator.
+              Pagefind reads the DOM, where generated content doesn't exist, so
+              without this the strip indexes as one run-on token
+              ("Keywordscalculusderivativesvisual proofs") and no single keyword
+              is findable. `.kw` is a flex container, so a whitespace-only text
+              node between flex items is not rendered — the space costs nothing
+              visually (CSS Flexbox §4). */}
+          {(label || i > 0) && " "}
+          <span class="kw-item">
+            <span
+              class="kw-btn"
+              role="button"
+              tabindex="0"
+              data-keyword={t}
+              aria-label={`Search for ${t}`}
+            >
+              {t}
+            </span>
+          </span>
+        </>
+      ))}
+    </div>
+  )
+}
+
+<style>
+  .kw {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    /* Row gap only; the horizontal rhythm comes from the separator's margins so
+       the "·" sits centered between terms rather than hard against one. */
+    gap: 0.35rem 0;
+    font-size: 0.82rem;
+    font-style: normal;
+    line-height: 1.5;
+  }
+  /* Matches the type spec of the Footnotes / References labels in
+     BlogPost.astro so the article's closing sections read as one family. */
+  .kw-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-text-muted);
+    margin-right: 0.75rem;
+  }
+  .kw-item + .kw-item::before {
+    content: "·";
+    color: var(--color-text-muted);
+    opacity: 0.55;
+    margin: 0 0.45rem;
+  }
+  .kw-btn {
+    font-style: normal;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    /* No resting underline — keywords are metadata and shouldn't pull the eye.
+       The affordance is hover-revealed, which is this site's established idiom
+       (Journal row titles draw their underline in on hover too). Transparent
+       rather than absent so revealing it shifts nothing. */
+    border-bottom: 1px solid transparent;
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease;
+    /* Sit above a stretched row-link overlay. Journal note rows make the whole
+       row clickable via `a::after { position:absolute; inset:0 }`; without its
+       own stacking position the keyword never receives the click. Same fix the
+       old .j-tag used. */
+    position: relative;
+    z-index: 1;
+  }
+  .kw-btn:hover {
+    color: var(--color-accent);
+    border-bottom-color: var(--color-accent);
+    /* Cancel the global `a:hover { opacity: 0.8 }` family of graying cues —
+       the color lift is the only intended hover signal. */
+    opacity: 1;
+  }
+  .kw-btn:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .kw-btn {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  // One delegated listener for every keyword button on the site.
+  //
+  // Bound to `document` so it survives ClientRouter swaps, and guarded so that
+  // the many component instances on a page (and any module re-execution) bind
+  // it exactly once. Mirrors the Journal's analytics listener in
+  // pages/blog/index.astro.
+  //
+  // `click`, not `pointerdown`: unlike the Journal's analytics beacon there's no
+  // navigation to race here.
+  //
+  // Keyboard activation is explicit because these are `role="button"` spans, not
+  // native buttons (see the Pagefind constraint in the frontmatter) — a span
+  // gets no free Enter/Space handling. Space is preventDefault'd so activating a
+  // keyword doesn't also page-scroll.
+  (() => {
+    const w = window as any;
+    if (w.__keywordSearchBound) return;
+    w.__keywordSearchBound = true;
+
+    const fire = (el: Element | null) => {
+      const query = (el as HTMLElement | null)?.dataset?.keyword;
+      if (!query) return false;
+      document.dispatchEvent(
+        new CustomEvent("open-search", { detail: { query } })
+      );
+      return true;
+    };
+
+    document.addEventListener("click", (e) => {
+      fire((e.target as Element)?.closest?.("[data-keyword]") ?? null);
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+      const el = (e.target as Element)?.closest?.("[data-keyword]") ?? null;
+      if (!el) return;
+      if (fire(el)) e.preventDefault();
+    });
+  })();
+</script>
