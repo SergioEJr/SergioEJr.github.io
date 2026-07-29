@@ -46,24 +46,37 @@ const dateLabel = post.data.pubDate.toLocaleDateString("en-US", {
           data-track-external={link.external ? "true" : "false"}
         >
           <span class="j-t" set:html={renderInline(post.data.title)} />
-          {link.external && (
-            <svg
-              class="j-ext"
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M7 17 17 7" />
-              <path d="M7 7h10v10" />
-            </svg>
-          )}
+          {/* Shown on EVERY linked stop, not just external ones, and at rest
+              rather than on hover. Updates is the only register where some rows
+              go nowhere (noLink), so it's the only one that has to say which do
+              — and it has to say it without hover, because on touch there is no
+              hover and a dead tap is the failure mode. Diagonal for off-site,
+              straight for a page here. */}
+          <svg
+            class="j-go"
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            {link.external ? (
+              <>
+                <path d="M7 17 17 7" />
+                <path d="M7 7h10v10" />
+              </>
+            ) : (
+              <>
+                <path d="M5 12h13" />
+                <path d="M12 5l7 7-7 7" />
+              </>
+            )}
+          </svg>
         </a>
       </p>
     ) : (
@@ -106,20 +119,19 @@ const dateLabel = post.data.pubDate.toLocaleDateString("en-US", {
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    /* Hollow dot by default (link-less update); filled when the entry goes
-       somewhere. Both sit on a ring of page background so the spine doesn't
-       show through the middle. */
-    background: var(--color-bg);
+    /* UNIFORM across every stop. It used to be filled for a linked entry and
+       hollow for a link-less one, but quantity of ink reads as RANK, not kind:
+       two solid dots among three hollow says "these two matter more" when it
+       meant "these two go somewhere". The dot is now purely a timeline marker
+       and the arrow beside the title carries linkedness (see .j-go). Sits on a
+       ring of page background so the spine doesn't show through the middle. */
+    background: var(--cat-updates);
     box-shadow: 0 0 0 2px var(--color-bg);
-    border: 2px solid var(--color-border);
+    border: 2px solid var(--cat-updates);
     transition:
       background-color 0.3s ease,
       border-color 0.3s ease,
       box-shadow 0.3s ease;
-  }
-  .j-stop.is-linked::before {
-    background: var(--cat-updates);
-    border-color: var(--cat-updates);
   }
   .j-stop.is-compact {
     padding: 0.32rem 0;
@@ -191,15 +203,23 @@ const dateLabel = post.data.pubDate.toLocaleDateString("en-US", {
       transition: none;
     }
   }
-  .j-ext {
+  .j-go {
     width: 0.7em;
     height: 0.7em;
     margin-left: 0.3rem;
     vertical-align: baseline;
-    opacity: 0.55;
+    /* Visible at rest — this is the affordance on touch, where the hover lift
+       below never happens. Quiet enough not to compete with the title. */
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
   }
-  .j-stop:hover .j-ext {
+  .j-stop:hover .j-go {
     opacity: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .j-go {
+      transition: none;
+    }
   }
 
   .j-stop-desc {
