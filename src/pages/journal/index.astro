@@ -379,8 +379,13 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
                   data-count={g.count}
                 >
                   <div class="j-nb-group-head">
-                    <span class="j-nb-group-name">{g.topic}</span>
-                    <span class="j-nb-group-count">{g.count}</span>
+                    {/* Count INSIDE the name, as in .j-shelf-head — a number
+                        parked at the far end of a full-width rule reads as
+                        unrelated to the label it counts (measured ~850px of gap
+                        at 1400px wide). */}
+                    <span class="j-nb-group-name"
+                      >{g.topic}<span class="j-nb-group-count">{g.count}</span></span
+                    >
                   </div>
                   {g.posts.map((post) => (
                     <JournalNoteRow post={post} />
@@ -1383,6 +1388,15 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
         font-size: 0.8rem;
         color: var(--color-text-muted);
         opacity: 0.6;
+        /* Matches .j-shelf-count so both header kinds space their count the
+           same way. Not inheriting the name's letter-spacing, which is set for
+           uppercase words and looks loose on a lone digit. */
+        margin-left: 0.45rem;
+        letter-spacing: 0;
+      }
+      /* The topic name carries the marker color; the count stays muted. */
+      .j-nb[data-marker] .j-nb-group-name .j-nb-group-count {
+        color: var(--color-text-muted);
       }
 
       /* ---------------- Margin markers (VARIANTS — keep one) ----------------
