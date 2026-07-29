@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Render a built figure SVG (src/assets/journal/<name>.svg) into light + dark PNGs
+// Render a built figure SVG (src/assets/diagrams/<name>.svg) into light + dark PNGs
 // so it can be visually judged without a dev server.
 //
 //   node .claude/skills/make-figure/scripts/render-fig.mjs <name> [outdir]
@@ -27,7 +27,7 @@ if (!name) {
 const outDir = process.argv[3] || '/tmp';
 mkdirSync(outDir, { recursive: true });
 
-const svgPath = join(repoRoot, 'src/assets/journal', `${name}.svg`);
+const svgPath = join(repoRoot, 'src/assets/diagrams', `${name}.svg`);
 const svg = readFileSync(svgPath, 'utf8');
 
 // Pull every `--x: value;` declaration out of a CSS block body.

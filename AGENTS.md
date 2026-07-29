@@ -59,7 +59,7 @@ about 19 of them mention something below. Same for older git commit messages.
 | `/publications/`, `src/pages/publications{.astro,/}` | `/research/`, `src/pages/research{.astro,/}` |
 | `/blog/`, `src/pages/blog/` | `/journal/`, `src/pages/journal/` |
 | `src/content/blog/` (flat) | `src/content/journal/{essays,notes,updates}/` |
-| `src/assets/blog/` | `src/assets/journal/` |
+| `src/assets/blog/` (flat: figures + photos + a stray logo) | split by lifecycle into `src/assets/diagrams/` and `src/assets/photos/` |
 | collection `blog` (`getCollection`, `CollectionEntry<>`) | `journal` |
 
 Deleted outright — do not try to restore or "fix" references to them:
@@ -78,6 +78,34 @@ Still named for the old scheme, deliberately: `src/layouts/BlogPost.astro` is th
 shared article layout for About, Projects, Research *and* Journal, so its name is
 a separate misnomer from this rename (its internal classes are `.article-*`).
 
+## Assets: split by lifecycle, not by collection
+
+```
+src/assets/diagrams/   generated theme-aware SVGs — 1:1 with figures/*.tex
+src/assets/photos/     photographs — hand-managed originals
+public/                only what needs a stable URL: favicon, fonts, PDFs
+```
+
+The split answers the question you actually ask of an asset: **can I delete
+this, and will it come back?**
+
+- **`diagrams/`** is output. `./fig.sh <name>` writes here from
+  `figures/<name>.tex`, and `scripts/check-figures.mjs` scans this directory for
+  theme-locked hexes. Never hand-edit an SVG here — regenerate it. (Pointing the
+  checker at a dedicated folder also stops it theme-checking SVGs that aren't
+  figures; it used to scan a stray `logo.svg`.)
+- **`photos/`** is irreplaceable input. **Downscale before committing**: heroes
+  render at `width={1020}` with `densities={[1,2]}`, so Astro never emits a
+  variant wider than **2040px** and anything above that is discarded at build
+  time. 2560px wide is the house default — 25% headroom over the ceiling, and
+  measurably indistinguishable from a full-resolution source at the size the
+  site actually serves. A 9.4 MB camera export costs visitors nothing and the
+  repo everything, permanently.
+- **`public/`** bypasses Astro's image pipeline entirely — files there ship at
+  exactly the bytes committed. Project cards, About images and author avatars
+  still live there (all ≤118 KB, so it isn't urgent); moving them would mean
+  changing `image: z.string()` to `image()` in the schema.
+
 ## Content collections (`src/content.config.ts`)
 
 - **journal** (`src/content/journal/`, `.md`/`.mdx`) — Journal posts. Key fields:
@@ -87,7 +115,7 @@ a separate misnomer from this rename (its internal classes are `.article-*`).
   from everything), `externalUrl`/`linkTo`/`noLink` (pointer/update posts with
   no detail page — link resolution + the has-detail-page rule live in
   `postLink()`/`postHasDetailPage()` in `posts.ts`), `heroImage` (off by
-  default; lives in `src/assets/journal/`), `tags` (**keywords, not routes** — see
+  default; lives in `src/assets/photos/`), `tags` (**keywords, not routes** — see
   below).
 - **projects** (`src/content/projects/`) — `categories` (Technical/Teaching),
   `image` (card thumbnail in `public/projects/`, gets pill overlay),

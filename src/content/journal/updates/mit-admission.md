@@ -8,7 +8,7 @@ authors:
 toc: false
 tags:
   - awards
-heroImage: /src/assets/journal/mit-letter.png
+heroImage: /src/assets/photos/mit-letter.png
 draft: false # set to true to unpublish
 ---
 

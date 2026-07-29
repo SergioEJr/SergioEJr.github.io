@@ -28,8 +28,8 @@ const journal = defineCollection({
       pubDate: z.coerce.date(),
       updatedDate: z.coerce.date().optional(),
       // Optional hero shown at the top of the post (off by default). Lives in
-      // src/assets/journal/ and is referenced by ROOT-ABSOLUTE path, e.g.
-      //   heroImage: /src/assets/journal/my-post.jpg
+      // src/assets/photos/ and is referenced by ROOT-ABSOLUTE path, e.g.
+      //   heroImage: /src/assets/photos/my-post.jpg
       // so Astro can optimize it (resize, webp/avif, hashing). Root-absolute
       // rather than relative so a post can be moved between essays/, notes/
       // and updates/ without rewriting every path inside it.

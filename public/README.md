@@ -14,7 +14,7 @@ string path in frontmatter or JSON. Compress images before adding them.
 **Images rendered with Astro's `<Image>` component do NOT go here** — put them in
 `src/assets/` so they get optimized and pass the accessibility/perf audit:
 
-- **Journal images** → `src/assets/journal/` (see that folder's README).
+- **Journal images** → `src/assets/photos/` (photographs) and `src/assets/diagrams/` (generated figures) (see that folder's README).
 - **About + homepage photos** → `src/assets/site/` (imported in `about.astro` /
   `index.astro`).
 

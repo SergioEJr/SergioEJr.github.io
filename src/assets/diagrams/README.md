@@ -10,14 +10,14 @@ frontmatter relative to the post file:
 ```yaml
 ---
 title: My Post
-heroImage: /src/assets/journal/my-post.jpg
+heroImage: /src/assets/diagrams/my-post.jpg
 ---
 ```
 
 **In-body images** — use a relative Markdown link or an import:
 
 ```md
-![Diagram](/src/assets/journal/my-post-diagram.png)
+![Diagram](/src/assets/diagrams/my-post-diagram.png)
 ```
 
 Recommended hero size: ~1600px wide. Anything large is fine — Astro downscales.
@@ -31,7 +31,7 @@ For diagrams that must work in light _and_ dark mode, use the `Figure` component
    `sed -i '' 's/#000000/currentColor/g; s/#000/currentColor/g' diagram.svg` so it
    inherits the page color and flips with the theme. Put it here; use:
    ```mdx
-   import diagram from '/src/assets/journal/diagram.svg?raw';
+   import diagram from '/src/assets/diagrams/diagram.svg?raw';
    <Figure svg={diagram} alt="..." caption="..." />
    ```
 2. **Light/dark pair** (for colored graphics) — export two images to `public/journal/`:
@@ -56,14 +56,14 @@ One source file per figure in `/figures`, built by one script.
 
 ```sh
 ./fig.sh product-rule          # builds figures/product-rule.tex
-# -> src/assets/journal/product-rule.svg   theme-aware, for the site  (commit this)
+# -> src/assets/diagrams/product-rule.svg   theme-aware, for the site  (commit this)
 # -> build/product-rule.pdf             cropped, for Overleaf      (gitignored)
 ```
 
 Then in an `.mdx` post, mode 1 above:
 
 ```mdx
-import fig from '/src/assets/journal/product-rule.svg?raw';
+import fig from '/src/assets/diagrams/product-rule.svg?raw';
 <Figure svg={fig} alt="Product rule as rectangle areas" caption="..." />
 ```
 
@@ -158,7 +158,7 @@ Four non-obvious failures, each of which broke a hand-written SVG:
   forms.
 - **Never bake `#fff`, `#000`, `#1a1a1a`, or `#0f172a` into an SVG.** Such a
   figure looks correct in exactly one theme. This is enforced:
-  `scripts/check-figures.mjs` scans `src/assets/journal/*.svg` for baked theme hexes
+  `scripts/check-figures.mjs` scans `src/assets/diagrams/*.svg` for baked theme hexes
   and **fails the build** if any slip through (wired as `prebuild`, so it runs
   locally and in CI). Run it directly with `npm run check:figures`.
 

@@ -10,7 +10,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const DIR = "src/assets/journal";
+const DIR = "src/assets/diagrams";
 
 // Hexes that are theme backgrounds/ink and must never be baked into a themed
 // figure. Both long and dvisvgm-compacted short forms. The sanctioned figure
@@ -50,7 +50,7 @@ for (const file of svgs) {
 
 if (failed) {
   console.error(
-    '\nFigure theme check failed. See src/assets/journal/README.md > "Why it\'s built this way".',
+    '\nFigure theme check failed. See src/assets/diagrams/README.md > "Why it\'s built this way".',
   );
   process.exit(1);
 }

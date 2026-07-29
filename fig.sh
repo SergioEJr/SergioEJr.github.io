@@ -1,10 +1,10 @@
 #!/bin/sh
 # ./fig.sh product-rule
-#   -> src/assets/journal/product-rule.svg   (theme-aware, for the website)
+#   -> src/assets/diagrams/product-rule.svg   (theme-aware, for the website)
 #   -> build/product-rule.pdf             (for Overleaf: \includegraphics)
 set -e
 n="$1"; [ -n "$n" ] || { echo "usage: ./fig.sh <name>   (figures/<name>.tex)"; exit 1; }
-mkdir -p build src/assets/journal
+mkdir -p build src/assets/diagrams
 
 # Resolve \input{_preamble} (and any other shared figure includes) from figures/,
 # regardless of the CWD we invoke latex from. Trailing empty entry keeps the
@@ -56,7 +56,7 @@ sed -E \
   s/#047857\b/var(--fig-green, #047857)/gi;
   s/#64748b\b/var(--fig-muted, #64748b)/gi;
   s/currentColor/var(--color-text-main, currentColor)/g;
-' > "src/assets/journal/$n.svg"
+' > "src/assets/diagrams/$n.svg"
 
-echo "web    -> src/assets/journal/$n.svg"
+echo "web    -> src/assets/diagrams/$n.svg"
 echo "paper  -> build/$n.pdf"

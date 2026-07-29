@@ -31,7 +31,7 @@
 	   selection). Kept non-interactive so it stays a signature, not a theme color. */
   --color-hot: #d1268f;
 
-  /* Diagram palette (figure-only; see src/assets/journal/README.md). Tuned for the
+  /* Diagram palette (figure-only; see src/assets/diagrams/README.md). Tuned for the
 	   #f6f8fa light ground: each hue is legible, mutually distinguishable, and
 	   harmonic with the cool navy accent + magenta hot mark. fig-blue is a TRUE
 	   blue (not the old navy that collided with --color-accent); fig-red leans cool

@@ -50,7 +50,7 @@
   // repo root too, so a stray editor build doesn't scatter .aux/.log files.
   "latex-workshop.latex.outDir": "%DIR%/../build",
   // Don't build on save. The real figure pipeline is ./fig.sh (latex -> dvisvgm
-  // -> themed SVG in src/assets/journal/), which the editor's pdflatex recipe
+  // -> themed SVG in src/assets/diagrams/), which the editor's pdflatex recipe
   // doesn't replicate — so an on-save build just scatters unused .aux/.log/.dvi/
   // .pdf into build/ on every Ctrl+S. Saving now only saves; build on demand via
   // LaTeX Workshop's build button, or run ./fig.sh.
