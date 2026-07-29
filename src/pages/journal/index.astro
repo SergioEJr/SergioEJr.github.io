@@ -407,6 +407,34 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
           </div>
         </section>
       </div>
+      {
+        /* Settle the frost BEFORE the first paint. The markup ships without
+           data-lit (so a no-JS reader gets a permanently frosted bar, see the
+           [data-lit] rule), and initJournalFilters only runs on
+           astro:page-load — which fires after the browser has already painted.
+           That left exactly one frame of frosted bar on every entry to the
+           Journal, then a flip to clear: measured at rgba(246,248,250,0.85) at
+           swap and transparent 7ms later.
+
+           Placed here rather than in the main script because it has to run
+           synchronously during parse, and after .j-views so both elements it
+           measures exist. Same pre-paint inline pattern as the glow-intro
+           script above. data-astro-rerun re-runs it on ClientRouter swaps,
+           which is the case that shows the flash most clearly. */
+      }
+      <script is:inline data-astro-rerun>
+        (() => {
+          const bar = document.querySelector(".j-filters-bar");
+          const content = document.querySelector(".j-views");
+          if (!bar || !content) return;
+          const br = bar.getBoundingClientRect();
+          if (!br.height) return;
+          // Same test as updateFrost(), including the 10px lead.
+          const lit = content.getBoundingClientRect().top >= br.bottom + 10;
+          bar.toggleAttribute("data-lit", lit);
+          document.getElementById("journal")?.toggleAttribute("data-lit", lit);
+        })();
+      </script>
     </main>
     <Footer />
 
@@ -567,12 +595,15 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
           // tint for 300ms, which is exactly the "I can almost read it" state
           // this switch exists to prevent. Suppress the transition across the
           // toggle, commit it, then hand the stylesheet's transition back.
-          b.style.transition = "none";
+          // Attribute, not `b.style.transition` — an inline style on the bar
+          // cannot reach ::before, where the transition actually lives, so the
+          // old form never suppressed anything. See [data-frost-instant].
+          b.setAttribute("data-frost-instant", "");
           b.toggleAttribute("data-lit", lit);
           // Mirrored onto #journal so CSS can put the glow field away with it.
           root.toggleAttribute("data-lit", lit);
           void b.offsetHeight;
-          b.style.transition = "";
+          b.removeAttribute("data-frost-instant");
         }
 
         // rAF-coalesced: scroll fires far more often than we need to repaint.
@@ -945,6 +976,18 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
         background-color: transparent;
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
+      }
+      /* Suppresses the 0.3s ease across a SCRIPTED flip of [data-lit], so the
+         frost switches in one frame while a theme toggle still eases.
+         This has to be a stylesheet rule keyed off an attribute: the transition
+         lives on ::before, and a pseudo-element cannot be reached by an inline
+         style on its originating element. updateFrost() used to set
+         `bar.style.transition = "none"`, which silently did nothing — measured,
+         the frost stepped through the whole 0 -> 0.85 alpha ramp on every
+         switch, i.e. exactly the half-strength tint the [data-lit] rule above
+         exists to avoid. */
+      .j-filters-bar[data-frost-instant]::before {
+        transition: none;
       }
       .j-eyebrow {
         display: inline-block;
