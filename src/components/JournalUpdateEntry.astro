@@ -119,15 +119,20 @@ const dateLabel = post.data.pubDate.toLocaleDateString("en-US", {
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    /* UNIFORM across every stop. It used to be filled for a linked entry and
-       hollow for a link-less one, but quantity of ink reads as RANK, not kind:
-       two solid dots among three hollow says "these two matter more" when it
-       meant "these two go somewhere". The dot is now purely a timeline marker
-       and the arrow beside the title carries linkedness (see .j-go). Sits on a
-       ring of page background so the spine doesn't show through the middle. */
-    background: var(--cat-updates);
+    /* UNIFORM across every stop, and NEUTRAL. It used to be filled for a linked
+       entry and hollow for a link-less one, but quantity of ink reads as RANK,
+       not kind: two solid dots among three hollow says "these two matter more"
+       when it meant "these two go somewhere". The arrow beside the title
+       carries linkedness now (see .j-go), leaving the dot a pure timeline tick.
+       Neutral rather than --cat-updates because the register colour belongs to
+       the YEAR marker: a section header must not be quieter than the entries
+       under it, and the Notebook view spends its accent the same way — on the
+       topic header, not on individual notes. Sits on a ring of page background
+       so the spine doesn't show through the middle. */
+    background: var(--color-text-muted);
     box-shadow: 0 0 0 2px var(--color-bg);
-    border: 2px solid var(--cat-updates);
+    border: 2px solid var(--color-text-muted);
+    opacity: 0.55;
     transition:
       background-color 0.3s ease,
       border-color 0.3s ease,

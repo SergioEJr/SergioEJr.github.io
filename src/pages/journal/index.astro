@@ -1218,10 +1218,13 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
         left: calc(-1 * var(--j-tl-gutter));
         top: 50%;
         transform: translateY(-50%);
-        width: 8px;
+        width: 10px;
         height: 2px;
-        background: var(--color-text-muted);
-        opacity: 0.6;
+        /* Register colour, because the year is the timeline's section header
+           and the entry dots below it are deliberately neutral. Muted grey here
+           made the two levels the same weight, so the rail read flat. */
+        background: var(--cat-updates);
+        opacity: 0.85;
       }
       .j-timeline--big .j-tl-year {
         font-size: 0.95rem;
@@ -1232,8 +1235,16 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
       .j-timeline--big .j-tl-year:first-child {
         margin-top: 0;
       }
+      /* The year is the section header of the timeline, so it carries the
+         register colour and the entry dots stay neutral — same division the
+         Notebook view uses (topic header coloured, notes not). Longer and at
+         full strength so the structural marks read above the entry ticks
+         rather than under them. */
       .j-timeline--big .j-tl-year::before {
-        width: 10px;
+        width: 14px;
+        height: 2px;
+        background: var(--cat-updates);
+        opacity: 1;
       }
 
       /* ---------------- Updates view ---------------- */
