@@ -131,6 +131,33 @@ const noteGroups = [...noteGroupMap.entries()]
     posts: ps,
   }));
 
+// Subjects for the Essays strip. Every essay row already prints its subject and
+// there was no way to act on it — the same gap the Notebook's topic strip fills.
+//
+// The Essays list stays REVERSE-CHRONOLOGICAL and the subject only filters it;
+// it does not group like the Notebook does. A note is reference material, so
+// what it's about is its primary key. An essay is read for interest, and the
+// order carries real information — it's the newest thinking first. Grouping by
+// subject would bury a new essay under whichever subject happens to sort first.
+//
+// Fixed schema order rather than alphabetical or by count, so the strip doesn't
+// reshuffle itself as essays are published.
+const SUBJECT_ORDER = ["Science", "Math", "Ideas"];
+const UNSUBJECTED = "Other";
+const essaySubjectCounts = new Map<string, number>();
+for (const p of essays) {
+  const s = p.data.subject ?? UNSUBJECTED;
+  essaySubjectCounts.set(s, (essaySubjectCounts.get(s) ?? 0) + 1);
+}
+const essaySubjects = [
+  ...SUBJECT_ORDER,
+  // Same reasoning as UNTOPICED: the absence of a subject sorts last rather
+  // than into the middle of the real ones.
+  UNSUBJECTED,
+]
+  .filter((s) => essaySubjectCounts.has(s))
+  .map((s) => ({ subject: s, count: essaySubjectCounts.get(s)! }));
+
 // Updates grouped by year for the timeline spine. The list is newest-first, so
 // the years come out newest-first too. UTC to match FormattedDate — frontmatter
 // dates parse as UTC midnight, and a build machine behind UTC would otherwise
@@ -304,7 +331,51 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
 
         {/* ---------- ESSAYS ---------- */}
         <section class="j-view j-essays" data-view="essays" hidden>
-          {essays.map((post) => <JournalEssayRow post={post} />)}
+          {
+            /* Only worth a strip once there's something to choose between —
+               with a single subject every pill would select the whole list.
+               Pills reuse .j-topic: identical idiom to the Notebook strip, told
+               apart by their container and by data-subject vs data-topic, so
+               restyling the pills restyles both. */
+            essaySubjects.length > 1 && (
+              <div
+                class="j-es-side"
+                role="group"
+                aria-label="Filter essays by subject"
+              >
+                <div class="j-side-label" aria-hidden="true">
+                  Subjects
+                </div>
+                {/* data-label reserves the pill's BOLD width — see the ::after
+                    phantom on .j-topic. Must match the visible text exactly,
+                    including the single space before the count. */}
+                <button
+                  class="j-topic active"
+                  data-subject="all"
+                  data-label={`All ${counts.essays}`}
+                  aria-pressed="true"
+                >
+                  All <span>{counts.essays}</span>
+                </button>
+                {essaySubjects.map((s) => (
+                  <button
+                    class="j-topic"
+                    data-subject={s.subject}
+                    data-label={`${s.subject} ${s.count}`}
+                    aria-pressed="false"
+                  >
+                    {s.subject} <span>{s.count}</span>
+                  </button>
+                ))}
+              </div>
+            )
+          }
+          {/* Rows wrapped separately from the strip so a subject switch can
+              fade the LIST without flickering the control that triggered it —
+              same split as .j-nb-main in the Notebook view. */}
+          <div class="j-es-main">
+            {essays.map((post) => <JournalEssayRow post={post} />)}
+          </div>
         </section>
 
         {/* ---------- NOTEBOOK ---------- */}
@@ -457,11 +528,28 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
         const views = Array.from(document.querySelectorAll(".j-view"));
         const groups = Array.from(document.querySelectorAll(".j-nb-group"));
         const filters = Array.from(document.querySelectorAll(".j-filter"));
-        const topicBtns = Array.from(document.querySelectorAll(".j-topic"));
+        // Both strips use .j-topic for styling, so these are scoped by
+        // container — an unscoped ".j-topic" would hand the Notebook the
+        // Essays pills as well.
+        const topicBtns = Array.from(
+          document.querySelectorAll(".j-nb-side .j-topic"),
+        );
+        const subjectBtns = Array.from(
+          document.querySelectorAll(".j-es-side .j-topic"),
+        );
+        // Scoped to the Essays VIEW: the All view's shelf renders .j-essay rows
+        // too, and an unscoped selector let a subject filter quietly hide rows
+        // over there as well.
+        const essayRows = Array.from(
+          document.querySelectorAll(".j-es-main .j-essay"),
+        );
         const bar = document.querySelector(".j-filters-bar");
 
         const validCats = filters.map((b) => b.getAttribute("data-filter"));
         const validTopics = topicBtns.map((b) => b.getAttribute("data-topic"));
+        const validSubjects = subjectBtns.map((b) =>
+          b.getAttribute("data-subject"),
+        );
 
         // Toggle a filter pill's visual + a11y active state together, so
         // aria-pressed never drifts from the .active class.
@@ -472,21 +560,30 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
 
         let activeCat = "all";
         let activeTopic = "all";
+        let activeSubject = "all";
 
         // The active filter lives in the URL hash so it survives navigation
         // (Back from a post returns to the chosen filter) and is shareable.
-        //   #notebook     → Notebook, all topics
-        //   #notebook:Git → Notebook, Git topic
-        //   (no hash)     → All (default)
+        //   #notebook       → Notebook, all topics
+        //   #notebook:Git   → Notebook, Git topic
+        //   #essays         → Essays, all subjects
+        //   #essays:Science → Essays, Science subject
+        //   (no hash)       → All (default)
         function readHash() {
           const raw = decodeURIComponent(
             (location.hash || "").replace(/^#/, ""),
           );
-          const [cat, topic] = raw.split(":");
+          // One sub-slot, read as a topic or a subject depending on the
+          // register — the two never coexist, so they share the syntax.
+          const [cat, sub] = raw.split(":");
           activeCat = validCats.includes(cat) ? cat : "all";
           activeTopic =
-            activeCat === "notebook" && topic && validTopics.includes(topic)
-              ? topic
+            activeCat === "notebook" && sub && validTopics.includes(sub)
+              ? sub
+              : "all";
+          activeSubject =
+            activeCat === "essays" && sub && validSubjects.includes(sub)
+              ? sub
               : "all";
           // Reflect the parsed state on the controls (class + aria-pressed).
           filters.forEach((b) =>
@@ -494,6 +591,9 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
           );
           topicBtns.forEach((b) =>
             setActive(b, b.getAttribute("data-topic") === activeTopic),
+          );
+          subjectBtns.forEach((b) =>
+            setActive(b, b.getAttribute("data-subject") === activeSubject),
           );
         }
 
@@ -514,6 +614,8 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
             hash = "#" + activeCat;
             if (activeCat === "notebook" && activeTopic !== "all")
               hash += ":" + encodeURIComponent(activeTopic);
+            if (activeCat === "essays" && activeSubject !== "all")
+              hash += ":" + encodeURIComponent(activeSubject);
           }
           history.replaceState(
             history.state,
@@ -547,6 +649,22 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
           } else {
             groups.forEach((g) => {
               g.style.display = "";
+            });
+          }
+
+          // Subject filter inside the Essays view. Filters rows in place rather
+          // than regrouping them, so the list stays newest-first whatever is
+          // selected. Eyebrow count follows the selection, same as topics.
+          if (activeCat === "essays" && activeSubject !== "all") {
+            visible = 0;
+            essayRows.forEach((r) => {
+              const show = r.getAttribute("data-subject") === activeSubject;
+              r.style.display = show ? "" : "none";
+              if (show) visible += 1;
+            });
+          } else {
+            essayRows.forEach((r) => {
+              r.style.display = "";
             });
           }
 
@@ -700,9 +818,16 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
           filters.forEach((b) =>
             setActive(b, b.getAttribute("data-filter") === activeCat),
           );
+          // Switching register resets both sub-filters: arriving at Essays or
+          // the Notebook with a stale narrowing from the other visit would show
+          // a partial list nobody asked for.
           activeTopic = "all";
           topicBtns.forEach((b) =>
             setActive(b, b.getAttribute("data-topic") === "all"),
+          );
+          activeSubject = "all";
+          subjectBtns.forEach((b) =>
+            setActive(b, b.getAttribute("data-subject") === "all"),
           );
           writeHash();
           fadeApply();
@@ -739,6 +864,16 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
             writeHash();
             // Fade the note list only — never the strip you just clicked.
             fadeApply(nbMain);
+          });
+        });
+
+        const esMain = document.querySelector(".j-es-main");
+        subjectBtns.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            subjectBtns.forEach((b) => setActive(b, b === btn));
+            activeSubject = btn.getAttribute("data-subject");
+            writeHash();
+            fadeApply(esMain);
           });
         });
 
@@ -1252,6 +1387,40 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
       /* ---------------- Updates view ---------------- */
       .j-updates {
         max-width: 680px;
+      }
+
+      /* Subject strip over the Essays list. Same layout as .j-nb-side; the
+         pills themselves are .j-topic, so they inherit that idiom wholesale and
+         only the selected colour changes register. */
+      .j-es-side {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.45rem;
+        margin-bottom: 1.5rem;
+      }
+      .j-es-side .j-topic:hover {
+        color: var(--cat-essays);
+        border-color: var(--cat-essays);
+      }
+      .j-es-side .j-topic.active {
+        border-color: var(--cat-essays);
+        background: color-mix(in srgb, var(--cat-essays) 14%, transparent);
+      }
+      @media (max-width: 600px) {
+        /* Scrolls sideways rather than stacking, so it never pushes the first
+           essay off the fold. Bleeds to the viewport edges so the last pill
+           doesn't look clipped mid-gutter. */
+        .j-es-side {
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          margin: 0 -1rem 1.25rem;
+          padding: 0 1rem 0.25rem;
+          scrollbar-width: none;
+        }
+        .j-es-side::-webkit-scrollbar {
+          display: none;
+        }
       }
 
       /* ---------------- Essays view ---------------- */

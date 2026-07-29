@@ -30,7 +30,11 @@ const minutes = link.hasPage ? readingMinutes(post) : null;
 const host = externalHost(post);
 ---
 
-<article class="j-essay" style={`--row-color:${color}`}>
+<article
+  class="j-essay"
+  data-subject={post.data.subject ?? "Other"}
+  style={`--row-color:${color}`}
+>
   <div class="j-essay-eyebrow"><span class="j-dot" aria-hidden="true"></span>{label}</div>
   {
     link.href ? (
