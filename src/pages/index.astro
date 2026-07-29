@@ -2424,6 +2424,18 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           }
           cancelTween(); // real input takes the visuals back from the tween
           settling = false;
+          // ...then re-arm. Cancelling alone left NOTHING scheduled, and the
+          // timer is otherwise only armed from onScroll — so a wheel event that
+          // moves scrollY by less than a pixel fires no scroll event, and the
+          // hero rests half-faded with no snap. That is the tail of every
+          // trackpad gesture: momentum decays into sub-pixel deltas that still
+          // dispatch `wheel` but no longer move the page. (Invisible to
+          // synthetic testing, where wheel input always scrolls.)
+          //
+          // Free when a scroll does follow: onScroll just resets this timer.
+          // Safe from the cue click too — that calls cancelSettle() and then
+          // immediately sets `settling`, which doSettle bails on.
+          if (!isFallback()) scheduleSettle();
         };
         const onTouchStart = () => {
           touchDown = true;
