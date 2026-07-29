@@ -80,7 +80,9 @@ const counts: Record<Cat, number> = {
   updates: updates.length,
 };
 
-// Topics for the Notebook sidebar, alphabetical.
+// Topics for the Notebook strip, alphabetical — the same order as the groups
+// below, which is the point. See the noteGroups comment for why alphabetical
+// and not newest-first.
 const topicCounts = new Map<string, number>();
 for (const p of notes) {
   const t = p.data.topic;
@@ -90,20 +92,38 @@ const topics = [...topicCounts.entries()].sort((a, b) =>
   a[0].localeCompare(b[0]),
 );
 
-// Notebook posts grouped by topic. `notes` is newest-first, so the first time a
-// topic appears is its newest post — that order is also the group order
-// (newest-group-first). Posts within a group stay newest-first.
+// Notebook posts grouped by topic. Groups are ALPHABETICAL, matching the topic
+// strip above them — a control sitting directly over a list has to present its
+// items in that list's order, or the reader re-maps between the two.
+//
+// Alphabetical rather than newest-first, even though the rest of the site is
+// reverse-chronological, because the Notebook already rejects recency as
+// meaningful for a note: JournalNoteRow prints NO DATE, on the grounds that
+// "the product-rule proof is as good in 2023 as in 2026". Ordering the groups
+// by recency sorts the page on a fact it deliberately refuses to show, so the
+// reader cannot see why one topic precedes another. Alphabetical is visible,
+// and it keeps a topic in the same place as the notebook grows.
+//
+// (These two orders used to disagree — strip alphabetical, groups newest-first.
+// With the topics as a separate sidebar it went unnoticed, and the current four
+// notes make the two exact reverses, which reads as intentional. It isn't: a new
+// topic would land in unrelated positions in each.)
+//
+// Posts WITHIN a group stay newest-first — invisible with no dates shown, and a
+// reasonable tiebreak.
 const noteGroupMap = new Map<string, typeof notes>();
 for (const p of notes) {
   const t = p.data.topic ?? "Other";
   if (!noteGroupMap.has(t)) noteGroupMap.set(t, []);
   noteGroupMap.get(t)!.push(p);
 }
-const noteGroups = [...noteGroupMap.entries()].map(([topic, ps]) => ({
-  topic,
-  count: ps.length,
-  posts: ps,
-}));
+const noteGroups = [...noteGroupMap.entries()]
+  .sort((a, b) => a[0].localeCompare(b[0]))
+  .map(([topic, ps]) => ({
+    topic,
+    count: ps.length,
+    posts: ps,
+  }));
 
 // Updates grouped by year for the timeline spine. The list is newest-first, so
 // the years come out newest-first too. UTC to match FormattedDate — frontmatter
