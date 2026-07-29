@@ -1215,9 +1215,11 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
       .j-tl-year::before {
         content: "";
         position: absolute;
-        left: calc(-1 * var(--j-tl-gutter));
+        /* Centred on the spine so the tick CROSSES it evenly — it used to start
+           at the timeline's left edge, putting its centre 2px to the right. */
+        left: calc(var(--j-tl-spine-x) - var(--j-tl-gutter));
         top: 50%;
-        transform: translateY(-50%);
+        transform: translate(-50%, -50%);
         width: 10px;
         height: 2px;
         /* Register colour, because the year is the timeline's section header

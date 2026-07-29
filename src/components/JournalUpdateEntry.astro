@@ -114,7 +114,13 @@ const dateLabel = post.data.pubDate.toLocaleDateString("en-US", {
   .j-stop::before {
     content: "";
     position: absolute;
-    left: calc(-1 * var(--j-tl-gutter) + 1px);
+    /* Centred ON the spine, not nudged toward it. --j-tl-spine-x is the spine's
+       centre measured from the timeline's left edge, and .j-stop starts one
+       gutter in, so this puts the dot's own centre exactly there. translateX
+       does the halving, which keeps it correct if the dot's size changes.
+       (Was `-gutter + 1px`, a hand-tuned offset that landed 0.51px left.) */
+    left: calc(var(--j-tl-spine-x) - var(--j-tl-gutter));
+    transform: translateX(-50%);
     top: 1.72em;
     width: 7px;
     height: 7px;
