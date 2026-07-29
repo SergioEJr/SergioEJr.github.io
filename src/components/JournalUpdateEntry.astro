@@ -135,10 +135,15 @@ const dateLabel = post.data.pubDate.toLocaleDateString("en-US", {
        under it, and the Notebook view spends its accent the same way — on the
        topic header, not on individual notes. Sits on a ring of page background
        so the spine doesn't show through the middle. */
-    background: var(--color-text-muted);
+    /* OPAQUE — mixed toward the page instead of `opacity`, which is the whole
+       point. `opacity` fades the element AND its box-shadow ring, so the spine
+       showed straight through both: the dot looked like a bead the line was
+       drawn over rather than one sitting on it. Mixing keeps the same weight
+       while the ring stays solid enough to break the spine cleanly. */
+    background: color-mix(in srgb, var(--color-text-muted) 55%, var(--color-bg));
     box-shadow: 0 0 0 2px var(--color-bg);
-    border: 2px solid var(--color-text-muted);
-    opacity: 0.55;
+    border: 2px solid
+      color-mix(in srgb, var(--color-text-muted) 55%, var(--color-bg));
     transition:
       background-color 0.3s ease,
       border-color 0.3s ease,
