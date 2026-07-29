@@ -1399,6 +1399,33 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
             calc(var(--hero-svh, 1svh) * 46)
           );
         }
+        /* Stacked layout: the photo is a full-width band on TOP of the copy,
+           not an arrival from a right-hand column — so the desktop's 7vw
+           right-to-left slide has no geometry to justify it here (and its
+           travel just sweeps the soft mask edge across dead space). Cancel it
+           and CONDENSE the photo into place instead: it scales down and comes
+           into focus, the exact inverse of the sim layer's gas dissolving
+           (scale UP + blur OUT, see .hero-layer-sim .hero-sim-canvas). The gas
+           leaving and the person resolving become one physical event, and the
+           entrance needs no direction to make sense.
+           Transform/filter go on the IMG, not the wrapper: the wrapper is a
+           `container-type: size` query container (the crop math reads cqw/cqh
+           off it), and the img is what carries the mask — blurring it keeps
+           the feathered edges coherent. */
+        .hero-card-photo {
+          transform: none;
+        }
+        .hero-card-photo img {
+          transform: scale(calc(1 + (1 - var(--b-photo)) * 0.06));
+          /* 6px ≈ the sim canvas's 5px ceiling, scaled for the smaller box.
+             The photo is static during the scrub, so this blurs a still
+             frame — same cost profile as the gas dissolve it mirrors.
+             Re-declare grayscale/contrast: `filter` is one property, so
+             adding blur() alone would drop the desaturation and flash the
+             photo in color. */
+          filter: grayscale(1) contrast(1.02)
+            blur(calc((1 - var(--b-photo)) * 6px));
+        }
         .hero-card-copy {
           grid-row: 2;
           padding: 0 1.25rem;
@@ -1419,20 +1446,45 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
              doesn't swallow the sign. Both only touch wall/frames, never the
              face. */
           object-position: 20% 45%;
+          /* --edge: horizontal fade width, open ONLY while the photo is
+             condensing (7% at b-photo=0 → 0% at rest). The band's left/right
+             edges run flush to the viewport at rest, so a permanent side fade
+             would be wrong — but during the entrance the img is scaled past
+             both edges AND blurred, and `filter: blur` bleeds beyond the mask
+             boundary, so an unmasked side edge reads as a hard-edged grey slab
+             sliding inward. Collapsing to 0 keeps the flush end state
+             pixel-identical to the vertical-only mask this replaced. */
+          --edge: calc((1 - var(--b-photo)) * 7%);
           -webkit-mask-image: linear-gradient(
-            to bottom,
-            transparent 0,
-            #000 10%,
-            #000 86%,
-            transparent 100%
-          );
+              to bottom,
+              transparent 0,
+              #000 10%,
+              #000 86%,
+              transparent 100%
+            ),
+            linear-gradient(
+              to right,
+              transparent 0,
+              #000 var(--edge),
+              #000 calc(100% - var(--edge)),
+              transparent 100%
+            );
+          -webkit-mask-composite: source-in;
           mask-image: linear-gradient(
-            to bottom,
-            transparent 0,
-            #000 10%,
-            #000 86%,
-            transparent 100%
-          );
+              to bottom,
+              transparent 0,
+              #000 10%,
+              #000 86%,
+              transparent 100%
+            ),
+            linear-gradient(
+              to right,
+              transparent 0,
+              #000 var(--edge),
+              #000 calc(100% - var(--edge)),
+              transparent 100%
+            );
+          mask-composite: intersect;
         }
       }
 
