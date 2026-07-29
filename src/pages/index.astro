@@ -636,6 +636,17 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
       }
 
       .hero-scroll-cue {
+        /* Button reset first, so the type rules below win. Not the `font`
+           shorthand: it would take line-height with it. */
+        appearance: none;
+        -webkit-appearance: none;
+        background: none;
+        border: 0;
+        margin: 0;
+        padding: 0;
+        font-family: inherit;
+        line-height: inherit;
+        cursor: pointer;
         position: absolute;
         bottom: 1.5rem;
         left: 50%;
@@ -651,7 +662,21 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         /* Fades as soon as the user starts scrolling. */
         opacity: clamp(0, calc(1 - var(--hero-progress) / 0.15), 1);
         animation: heroCueBob 1.8s ease-in-out infinite;
+        /* Inert until initHeroScroll switches this on (and back off once the
+           fade above has taken the cue below visibility) — so it stays a pure
+           hint if the script never runs. No `transition` here on purpose: the
+           intro rule owns this element's transition while it plays, and a
+           second declaration would just be dead weight for 2s. */
         pointer-events: none;
+      }
+      .hero-scroll-cue:hover,
+      .hero-scroll-cue:focus-visible {
+        color: var(--color-text-main);
+      }
+      /* Hold the bob while it's being aimed at — a target that keeps moving
+         under the cursor is a worse button than a still one. */
+      .hero-scroll-cue:hover {
+        animation-play-state: paused;
       }
       @keyframes heroCueBob {
         0%,
@@ -1608,7 +1633,21 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         <div class="hero-stage">
           <div class="hero-layer hero-layer-sim" data-hero-sim-layer>
             <HeroSim />
-            <div class="hero-scroll-cue" aria-hidden="true">
+            {
+              /* The cue is a CONTROL as well as a hint: clicking it runs the
+                same glide the idle settle uses, straight to the card view (see
+                onCueClick). It's a real <button> rather than a click handler on
+                a div so it's keyboard-reachable — which is also why it's no
+                longer aria-hidden. Hit-testing is off in CSS and switched on by
+                JS only while the sim view is showing, so the faded-out cue
+                never eats clicks mid-scrub. */
+            }
+            <button
+              type="button"
+              class="hero-scroll-cue"
+              data-hero-cue
+              aria-label="Scroll to the introduction"
+            >
               <span>scroll</span>
               <svg
                 width="18"
@@ -1619,9 +1658,10 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
                 stroke-width="2"
                 stroke-linecap="round"
                 stroke-linejoin="round"
+                aria-hidden="true"
                 ><path d="M12 5v14M19 12l-7 7-7-7"></path></svg
               >
-            </div>
+            </button>
           </div>
 
           <div class="hero-layer hero-layer-card" data-hero-card>
@@ -2058,6 +2098,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         else window.__heroScrollCleanup?.();
 
         const stage = section.querySelector(".hero-stage");
+        const cue = section.querySelector("[data-hero-cue]");
         const docEl = document.documentElement;
         const mqReduce = window.matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -2149,20 +2190,28 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           if (dir < 0) return p > 1 - FLICK ? 1 : 0; // heading up → sim
           return p < 0.5 ? 0 : 1; // no direction → nearest
         }
-        function doSettle() {
-          settleTimer = null;
-          if (isFallback() || settling) return;
-          const p = progress();
-          if (p <= 0.001 || p >= 0.999) return; // endpoint or inside the hold
+        // Glide from progress pFrom to an ENDPOINT pTo (0 = sim, 1 = card).
+        // Shared by the idle settle and the scroll-cue click.
+        //
+        // `realScroll` forces the scrolling mechanism even on touch. The idle
+        // settle defers its scroll commit (see below) because it fires after
+        // EVERY gesture, and the deferral is short — a few hundred px of
+        // half-finished transition. The cue click is neither: it jumps the
+        // whole scrub at once, so a deferred commit leaves scrollY a full
+        // viewport away from what's on screen, and the next swipe on mobile
+        // scrubs the crossfade again from the sim instead of moving on past
+        // the card. The URL-bar reason for deferring doesn't apply here
+        // either — the cue is only clickable at the top of the page, where
+        // the bar is expanded already.
+        function settleTo(pFrom, pTo, realScroll) {
           const m = metrics();
           // The card endpoint is the START of the hold (transition just
           // finished), not the end of the section — settling to the section
           // end would silently spend the hold distance.
-          const pTo = settleTarget(p);
           const targetY = pTo === 0 ? m.start : m.start + m.scrub;
           if (Math.abs(targetY - window.scrollY) < 1) return;
           settling = true;
-          if (mqFinePointer.matches) {
+          if (realScroll || mqFinePointer.matches) {
             // Desktop: smooth glide. Fine here — no dynamic URL bar to poke.
             window.scrollTo({ top: targetY, behavior: "smooth" });
             // Clear the settling flag once we've effectively arrived (smooth
@@ -2187,7 +2236,6 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           // next gesture (see onTouchStart). See the pendingSnapY comment.
           pendingSnapY = targetY;
           snapRestY = window.scrollY;
-          const pFrom = p;
           const DUR = 300;
           const t0 = performance.now();
           const step = () => {
@@ -2203,6 +2251,13 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
             }
           };
           tweenRaf = requestAnimationFrame(step);
+        }
+        function doSettle() {
+          settleTimer = null;
+          if (isFallback() || settling) return;
+          const p = progress();
+          if (p <= 0.001 || p >= 0.999) return; // endpoint or inside the hold
+          settleTo(p, settleTarget(p));
         }
         function scheduleSettle() {
           // Never settle under a held finger: a stationary touch produces the
@@ -2246,6 +2301,18 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           );
         }
 
+        // The cue is clickable only while it's actually visible. Its CSS fade
+        // ends at progress 0.15, and a transparent element still hit-tests —
+        // without this, an invisible cue would keep swallowing clicks at the
+        // bottom of the viewport for the rest of the transition.
+        const CUE_HIT_BELOW = 0.15;
+        let cueHittable = null;
+        function setCueHittable(on) {
+          if (!cue || on === cueHittable) return;
+          cueHittable = on;
+          cue.style.pointerEvents = on ? "auto" : "none";
+        }
+
         // Write one visual frame. Shared by the scroll path (update) and the
         // touch-settle tween (doSettle), so both drive the same choreography.
         function applyProgress(p, hp) {
@@ -2259,6 +2326,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           // the card/hold states. Resumes when scrolled back to the top.
           window.__heroSimSetGasActive?.(p < 0.03);
           setGuardForProgress(p);
+          setCueHittable(p < CUE_HIT_BELOW);
         }
         // Non-null while the touch settle is tweening the visuals; update()
         // must not stomp the tween's frames with scroll-derived ones.
@@ -2374,6 +2442,31 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           touchDown = false;
           if (!isFallback()) scheduleSettle();
         };
+        // Clicking the cue commits to the card in one gesture, using the same
+        // settle glide a flick would get — so it lands exactly where the scrub
+        // rests (the start of the hold) and inherits the touch path's deferred
+        // scroll commit instead of poking the mobile URL bar.
+        const onCueClick = () => {
+          // Early in the intro the cue is still transparent (it fades in on
+          // .cue-in) — don't let a target nobody can see skip the intro.
+          if (
+            docEl.hasAttribute("data-home-intro") &&
+            !cue.classList.contains("cue-in")
+          ) {
+            return;
+          }
+          // A click is scroll intent, so it must END a running intro rather
+          // than just release its lock (same reasoning as onScrollIntent):
+          // while data-home-intro is set, the lock would pin us back to 0 and
+          // the intro's canvas animation would override the crossfade.
+          window.__homeIntroEnd?.();
+          cancelSettle(); // don't let a queued idle settle fight the glide
+          // Reduced motion has no scrub to glide through (the cue is
+          // display:none there, so this is belt-and-braces).
+          if (isFallback()) return;
+          settleTo(progress(), 1, true);
+        };
+        cue?.addEventListener("click", onCueClick);
         window.addEventListener("scroll", onScroll, { passive: true });
         window.addEventListener("resize", onResize);
         window.addEventListener("wheel", cancelSettle, { passive: true });
@@ -2390,6 +2483,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         update();
 
         const cleanup = () => {
+          cue?.removeEventListener("click", onCueClick);
           window.removeEventListener("scroll", onScroll);
           window.removeEventListener("resize", onResize);
           window.removeEventListener("wheel", cancelSettle);
@@ -2425,6 +2519,14 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
       function initHomeIntro() {
         const root = document.documentElement;
         if (!root.hasAttribute("data-home-intro")) return;
+        // This runs TWICE on a fresh load — the direct call below, then the
+        // astro:page-load that fires on first paint — and the attribute is
+        // still set both times. Let only the first instance own the scroll
+        // lock: a second set of lockScroll listeners survives the first's
+        // release and pins the page back to 0 (it ate the scroll-cue click's
+        // glide). The handle is nulled on release, so a genuine later visit
+        // still initializes.
+        if (window.__homeIntroReleaseScroll) return;
 
         // Reveal the scroll cue (idempotent — re-adding the class is a no-op).
         const showCue = () =>
@@ -2454,6 +2556,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           window.removeEventListener("touchstart", onScrollIntent);
           window.removeEventListener("keydown", onScrollIntent);
           window.__homeIntroReleaseScroll = null;
+          window.__homeIntroEnd = null;
           // If they broke the lock before the cue appeared, show it now so the
           // page reads as intentionally scrollable.
           showCue();
@@ -2502,6 +2605,14 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         // If the user navigates AWAY mid-intro, release the lock so its window
         // listeners don't linger onto other pages.
         window.__homeIntroReleaseScroll = releaseScrollLock;
+        // Clicking the scroll cue is scroll intent too, but it happens outside
+        // this closure (initHeroScroll owns the cue) — so hand out the same
+        // cut-the-intro-short path onScrollIntent takes. No INTRO_SCROLL_FLOOR
+        // here: a click on the cue can't be a stray load-time event.
+        window.__homeIntroEnd = () => {
+          root.removeAttribute("data-home-intro");
+          releaseScrollLock();
+        };
 
         // Hold the intro state until everything finishes. The phases can OVERLAP
         // now (the sim may start mid-flicker), so the end is the latest of:
