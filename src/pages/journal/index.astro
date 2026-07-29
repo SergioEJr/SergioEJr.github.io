@@ -80,45 +80,51 @@ const counts: Record<Cat, number> = {
   updates: updates.length,
 };
 
-// Topics for the Notebook strip, alphabetical — the same order as the groups
-// below, which is the point. See the noteGroups comment for why alphabetical
-// and not newest-first.
-const topicCounts = new Map<string, number>();
-for (const p of notes) {
-  const t = p.data.topic;
-  if (t) topicCounts.set(t, (topicCounts.get(t) || 0) + 1);
-}
-const topics = [...topicCounts.entries()].sort((a, b) =>
-  a[0].localeCompare(b[0]),
-);
+// `topic` is optional in the schema, so a note can arrive without one. It still
+// has to appear somewhere, and this is the bucket it lands in.
+const UNTOPICED = "Other";
 
-// Notebook posts grouped by topic. Groups are ALPHABETICAL, matching the topic
-// strip above them — a control sitting directly over a list has to present its
-// items in that list's order, or the reader re-maps between the two.
+// Notebook notes grouped by topic. ONE derivation feeds BOTH the topic strip
+// and the column's groups — `noteGroups` IS the strip's data — so the two
+// cannot disagree about which topics exist, how many notes each holds, or what
+// order they come in.
 //
-// Alphabetical rather than newest-first, even though the rest of the site is
+// They used to be built by two separate loops, which is exactly how they drifted
+// apart twice: once on ORDER (strip alphabetical, groups newest-first), and once
+// on the untopiced case — the strip did `if (t)` and skipped such a note, while
+// the groups did `?? "Other"` and filed it. The first note without a topic would
+// therefore have produced an "Other" group in the column with no matching pill:
+// visible under "All", but impossible to filter to, and impossible to filter
+// away from without losing it. Deriving both from one list removes the whole
+// class of bug rather than the two instances of it.
+//
+// Groups are ALPHABETICAL. A control sitting directly over a list has to present
+// its items in that list's order, or the reader re-maps between the two. And
+// alphabetical rather than newest-first, even though the rest of the site is
 // reverse-chronological, because the Notebook already rejects recency as
 // meaningful for a note: JournalNoteRow prints NO DATE, on the grounds that
-// "the product-rule proof is as good in 2023 as in 2026". Ordering the groups
-// by recency sorts the page on a fact it deliberately refuses to show, so the
-// reader cannot see why one topic precedes another. Alphabetical is visible,
+// "the product-rule proof is as good in 2023 as in 2026". Ordering the groups by
+// recency would sort the page on a fact it deliberately refuses to show, so the
+// reader could not see why one topic precedes another. Alphabetical is visible,
 // and it keeps a topic in the same place as the notebook grows.
-//
-// (These two orders used to disagree — strip alphabetical, groups newest-first.
-// With the topics as a separate sidebar it went unnoticed, and the current four
-// notes make the two exact reverses, which reads as intentional. It isn't: a new
-// topic would land in unrelated positions in each.)
 //
 // Posts WITHIN a group stay newest-first — invisible with no dates shown, and a
 // reasonable tiebreak.
 const noteGroupMap = new Map<string, typeof notes>();
 for (const p of notes) {
-  const t = p.data.topic ?? "Other";
+  const t = p.data.topic ?? UNTOPICED;
   if (!noteGroupMap.has(t)) noteGroupMap.set(t, []);
   noteGroupMap.get(t)!.push(p);
 }
 const noteGroups = [...noteGroupMap.entries()]
-  .sort((a, b) => a[0].localeCompare(b[0]))
+  .sort((a, b) => {
+    // The catch-all sorts last whatever its name, because it isn't a topic —
+    // it's the absence of one. Alphabetically "Other" would wedge itself
+    // between Math and Physics as though it were a subject.
+    if (a[0] === UNTOPICED) return 1;
+    if (b[0] === UNTOPICED) return -1;
+    return a[0].localeCompare(b[0]);
+  })
   .map(([topic, ps]) => ({
     topic,
     count: ps.length,
@@ -319,7 +325,7 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
                role="group" + aria-label rather than leaning on .j-side-label:
                that label is display:none below 600px, which would leave the
                group unnamed on exactly the screens where it matters most. */
-            topics.length > 0 && (
+            noteGroups.length > 0 && (
               <div
                 class="j-nb-side"
                 role="group"
@@ -340,14 +346,15 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
                 >
                   All <span>{counts.notebook}</span>
                 </button>
-                {topics.map(([t, n]) => (
+                {/* Same list the column renders — see noteGroups. */}
+                {noteGroups.map((g) => (
                   <button
                     class="j-topic"
-                    data-topic={t}
-                    data-label={`${t} ${n}`}
+                    data-topic={g.topic}
+                    data-label={`${g.topic} ${g.count}`}
                     aria-pressed="false"
                   >
-                    {t} <span>{n}</span>
+                    {g.topic} <span>{g.count}</span>
                   </button>
                 ))}
                 {/* The topic that doesn't exist yet. An <a>, not a button — it
