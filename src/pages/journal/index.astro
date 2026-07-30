@@ -142,6 +142,13 @@ const noteGroups = [...noteGroupMap.entries()]
 //
 // Fixed schema order rather than alphabetical or by count, so the strip doesn't
 // reshuffle itself as essays are published.
+//
+// HELD BACK until the list is long enough to be worth narrowing. A filter over
+// four essays is a control for a page you can already read in full — it adds a
+// decision without saving any scrolling, and an empty-looking Science/Ideas
+// split advertises how little is there. The strip appears on its own once the
+// tenth essay is published; nothing else needs changing.
+const SUBJECT_STRIP_MIN_ESSAYS = 10;
 const SUBJECT_ORDER = ["Science", "Math", "Ideas"];
 const UNSUBJECTED = "Other";
 const essaySubjectCounts = new Map<string, number>();
@@ -332,12 +339,15 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
         {/* ---------- ESSAYS ---------- */}
         <section class="j-view j-essays" data-view="essays" hidden>
           {
-            /* Only worth a strip once there's something to choose between —
-               with a single subject every pill would select the whole list.
+            /* Two gates. The list has to be long enough to be worth narrowing
+               (see SUBJECT_STRIP_MIN_ESSAYS), and there has to be more than one
+               subject to choose between — with a single subject every pill
+               would select the whole list.
                Pills reuse .j-topic: identical idiom to the Notebook strip, told
                apart by their container and by data-subject vs data-topic, so
                restyling the pills restyles both. */
-            essaySubjects.length > 1 && (
+            essays.length >= SUBJECT_STRIP_MIN_ESSAYS &&
+              essaySubjects.length > 1 && (
               <div
                 class="j-es-side"
                 role="group"
