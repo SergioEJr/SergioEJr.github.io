@@ -385,6 +385,9 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
               same split as .j-nb-main in the Notebook view. */}
           <div class="j-es-main">
             {essays.map((post) => <JournalEssayRow post={post} />)}
+            {essays.length === 0 && (
+              <p class="j-empty">No essays published yet.</p>
+            )}
           </div>
         </section>
 
@@ -452,6 +455,9 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
             )
           }
           <div class="j-nb-main">
+            {noteGroups.length === 0 && (
+              <p class="j-empty">No notes published yet.</p>
+            )}
             {
               noteGroups.map((g) => (
                 <section
@@ -484,18 +490,24 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
 
         {/* ---------- UPDATES ---------- */}
         <section class="j-view j-updates" data-view="updates" hidden>
-          <div class="j-timeline j-timeline--big">
-            {
-              updateYears.map((y) => (
-                <Fragment>
-                  <div class="j-tl-year">{y.year}</div>
-                  {y.posts.map((post) => (
-                    <JournalUpdateEntry post={post} />
-                  ))}
-                </Fragment>
-              ))
-            }
-          </div>
+          {
+            /* The spine IS the content here, so an empty timeline would draw a
+               bare line down the page. Swap the whole thing out instead. */
+            updateYears.length > 0 ? (
+              <div class="j-timeline j-timeline--big">
+                {updateYears.map((y) => (
+                  <Fragment>
+                    <div class="j-tl-year">{y.year}</div>
+                    {y.posts.map((post) => (
+                      <JournalUpdateEntry post={post} />
+                    ))}
+                  </Fragment>
+                ))}
+              </div>
+            ) : (
+              <p class="j-empty">No updates published yet.</p>
+            )
+          }
         </section>
       </div>
       {
@@ -1436,6 +1448,16 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
         .j-es-side::-webkit-scrollbar {
           display: none;
         }
+      }
+
+      /* Shown when a register has nothing published — otherwise a confident
+         hero sits above blank space and reads as broken rather than empty. The
+         register pills stay visible above, so the way out is already on screen
+         and this doesn't need to offer one. */
+      .j-empty {
+        color: var(--color-text-muted);
+        font-style: italic;
+        margin: 2.25rem 0 3rem;
       }
 
       /* ---------------- Essays view ---------------- */
