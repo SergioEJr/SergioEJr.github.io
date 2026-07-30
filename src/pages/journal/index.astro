@@ -281,7 +281,7 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
                     </a>
                   </div>
                   {essays.slice(0, FRONT_ESSAYS).map((post) => (
-                    <JournalEssayRow post={post} />
+                    <JournalEssayRow post={post} headingLevel={3} />
                   ))}
                 </section>
               )
@@ -464,8 +464,13 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
                         parked at the far end of a full-width rule reads as
                         unrelated to the label it counts (measured ~850px of gap
                         at 1400px wide). */}
-                    <span class="j-nb-group-name"
-                      >{g.topic}<span class="j-nb-group-count">{g.count}</span></span
+                    {/* A real h2, not a span: the notes below are h3, so
+                        without it they hung straight off the page h1 and a
+                        screen reader navigating by heading saw no section
+                        structure at all. Styling is unchanged — the resets in
+                        .j-nb-group-name undo what the global h2 rules add. */}
+                    <h2 class="j-nb-group-name"
+                      >{g.topic}<span class="j-nb-group-count">{g.count}</span></h2
                     >
                   </div>
                   {g.posts.map((post) => (
@@ -1574,6 +1579,14 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
         text-transform: uppercase;
         letter-spacing: 0.1em;
         color: var(--color-text-muted);
+        /* Undo the global h2: serif face, 2rem, its own margins and the hot
+           rule-mark under it. This is a label that happens to be a heading. */
+        font-family: inherit;
+        line-height: inherit;
+        margin: 0;
+      }
+      .j-nb-group-name::after {
+        content: none;
       }
       .j-nb-group-count {
         font-variant-numeric: tabular-nums;

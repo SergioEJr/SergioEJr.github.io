@@ -13,8 +13,16 @@ import { postLink, readingMinutes, externalHost } from "../utils/posts";
 
 interface Props {
   post: CollectionEntry<"journal">;
+  /**
+   * Heading level for the title. 2 in the Essays view, where a row sits
+   * directly under the page's h1; 3 in the All view's shelf, where the "Essays"
+   * shelf header is itself an h2 and these are its children. Purely structural —
+   * .j-essay-title sets the font, size and margins, so both render identically.
+   */
+  headingLevel?: 2 | 3;
 }
-const { post } = Astro.props;
+const { post, headingLevel = 2 } = Astro.props;
+const Title = `h${headingLevel}` as "h2" | "h3";
 
 const link = postLink(post);
 // Essays take their subject color; an essay with no subject falls back to the
@@ -38,7 +46,7 @@ const host = externalHost(post);
   <div class="j-essay-eyebrow"><span class="j-dot" aria-hidden="true"></span>{label}</div>
   {
     link.href ? (
-      <h2 class="j-essay-title">
+      <Title class="j-essay-title">
         <a
           href={link.href}
           {...(link.external
@@ -49,29 +57,21 @@ const host = externalHost(post);
           data-track-category={post.data.category}
           data-track-external={link.external ? "true" : "false"}
         >
-          <span class="j-t" set:html={renderInline(post.data.title)} />
-          {link.external && (
-            <svg
-              class="j-ext"
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M7 17 17 7" />
-              <path d="M7 7h10v10" />
-            </svg>
-          )}
+          {/* The external arrow is generated content on this span, NOT a
+              sibling <svg>. Any whitespace between </span> and <svg> is a
+              line-break opportunity, and a wrapped title stranded the arrow
+              alone on its own line (measured at 390px). Generated content has
+              no break opportunity before it, so the arrow always travels with
+              the last word. */}
+          <span
+            class="j-t"
+            {...(link.external ? { "data-external": "" } : {})}
+            set:html={renderInline(post.data.title)}
+          />
         </a>
-      </h2>
+      </Title>
     ) : (
-      <h2 class="j-essay-title j-essay-title--static" set:html={renderInline(post.data.title)} />
+      <Title class="j-essay-title j-essay-title--static" set:html={renderInline(post.data.title)} />
     )
   }
   <p class="j-essay-desc">{post.data.description}</p>
@@ -143,7 +143,9 @@ const host = externalHost(post);
     position: relative;
     display: inline;
   }
-  .j-t::after {
+  /* The hover underline lives on ::before so ::after is free for the external
+     arrow below. Both are generated content on the title span itself. */
+  .j-t::before {
     content: "";
     position: absolute;
     left: 0;
@@ -155,23 +157,36 @@ const host = externalHost(post);
     transform-origin: left;
     transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
   }
-  .j-essay:hover .j-t::after {
+  /* The arrow now lives INSIDE .j-t, so it widens the span the underline
+     spans. Pull the underline back by the arrow's width + margin so it still
+     stops at the last word, as it did when the icon was a sibling. */
+  .j-t[data-external]::before {
+    right: 0.85em;
+  }
+  .j-essay:hover .j-t::before {
     transform: scaleX(1);
   }
   @media (prefers-reduced-motion: reduce) {
-    .j-t::after {
+    .j-t::before {
       transition: none;
     }
   }
-  .j-ext {
-    width: 0.7em;
-    height: 0.7em;
-    margin-left: 0.35rem;
-    vertical-align: baseline;
+  /* External-link arrow, as a TEXT glyph rather than a masked box. Generated
+     content alone wasn't enough: an inline-block is an atomic inline, and line
+     breaking allows a break before one even with no whitespace, so the arrow
+     still stranded itself at 390px. As text it is class AL next to a letter,
+     which permits no break — it can only travel with the last word. Same idiom
+     as the "Read all →" links elsewhere on the page. */
+  .j-t[data-external]::after {
+    content: "\2197";
+    margin-left: 0.28em;
+    font-size: 0.72em;
+    font-weight: 600;
+    line-height: 1;
     opacity: 0.55;
     transition: opacity 0.2s ease;
   }
-  .j-essay:hover .j-ext {
+  .j-essay:hover .j-t[data-external]::after {
     opacity: 1;
   }
   .j-essay-desc {
