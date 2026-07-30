@@ -77,3 +77,33 @@ export function stripInline(input: string): string {
     .replace(/~~(.+?)~~/g, "$1") // drop strikethrough markers
     .replace(/\$([^$\n]+?)\$/g, "$1"); // drop inline-math delimiters
 }
+
+/**
+ * Wrap the final word of `html`, plus `icon`, in a `white-space: nowrap` span
+ * so a link icon can never be stranded on its own line by a wrapped title.
+ *
+ * Every tidier fix fails: an `<svg>` (or a masked inline-block) is an ATOMIC
+ * INLINE, and UAX #14 LB20 permits a line break before one even with no
+ * whitespace preceding it. A word joiner should prohibit that under LB11, but
+ * Chromium breaks anyway. `white-space: nowrap` is unambiguous — nothing inside
+ * it can break — so the tail word and the icon travel together while the rest of
+ * the title wraps normally.
+ *
+ * Splits at the last whitespace OUTSIDE a tag, so a title ending in markup
+ * (e.g. `…<del>learning</del> grades`) still splits on real text. The caller
+ * supplies trusted icon markup; `html` is already-sanitised output of
+ * renderInline.
+ */
+export function bindTrailingIcon(html: string, icon: string): string {
+  let depth = 0;
+  let cut = -1;
+  for (let i = 0; i < html.length; i++) {
+    const c = html[i];
+    if (c === "<") depth++;
+    else if (c === ">") depth--;
+    else if (depth === 0 && /\s/.test(c)) cut = i;
+  }
+  const head = cut >= 0 ? html.slice(0, cut + 1) : "";
+  const tail = cut >= 0 ? html.slice(cut + 1) : html;
+  return `${head}<span class="j-tail">${tail}${icon}</span>`;
+}

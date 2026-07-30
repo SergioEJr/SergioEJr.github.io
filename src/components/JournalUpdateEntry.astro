@@ -12,7 +12,7 @@
 // stop — it marks a point on the spine, not whether the entry is clickable.
 import type { CollectionEntry } from "astro:content";
 import { Image } from "astro:assets";
-import { renderInline } from "../utils/inlineText";
+import { renderInline, bindTrailingIcon } from "../utils/inlineText";
 import { url } from "../utils/paths";
 import { postLink } from "../utils/posts";
 
@@ -29,6 +29,19 @@ const dateLabel = post.data.pubDate.toLocaleDateString("en-US", {
   day: "numeric",
   timeZone: "UTC",
 });
+
+// Straight arrow for a page on this site, diagonal for off-site. Shown at rest
+// rather than on hover: Updates is the only register with rows that go nowhere,
+// and on touch there is no hover to reveal an affordance with. Bound to the
+// title's last word so a wrapped title can't strand it — see bindTrailingIcon.
+const ICON_ATTRS =
+  'xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+const GO_ICON = link.external
+  ? `<svg class="j-go" ${ICON_ATTRS}><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>`
+  : `<svg class="j-go" ${ICON_ATTRS}><path d="M5 12h13"/><path d="M12 5l7 7-7 7"/></svg>`;
+const titleHtml = link.href
+  ? bindTrailingIcon(renderInline(post.data.title), GO_ICON)
+  : renderInline(post.data.title);
 ---
 
 <div class:list={["j-stop", { "is-compact": compact, "is-linked": !!link.href }]}>
@@ -46,17 +59,7 @@ const dateLabel = post.data.pubDate.toLocaleDateString("en-US", {
           data-track-category={post.data.category}
           data-track-external={link.external ? "true" : "false"}
         >
-          {/* The arrow is generated content on this span, not a sibling
-              <svg>, and it is a TEXT glyph rather than a sized box. Whitespace
-              between </span> and <svg> is a break opportunity, and an
-              inline-block is an atomic inline that can also be broken before —
-              either way a wrapped title stranded the arrow alone on its own
-              line. As text it can only travel with the last word. */}
-          <span
-            class="j-t"
-            data-go={link.external ? "external" : "internal"}
-            set:html={renderInline(post.data.title)}
-          />
+          <span class="j-t" set:html={titleHtml} />
         </a>
       </p>
     ) : (
@@ -200,32 +203,27 @@ const dateLabel = post.data.pubDate.toLocaleDateString("en-US", {
       transition: none;
     }
   }
-  /* Straight arrow for a page on this site, diagonal for off-site. Shown at
-     rest, not on hover: Updates is the only register with rows that go nowhere,
-     and on touch there is no hover to reveal an affordance with. */
-  .j-t[data-go]::after {
+  /* Injected via set:html, so no scope attribute — reached with :global()
+     nested inside the scoped .j-t. */
+  .j-t :global(.j-tail) {
+    white-space: nowrap;
+  }
+  .j-t :global(.j-go) {
+    width: 0.62em;
+    height: 0.62em;
     margin-left: 0.28em;
-    font-size: 0.72em;
-    font-weight: 600;
-    line-height: 1;
     opacity: 0.5;
     transition: opacity 0.2s ease;
   }
-  .j-t[data-go="internal"]::after {
-    content: "\2192";
-  }
-  .j-t[data-go="external"]::after {
-    content: "\2197";
-  }
-  /* Underline stops at the last word, not under the arrow. */
-  .j-t[data-go]::before {
-    right: 0.85em;
-  }
-  .j-stop:hover .j-t[data-go]::after {
+  .j-stop:hover .j-t :global(.j-go) {
     opacity: 1;
   }
+  /* Underline stops at the last word rather than running under the icon. */
+  .j-t:has(.j-go)::before {
+    right: 0.9em;
+  }
   @media (prefers-reduced-motion: reduce) {
-    .j-t[data-go]::after {
+    .j-t :global(.j-go) {
       transition: none;
     }
   }

@@ -8,7 +8,7 @@
 // (date) for the same rule applied to the other two registers.
 import type { CollectionEntry } from "astro:content";
 import FormattedDate from "./FormattedDate.astro";
-import { renderInline } from "../utils/inlineText";
+import { renderInline, bindTrailingIcon } from "../utils/inlineText";
 import { postLink, readingMinutes, externalHost } from "../utils/posts";
 
 interface Props {
@@ -36,6 +36,26 @@ const label = post.data.subject ?? "Essay";
 // detail page) or where it lives (external pointers). Neither for the rest.
 const minutes = link.hasPage ? readingMinutes(post) : null;
 const host = externalHost(post);
+
+// The external-link icon is concatenated into the title's HTML rather than
+// placed beside it in the template, separated by a WORD JOINER (U+2060).
+//
+// Two things had to be true at once. Any whitespace between </span> and <svg>
+// is a line-break opportunity, which stranded the arrow alone on its own line
+// at 390px; and an <svg> is an ATOMIC INLINE, which UAX #14 allows a break
+// before even with no whitespace (LB20), so simply deleting the whitespace
+// isn't enough either. LB11 — "do not break before or after a word joiner" —
+// is applied ahead of LB20, so the joiner prohibits the break outright.
+// Building one string also guarantees no stray whitespace survives formatting.
+// External-link icon, bound to the title's last word so a wrapped title can't
+// strand it on its own line. See bindTrailingIcon for why nowrap is the only
+// mechanism that holds.
+const EXT_ICON =
+  '<svg class="j-ext" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>';
+
+const titleHtml = link.external
+  ? bindTrailingIcon(renderInline(post.data.title), EXT_ICON)
+  : renderInline(post.data.title);
 ---
 
 <article
@@ -57,17 +77,7 @@ const host = externalHost(post);
           data-track-category={post.data.category}
           data-track-external={link.external ? "true" : "false"}
         >
-          {/* The external arrow is generated content on this span, NOT a
-              sibling <svg>. Any whitespace between </span> and <svg> is a
-              line-break opportunity, and a wrapped title stranded the arrow
-              alone on its own line (measured at 390px). Generated content has
-              no break opportunity before it, so the arrow always travels with
-              the last word. */}
-          <span
-            class="j-t"
-            {...(link.external ? { "data-external": "" } : {})}
-            set:html={renderInline(post.data.title)}
-          />
+          <span class="j-t" set:html={titleHtml} />
         </a>
       </Title>
     ) : (
@@ -160,8 +170,9 @@ const host = externalHost(post);
   /* The arrow now lives INSIDE .j-t, so it widens the span the underline
      spans. Pull the underline back by the arrow's width + margin so it still
      stops at the last word, as it did when the icon was a sibling. */
-  .j-t[data-external]::before {
-    right: 0.85em;
+  /* Underline stops at the last word rather than running under the icon. */
+  .j-t:has(.j-ext)::before {
+    right: 0.9em;
   }
   .j-essay:hover .j-t::before {
     transform: scaleX(1);
@@ -171,22 +182,19 @@ const host = externalHost(post);
       transition: none;
     }
   }
-  /* External-link arrow, as a TEXT glyph rather than a masked box. Generated
-     content alone wasn't enough: an inline-block is an atomic inline, and line
-     breaking allows a break before one even with no whitespace, so the arrow
-     still stranded itself at 390px. As text it is class AL next to a letter,
-     which permits no break — it can only travel with the last word. Same idiom
-     as the "Read all →" links elsewhere on the page. */
-  .j-t[data-external]::after {
-    content: "\2197";
+  /* Injected via set:html, so these carry no scope attribute — reached with
+     :global() nested inside the scoped .j-t. */
+  .j-t :global(.j-tail) {
+    white-space: nowrap;
+  }
+  .j-t :global(.j-ext) {
+    width: 0.62em;
+    height: 0.62em;
     margin-left: 0.28em;
-    font-size: 0.72em;
-    font-weight: 600;
-    line-height: 1;
     opacity: 0.55;
     transition: opacity 0.2s ease;
   }
-  .j-essay:hover .j-t[data-external]::after {
+  .j-essay:hover .j-t :global(.j-ext) {
     opacity: 1;
   }
   .j-essay-desc {
