@@ -111,8 +111,20 @@ const numberedBody = numberCitations(renderedBody);
 				   so restate the main color here (article prose only — descriptions,
 				   meta, and captions keep their own muted colors). */
         color: var(--color-text-main);
-        text-align: justify;
-        hyphens: auto;
+        /* Ragged right, no auto-hyphenation — the same pair Wikipedia sets on
+           article prose (computed `start` / `manual`).
+           These two go together. Justification has no way to absorb slack
+           except stretching word spaces, so at a phone width it produced a
+           47.8px word space against a 5.1px norm (~9x) — a visible river. Auto
+           hyphenation was the escape valve keeping that in check, at the price
+           of 24 hyphenated words on a single page at 390px, which chops up the
+           reading. Dropping hyphens WITHOUT dropping justify is the worst of
+           both: measured, average word space rises 7.29px -> 9.02px.
+           Dropping both gives 0 hyphens and an even 4.3px space at every width,
+           for +6 lines in 228 (~2.6% longer).
+           `manual` rather than `none` so an explicit &shy; is still honoured. */
+        text-align: start;
+        hyphens: manual;
       }
       /* --- Subheadings (article prose only) ---------------------------------
 			   h2 is the section heading and is styled globally (2rem serif + the
