@@ -18,12 +18,13 @@ import Figure from '/src/components/Figure.astro';
 import Derivation from '/src/components/Derivation.astro';
 import fieldTranslation from '/src/assets/diagrams/field-translation.svg?raw';
 import fieldVectorTransform from '/src/assets/diagrams/field-vector-transform.svg?raw';
+import velocityTransform from '/src/assets/diagrams/velocity-field-transform.svg?raw';
 
 ## Scalar Fields
 
-Suppose I have a hot cup of coffee described by a temperature field $\phi(\bs{x})$, and I slide the cup by a displacement $\bs{a}$ on my desk. If physics is going to be of any use in this world, then the total heat content of the coffee better have not changed. Why?
+Suppose I have a hot cup of coffee described by a temperature field $\phi(\bs{x})$, and I slide the cup by a displacement $\bs{a}$ on my desk. If physics is going to be of any use to us, then the total heat content of the coffee better not have changed. Why must this be?
 
-Because space is *homogeneous* -- there is no preferred position. In other words, the energy $F[\phi]$ of the coffee cup is invariant under actions from the translation group $\mathbb{R}^3$. How do we describe the transformed temperature field of this displaced coffee? 
+Because space is *homogeneous* -- there is no preferred or privileged position. Mathematically, the energy $F[\phi]$ of the coffee cup is invariant under actions from the translation group $\mathbb{R}^3$. How do we describe the transformed temperature field of this displaced coffee? 
 <Figure
   svg={fieldTranslation}
   width={420}
@@ -31,7 +32,7 @@ Because space is *homogeneous* -- there is no preferred position. In other words
   caption="Displacing the cup by $\bs{a}$ carries the field $\phi$ to a new field $\phi'$."
 />
 
-Evidently, the transformed temperature field $\phi'$ now has support in a different region of space. This is a whole new function, it is an entirely different configuration of the coffee cup. In other words, $\phi$ is *not* invariant under translations, unlike the energy. This new function is defined by
+Evidently, the transformed temperature field $\phi'$ is now has support in a different region of space. This is a whole new function, it is an entirely different configuration of the coffee cup. The function $\phi$ is *not* invariant under translations, unlike the energy. This new function is defined by
 
 $$
 \begin{align*}
@@ -59,11 +60,11 @@ If the inverse group element is ever confusing, just remember that it comes from
 
 ## Vector Fields
 
-Now, let's consider a bar magnet whose local magnetization is described by a vector field $\bs{m}(\bs{x})$. In the absence of any external field, I can rotate this magnet by some transformation matrix $R$, and the energy of the magnetic field better not change. Why?
+Now, let's consider a bar magnet whose local magnetization is described by a vector field $\bs{m}(\bs{x})$. In the absence of any external field, I can rotate this magnet by rotation matrix $R$, and the energy of the magnetic field should not change. Why must this be?
 
-<SideNote label="aside"> For relativistic systems, the fundamental group of symmetries is the Poincaré group $P(1,3)$, which is the combination of spacetime translations $\mathbb{R}^{(1,3)}$ and spacetime rotations $O(1,3)$.</SideNote>
 
-Because in addition to being homogeneous, space is also *isotropic* -- there is no preferred direction. That means the energy of the bar magnet $F[\bs{m}]$ is invariant under translations $\mathbb{R}^3$ as well under the group of rotations $O(3)$. Together, these transformations make up the *Euclidean* group $E(3)$, the fundamental group of symmetries for flat three-dimensional space. Let's see how our magnetic field transforms under a rotation:
+
+Because in addition to being homogeneous, space is also *isotropic* -- there is no preferred or privileged direction. That means the energy of the bar magnet $F[\bs{m}]$ is not only invariant under translations $\mathbb{R}^3$, but also under the group of rotations $O(3)$. Together, these transformations make up the *Euclidean* group $E(3)$, the fundamental group of symmetries for flat three-dimensional space. <SideNote label="aside"> For relativistic systems, the fundamental group of symmetries is the Poincaré group $P(1,3)$, which is the combination of spacetime translations $\mathbb{R}^{(1,3)}$ and spacetime rotations $O(1,3)$.</SideNote> Let's see how our magnetic field transforms under a rotation:
 
 <Figure
   svg={fieldVectorTransform}
@@ -90,50 +91,47 @@ $$
 $$
 so that the rotated field is defined entirely in terms of the untransformed field. This reveals an important distinction between symmetry transformations on scalar fields (Eq. [](#eq:scalar-transform)) and on vector fields: for vector fields, one must transform both the inputs *and* the outputs. From Eq. [](#eq:vector-rotation), it may appear that we should just transform the vector field opposite how we transform the base space, however, we can come up with an immediate counterexample. 
 
-Consider now a general rigid-body transformations $\bs{x}' = R\bs{x} + \bs{a}$. Shifting the magnet by a translation should certainly not change the direction of the field, so only the rotation operator should act on $\bs{m}$, giving
+Consider now a general rigid-body transformation $\bs{x}' = R\bs{x} + \bs{a}$. Translating the magnet should certainly not change the direction of the field, so only the rotation operator should act on $\bs{m}$, giving
 $$
 \bs{m}'(\bs{x}') = R \bs{m}(R^{-1}(\bs{x}' - \bs{a})).
 $$
+So, we see that the transformation acting on the vector field $\bs{m}$ is not simply the rigid body motion $g$. The proper transformation is given by the *Jacobian* of the rigid body motion $J(\bs{x}) = R$. The Jacobian may generally vary over space, but it is constant in this simple example. 
 
-We require the value of the transformed field to match, which we verify below.
+<Derivation label="Derivation: Why the Jacobian shows up">
+Let $\Phi$ be an arbitrary coordinate transformation (an invertible, differentiable function) and let $\bs{v}$ represent a velocity field. Choose an arbitrary point $\bs{x}$ and define the curve $\gamma(t)$ such that $\gamma(0) = \bs{x}$ and $\dot{\gamma}(0) = \bs{v}(\bs{x})$ -- the curve passes through the chosen point and is tangent to the streamline through that point at $t = 0$. 
 
-<Derivation label="Derivation: Jacobian">
-Start from the transformation rule and apply the chain rule. Referencing an
-equation *outside* this block works — see Eq [](#eq:vector-rotation). Defining a
-new relation inside the block,
+<Figure
+  svg={velocityTransform}
+  width={550}
+  alt="Left: a curved velocity field v, with a curve gamma of t that cuts across the neighbouring streamlines but runs tangent to the one through the point x, where its tangent vector is v(x). An arrow labelled Phi above and J of x below carries this to the right panel: a straightened field v-prime in which the image curve Phi of gamma of t is likewise tangent at x-prime, with tangent vector v-prime(x-prime)."
+  caption="The curve $\gamma(t)$ need not follow the field, but it is tangent to it at $\bs{x}$ — so its velocity there is exactly $\bs{v}(\bs{x})$. Carrying the curve through $\Phi$ and differentiating at $t=0$ sends that tangent vector to $\bs{v}'(\bs{x}')$, so the field is carried by the Jacobian rather than by $\Phi$ itself."
+/>
+
+We require that the transformed field $\bs{v}'(\bs{x}')$ be equal to the velocity of the transformed curve $\Phi(\gamma(t))$. Calculating the velocity of the transformed curve, we are left with
 
 $$
 \begin{align}
-  \htmlId{eq:jacobian}{ J_{ij} = \frac{\partial x'_i}{\partial x_j} = R_{ij} }
+\bs{v}'(\bs{x}')
+= \frac{d}{dt} \Phi(\gamma(t))\; \Big|_{t = 0}
+= \frac{d\Phi}{dx}
+\frac{d\gamma}{dt} \Big|_{t = 0}
+= J(\bs{x}) \bs{v}(\bs{x})
 \end{align}
 $$
 
-we can refer back to Eq [](#eq:jacobian) from inside the derivation. This block
-starts collapsed; the bottom bar closes it again.
-</Derivation>
+where we have identified the derivative of the coordinate map as the Jacobian, $J$, at the point $\bs{x}$.
 
-The Jacobian defined in the derivation above (Eq [](#eq:jacobian)) is just the
-rotation matrix itself.
+</Derivation>
 
 ## Tensor Fields
 
-The previous section motivates the transformation rule for general tensor fields. 
-
-For a general group element $g$, vector fields transform as
+The previous section motivates the transformation rule for general tensor fields. For a general group element $g$, a tensor field $T$ transforms as
 
 $$
-(g \cdot T)(\bs{x}) = \rho(J(\bs{x})) T(g^{-1}\bs{r})
+(g \cdot T)(\bs{x}) = \rho(J(\bs{x})) T(g^{-1}\bs{x})
 $$
 
-where $\rho(g)$ is the representation of $g$ in the space of $\bs{m}$. For instance, for general rigid body motions $(\bs{a}, R)$, 
-
-$$
-\begin{align}
-(g \cdot Q)(\bs{x}) = \rho(g) Q(g^{-1} \bs{x})
-\end{align}
-$$
-
-
+where $\rho$ is the representation of $g$ in the space of $T$ and $J$ is the Jacobian. As an example, let us consider the Cauchy stress, a $(2,0)$ tensor. 
 
 
 ## Spinor Fields
