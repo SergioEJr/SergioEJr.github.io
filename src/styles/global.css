@@ -534,6 +534,15 @@ a:hover {
   padding-block: 0.2rem;
 }
 
+/* Inline math and the punctuation that follows it are one unbreakable unit, so
+   a lone "." or "," is never stranded at the start of a line. Built by
+   src/plugins/rehype-math-punctuation.mjs — see there for why the break exists
+   (KaTeX's .base is an inline-block, i.e. an atomic inline) and why justify is
+   neither the cause nor the cure. Same device as Wikipedia's {{nowrap}}. */
+.math-punct {
+  white-space: nowrap;
+}
+
 /* Numbered equations: the number sits in its OWN column beside the math, never
    on top of it — the structure Wikipedia's {{NumBlk}} uses ([equation][number]
    as separate cells). Built by src/plugins/rehype-eqref.mjs, which lifts the

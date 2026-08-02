@@ -8,12 +8,16 @@ import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import rehypeEqref from "./src/plugins/rehype-eqref.mjs";
 import rehypeFootnoteHistory from "./src/plugins/rehype-footnote-history.mjs";
+import rehypeMathPunctuation from "./src/plugins/rehype-math-punctuation.mjs";
 
 // Shared by both pipelines below so Markdown and MDX behave identically.
 // - rehypeKatex: `trust` enables \htmlId, which is how an equation gets a link
 //   target. KaTeX also auto-numbers unstarred environments (align/equation) via
 //   a CSS counter.
 // - rehypeEqref must run AFTER rehypeKatex — it reads the rendered KaTeX output.
+// - rehypeMathPunctuation likewise reads rendered KaTeX; it stops a lone "." or
+//   "," being stranded on its own line after inline math. Same technique
+//   Wikipedia leans on ({{nowrap}} — 220 uses on the Fourier transform page).
 // - rehypeFootnoteHistory is independent of math; it keeps GFM footnote jumps
 //   from pushing history entries under ClientRouter (see the plugin's header).
 // Typed as any[]: the local .mjs plugins ship no unified type declarations, so
@@ -31,6 +35,7 @@ const katexMacros = {
 const contentPlugins = [
   [rehypeKatex, { trust: true, macros: katexMacros }],
   rehypeEqref,
+  rehypeMathPunctuation,
   rehypeFootnoteHistory,
 ];
 
