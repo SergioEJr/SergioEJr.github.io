@@ -510,6 +510,54 @@ a:hover {
   filter: brightness(0.9);
 }
 
+/* Display math wider than its column scrolls INSIDE itself instead of spilling.
+   KaTeX ships no overflow rule, so without this a wide equation just overflows —
+   and where an ancestor clips (Derivation.astro sets `overflow-x: clip` so the
+   block can't become a scroll container and break the sticky navbar), the
+   overflow is not merely hidden but UNREACHABLE. A 4-term chain in a Derivation
+   lost its last 115px — the conclusion — at phone width, with no way to scroll
+   to it. Making the equation its own scroll container is what Derivation.astro's
+   comment already claims happens; this is the rule that makes that true.
+
+   Safe for the sticky navbar: the AGENTS.md warning is about scroll/clip on an
+   ANCESTOR of the sticky header. .katex-display sits inside the article and is
+   an ancestor of nothing sticky, so it can scroll freely.
+
+   overflow-y must be `hidden`, not left at `visible`: a box with one axis
+   scrollable and the other visible is invalid, and the browser silently
+   promotes the visible axis to `auto` — adding a spurious vertical scrollbar to
+   every tall fraction. */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* Room so the scrollbar never lands on the glyphs' descenders. */
+  padding-block: 0.2rem;
+}
+
+/* Numbered equations: the number sits in its OWN column beside the math, never
+   on top of it — the structure Wikipedia's {{NumBlk}} uses ([equation][number]
+   as separate cells). Built by src/plugins/rehype-eqref.mjs, which lifts the
+   number out of KaTeX's absolutely-positioned .tag; see the Pass 1b comment
+   there for why the overlay had to go.
+
+   `min-width: 0` on the math is what makes it work: a flex item defaults to
+   `min-width: auto`, which refuses to shrink below its content, so a wide
+   equation would blow the row out and push the number off-screen instead of
+   scrolling inside its own box. */
+.eq-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.eq-row > .katex-display {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.eq-row > .eq-number {
+  flex: 0 0 auto;
+  color: var(--color-text-main);
+}
+
 /* --- Equation references (src/plugins/rehype-eqref.mjs) ---------------------
    KaTeX auto-numbers unstarred environments (align/equation) from a CSS counter
    in katex.min.css. `\htmlId{eq:foo}{...}` inside the math marks an equation as

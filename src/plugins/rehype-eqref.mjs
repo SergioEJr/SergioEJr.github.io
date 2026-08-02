@@ -48,6 +48,17 @@ function find(node, test) {
   return hit;
 }
 
+/** Drop the first descendant matching `test` from its parent. */
+function remove(root, test) {
+  visit(root, (n) => {
+    const i = n.children?.findIndex(test) ?? -1;
+    if (i !== -1) {
+      n.children.splice(i, 1);
+      return false;
+    }
+  });
+}
+
 export default function rehypeEqref() {
   return (tree) => {
     // Pass 1 — walk display-math blocks IN DOCUMENT ORDER, which is the order
@@ -55,9 +66,10 @@ export default function rehypeEqref() {
     // .eqn-num span, and only those advance katexEqnNo, so numbering here must
     // count exactly those and skip align*/aligned.
     const numberOf = new Map(); // id -> equation number
+    const toHoist = []; // { parent, node, n } — consumed by Pass 1b
     let n = 0;
 
-    visit(tree, "element", (node) => {
+    visit(tree, "element", (node, _index, parent) => {
       if (!hasClass(node, "katex-display")) return;
 
       const numbered = find(
@@ -78,6 +90,13 @@ export default function rehypeEqref() {
       // global.css suppresses the ::before counter so the two don't double up.
       numbered.children = [{ type: "text", value: `(${n})` }];
 
+      // Queue this equation to have its number lifted OUT of the math (Pass 1b).
+      // Recorded rather than done here: rewriting parent.children mid-visit
+      // would make `visit` descend into the new wrapper and rediscover this same
+      // .katex-display, forever. Pushed BEFORE the `\htmlId` early-return below,
+      // so equations that carry no reference id still get hoisted.
+      if (parent) toHoist.push({ parent, node, n });
+
       // The id comes from \htmlId inside the math. KaTeX renders that id on an
       // inner span; hoist it to the display wrapper so the anchor lands on the
       // whole equation (and scroll-margin can clear the sticky navbar).
@@ -93,6 +112,52 @@ export default function rehypeEqref() {
       node.properties.id = id;
       numberOf.set(id, n);
     });
+
+    // Pass 1b — give the number its own column instead of letting it lie on top
+    // of the math.
+    //
+    // KaTeX positions the number ABSOLUTELY (.tag, pinned to the right edge of
+    // .katex). .katex is only ever as wide as the COLUMN, so as soon as an
+    // equation is wider than its column the number anchors short of where the
+    // math ends and prints straight over the symbols — measured 187px inside the
+    // equation at 390px viewport. Because it only misbehaves when the equation
+    // overflows, it looks fine on desktop and broken on phones.
+    //
+    // The fix is Wikipedia's: its {{NumBlk}} renders a numbered equation as a
+    // row of cells — [equation][spacer][number] — with the label a static <td>
+    // that RESERVES width, so it structurally cannot collide. Mirror that here:
+    //
+    //   <div class="eq-row">
+    //     <span class="katex-display">…math…</span>   <- scrolls on its own
+    //     <span class="eq-number">(n)</span>          <- own column, never overlaps
+    //   </div>
+    //
+    // Dropping KaTeX's .tag is safe for layout precisely because it was absolute
+    // — out of flow, so the math's own centring and metrics are untouched. It
+    // also removes a phantom: .tag's sub-pixel right edge used to leave
+    // scrollWidth 2px over clientWidth on every numbered equation.
+    //
+    // The id stays on .katex-display, so #eq:foo anchors, scroll-margin-top and
+    // the .eq-flash highlight all still target the equation itself.
+    for (const { parent, node, n: num } of toHoist) {
+      const i = parent.children.indexOf(node);
+      if (i === -1) continue; // someone else moved it; leave well alone
+      remove(node, (c) => c.type === "element" && hasClass(c, "tag"));
+      parent.children[i] = {
+        type: "element",
+        tagName: "div",
+        properties: { className: ["eq-row"] },
+        children: [
+          node,
+          {
+            type: "element",
+            tagName: "span",
+            properties: { className: ["eq-number"], "aria-hidden": "true" },
+            children: [{ type: "text", value: `(${num})` }],
+          },
+        ],
+      };
+    }
 
     if (numberOf.size === 0) return;
 
