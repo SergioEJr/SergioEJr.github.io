@@ -17,7 +17,7 @@ type CategoryBadge = { label: string; color: string };
 // the Projects and Research detail pages, which don't supply Journal-only fields.
 type Props = Partial<CollectionEntry<"journal">["data"]> & {
   title: string;
-  description: string;
+  description?: string;
   pubDate: Date;
   // Journal posts pass optimized ImageMetadata; simple pages (e.g. About) may pass
   // a plain path string to a file in /public.

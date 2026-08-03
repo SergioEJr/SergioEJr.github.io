@@ -24,7 +24,16 @@ const journal = defineCollection({
   schema: ({ image }: SchemaContext) =>
     z.object({
       title: z.string(),
-      description: z.string(),
+      // OPTIONAL: a post is allowed to stand on its title alone. Some titles are
+      // already the whole thought ("My personal philosophy"), and a required
+      // field forces a restatement of the title in different words, which is
+      // worse than nothing — it's the blurb every listing shows under the title.
+      // Everywhere a description is rendered, it is rendered CONDITIONALLY; see
+      // the row components, BaseHead's meta tags and rss.xml.ts. In particular
+      // the <meta name="description"> is omitted rather than filled with the
+      // site's blurb, because a shared generic description across many pages is
+      // worse for search than none (the engine will pull a snippet from the body).
+      description: z.string().optional(),
       pubDate: z.coerce.date(),
       updatedDate: z.coerce.date().optional(),
       // Optional hero shown at the top of the post (off by default). Lives in

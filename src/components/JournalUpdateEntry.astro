@@ -66,7 +66,9 @@ const titleHtml = link.href
       <p class="j-stop-title" set:html={renderInline(post.data.title)} />
     )
   }
-  {!compact && <p class="j-stop-desc">{post.data.description}</p>}
+  {!compact && post.data.description && (
+    <p class="j-stop-desc">{post.data.description}</p>
+  )}
   {
     !compact && hero && (
       <div class="j-stop-photo">

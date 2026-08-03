@@ -58,7 +58,9 @@ const keywords = post.data.tags ?? [];
     }
     {showTopic && post.data.topic && <span class="j-chip">{post.data.topic}</span>}
   </h3>
-  <p class="j-note-desc">{post.data.description}</p>
+  {post.data.description && (
+    <p class="j-note-desc">{post.data.description}</p>
+  )}
   {
     /* Rendered only when there's something to say — in the "All" view the topic
        chip beside the title is the row's label, so the meta line is absent

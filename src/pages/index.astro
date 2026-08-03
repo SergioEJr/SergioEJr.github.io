@@ -1795,7 +1795,9 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
                             set:html={renderInline(post.data.title)}
                           />
                         )}
-                        <p class="home-row-desc">{post.data.description}</p>
+                        {post.data.description && (
+                          <p class="home-row-desc">{post.data.description}</p>
+                        )}
                         <div class="home-row-meta home-row-date">
                           {/* Subject in its own color, ahead of the date —
                               the same signal the Journal's Essays view leads

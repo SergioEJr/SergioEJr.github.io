@@ -22,7 +22,12 @@ export const GET: APIRoute = async (context) => {
       // Map explicit RSS fields only — spreading post.data would leak non-RSS
       // frontmatter (heroImage ImageMetadata, draft, toc, category…) into items.
       title: stripInline(post.data.title),
-      description: stripInline(post.data.description),
+      // Optional in the schema, and optional in RSS too — a feed item is valid
+      // with a title and no description. Passing undefined omits the element;
+      // stripInline would throw on it.
+      description: post.data.description
+        ? stripInline(post.data.description)
+        : undefined,
       pubDate: post.data.pubDate,
       link: postLink(post).href!,
     }));

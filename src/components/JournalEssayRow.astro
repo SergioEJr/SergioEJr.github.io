@@ -84,7 +84,9 @@ const titleHtml = link.external
       <Title class="j-essay-title j-essay-title--static" set:html={renderInline(post.data.title)} />
     )
   }
-  <p class="j-essay-desc">{post.data.description}</p>
+  {post.data.description && (
+    <p class="j-essay-desc">{post.data.description}</p>
+  )}
   <div class="j-essay-meta">
     <FormattedDate date={post.data.pubDate} />
     {minutes && <><span class="j-sep">·</span><span>{minutes} min read</span></>}
