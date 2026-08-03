@@ -127,6 +127,24 @@ const UNTOPICED = "Other";
 //
 // Posts WITHIN a group stay newest-first — invisible with no dates shown, and a
 // reasonable tiebreak.
+//
+// The topic STRIP is held back until there are this many notes, on the same
+// argument as SUBJECT_STRIP_MIN_ESSAYS below: a filter is a control for a list
+// you cannot already read in full, and today's pills would read "All 4 · Math 1 ·
+// Physics 1 · WebDev 2" — three of four selecting a single note, which is a link
+// wearing a control's clothes. The GROUP HEADERS stay either way; they are the
+// only place this view names a topic (JournalNoteRow suppresses its topic chip
+// here precisely because the header states it), so they label content where the
+// strip merely narrows it.
+//
+// Eight rather than the Essays strip's ten. Not scroll parity — a note row is
+// less than half an essay row, so equal-length lists would put this threshold
+// near eighteen. The Notebook is reference material reached by someone who
+// already knows the topic, so random access starts paying off per piece sooner
+// than it does for essays read newest-first. Eight is also where the column stops
+// fitting on one screen (~1120px against ~770px of usable height), i.e. where a
+// jump control begins saving a scroll instead of adding a decision.
+const TOPIC_STRIP_MIN_NOTES = 8;
 const noteGroupMap = new Map<string, typeof notes>();
 for (const p of notes) {
   const t = p.data.topic ?? UNTOPICED;
@@ -423,8 +441,15 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
                uppercase and bold).
                role="group" + aria-label rather than leaning on .j-side-label:
                that label is display:none below 600px, which would leave the
-               group unnamed on exactly the screens where it matters most. */
-            noteGroups.length > 0 && (
+               group unnamed on exactly the screens where it matters most.
+
+               Gated exactly like the Essays subject strip, and for the same
+               reason — see TOPIC_STRIP_MIN_NOTES. The second clause replaces the
+               old `> 0` guard rather than joining it: `notes.length >= N` already
+               implies at least one group, and with only ONE topic every pill
+               ("All 4", "Physics 4") would select the identical list. */
+            notes.length >= TOPIC_STRIP_MIN_NOTES &&
+              noteGroups.length > 1 && (
               <div
                 class="j-nb-side"
                 role="group"
