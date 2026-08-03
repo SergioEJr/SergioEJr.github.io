@@ -16,6 +16,19 @@ type Cat = "all" | "updates" | "essays" | "notebook";
 
 // Registers (organize by reader intent, not subject). `color` is a theme-flipping
 // CSS var (defined in global.css) so the header/pill color adapts to light/dark.
+//
+// TITLES share one grammatical form: register noun + prepositional phrase. They
+// used to be three unrelated idioms — a bare noun ("Essays"), a prepositional
+// phrase ("From the notebook") and a poetic one ("The story so far") — which cost
+// the reader the link between the pill they clicked and the heading they landed
+// on: nothing in "The story so far" says UPDATES. Now the pill's word always
+// opens its own title, and the phrase after it carries the one fact the pill
+// cannot: who the register is for, or how the view is filed.
+//
+// Two of the three are then checkable by looking down the page — "by topic" sits
+// over the Topics strip, "by year" over the timeline's year ticks. No commas
+// inside the phrases: measured, "Notebook, by topic" wraps to two lines at 360px
+// (a common Android width) where "Notebook by topic" stays on one.
 const CATS: Record<
   Cat,
   { label: string; color: string; title: string; subtitle: string }
@@ -24,30 +37,33 @@ const CATS: Record<
     label: BLOG_CATEGORY_LABELS.updates,
     color: "var(--cat-updates)",
     title: "The story so far",
-    subtitle: "Announcements, milestones, and what I’m up to.",
+    subtitle: "Some of the things I've done",
   },
   essays: {
     label: BLOG_CATEGORY_LABELS.essays,
     color: "var(--cat-essays)",
-    title: "Ideas worth sharing",
-    subtitle:
-      "Big-picture ideas in life, science, and math to be read by anyone.",
+    title: "Writing for anyone",
+    subtitle: "Big-picture ideas I think are cool",
   },
   notebook: {
     label: BLOG_CATEGORY_LABELS.notebook,
     color: "var(--cat-notebook)",
-    title: "Things I’m learning",
+    title: "Things I'm learning",
     subtitle:
-      "A growing notebook of guides and notes spanning from technical to plain.",
+      "Notes written in the way I would have wanted to be taught",
   },
   // "All" is not a register — give it a neutral ink color (not the accent blue,
   // which collides with the Updates blue in dark mode) since it renders as the
-  // text-style filter, and a title that isn't a repeat of a filter label.
+  // text-style filter, and a title that isn't a repeat of a filter label. It
+  // stays deliberately OUTSIDE the register-noun family above: there is no
+  // register noun for "all of them", and "The Journal" is the one heading that
+  // should name the whole thing. Its subtitle carries the three titles instead,
+  // so the front page previews the phrasing of the views it links to.
   all: {
     label: "All",
     color: "var(--color-text-main)",
     title: "The Journal",
-    subtitle: "Updates, essays, and a living notebook.",
+    subtitle: "My online scrapbook",
   },
 };
 // Pills run in front-page order (Essays → Notebook → Updates), matching the
@@ -188,7 +204,7 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
   <head>
     <BaseHead
       title={`Journal | ${SITE_TITLE}`}
-      description="Updates, essays, and a notebook of things I'm learning."
+      description="Essays for anyone, a notebook by topic, and updates by year."
     />
   </head>
   <body>
@@ -293,8 +309,7 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
                 <section class="j-shelf">
                   <div class="j-shelf-head">
                     <h2 class="j-shelf-name">
-                      From the notebook
-                      <span class="j-shelf-count">{counts.notebook}</span>
+                      Notebook<span class="j-shelf-count">{counts.notebook}</span>
                     </h2>
                     <a class="j-shelf-link" href="#notebook" data-goto="notebook">
                       Browse by topic <span aria-hidden="true">&rarr;</span>
@@ -313,8 +328,7 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
               <aside class="j-rail">
                 <div class="j-shelf-head j-rail-head">
                   <h2 class="j-shelf-name">
-                    The story so far
-                    <span class="j-shelf-count">{counts.updates}</span>
+                    Updates<span class="j-shelf-count">{counts.updates}</span>
                   </h2>
                 </div>
                 <div class="j-timeline">
