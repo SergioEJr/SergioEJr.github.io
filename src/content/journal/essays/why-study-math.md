@@ -1,12 +1,15 @@
 ---
-title: "Draft: a math essay for color checking"
-description: "A throwaway draft to verify the Math subject color renders on Essays rows and the post-header badge. Delete or replace before publishing."
+title: "Draft: Why would anyone study math?"
+description: "Math seems so abstract and disconnected from the world. It seems so rigid and unforgiving."
 pubDate: "2026-07-11"
 category: essays
 subject: Math
 authors:
   - sergio-eraso
-tags: []
+tags: 
+ - education
+ - culture 
+ - art
 draft: true # unpublished — exists only to verify the Math essay subject color
 ---
 
