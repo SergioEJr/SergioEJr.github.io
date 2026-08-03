@@ -348,7 +348,17 @@ const { count = 46, class: className = "" } = Astro.props;
         // Light mode: a COMPACT tinted pool of the register color bleeding into the
         // paper, not a wide gray haze. A gentle multiplier + a tighter outer radius
         // (see `outerR` below) keep it reading as colored ink around the eyebrow.
-        const glowK = dark ? 1 : 1.1;
+        //
+        // The multiplier used to be 1.1, i.e. light mode got MORE wash than dark.
+        // That is backwards: on #0f172a a translucent colored layer adds light and
+        // reads as a nebula, but on #f6f8fa it subtracts and reads as a stain — and
+        // the capsule is centered on .j-eyebrow's own measured box, so the densest
+        // part sat exactly behind the header's only colored text. Measured, the
+        // register color landed at 15.3% alpha there and cost the eyebrow 15-26% of
+        // its contrast, taking Updates from 4.85 to 3.96 (AA pass to fail). At 0.6
+        // that drops to 4.3% alpha. Dark is untouched — the `dark ? 1` branch is
+        // the same value it always was.
+        const glowK = dark ? 1 : 0.6;
 
         ctx!.clearRect(0, 0, W, H);
 
@@ -392,7 +402,13 @@ const { count = 46, class: className = "" } = Astro.props;
         };
         // Tighter outer halo in light so the pool stays a compact ink bleed rather
         // than a broad wash across the header (dark keeps the wider, softer reach).
-        const outerR = dark ? LOOK.outerR : 200;
+        //
+        // 200 was still a FIXED radius against a header whose width is not: it
+        // reached ~167px past the eyebrow either way, which is ~33% of the .j-head
+        // box at 1440px but ~85% of it at 390px — so the narrower the screen, the
+        // more of the header the wash owned, which is the opposite of what a
+        // decorative field should do. 150 pulls mobile back to ~74%.
+        const outerR = dark ? LOOK.outerR : 150;
         drawPill(outerR, LOOK.outerAlpha); // soft, extends further
         drawPill(LOOK.innerR, LOOK.innerAlpha); // tight, anchors the source
 
