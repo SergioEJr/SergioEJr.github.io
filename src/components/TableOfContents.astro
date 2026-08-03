@@ -588,51 +588,103 @@ const toc = headings.filter(
     const onResize = () => {
       measureLift();
       balanceLabels();
+      // The reading line is a fraction of the viewport height, so it moves.
+      syncActive();
     };
     window.addEventListener("resize", onResize, { passive: true });
     cleanup = () => window.removeEventListener("resize", onResize);
 
-    const observerCallback = (entries: IntersectionObserverEntry[]) => {
-      entries.forEach((entry) => {
-        const id = entry.target.getAttribute("id");
-        if (!id || !entry.isIntersecting) return;
+    // --- Reading position ---------------------------------------------------
+    // The lit tick answers "which section am I in", so it has to be derived
+    // from where the headings ARE, not from which one most recently crossed
+    // into view. An entry-triggered version (activate on isIntersecting, ignore
+    // everything else) is only correct while scrolling forward: on the way back
+    // up nothing ever moves the highlight, so it stayed on section N until
+    // heading N-1 came back on screen — the reader could already SEE the
+    // heading of the section they were reading before the outline agreed.
+    //
+    // So: one reading line across the viewport, and the active section is the
+    // last heading above it. Symmetric by construction, in both directions.
 
-        const railLink = document.querySelector(`.toc-tick a[href="#${id}"]`);
-        const barLink = document.querySelector(
-          `.toc-bar__item a[href="#${id}"]`,
+    // 40% down the viewport — a heading is promoted once it has climbed into
+    // the upper reading area, which is where the section it opens starts to own
+    // the screen. Kept in sync with the observer's bottom rootMargin below.
+    const ACTIVE_LINE = 0.4;
+
+    // Only headings the outline actually lists. Filtering by the rendered links
+    // (rather than observing every h2/h3) skips the Footnotes heading and any
+    // headings outside the article — e.g. the search modal's — so scrolling
+    // into the article's tail leaves the last real section lit instead of
+    // blanking the outline.
+    const listed = new Set(
+      Array.from(
+        document.querySelectorAll<HTMLAnchorElement>(
+          '.toc-tick a[href^="#"], .toc-bar__item a[href^="#"]',
+        ),
+      ).map((a) => decodeURIComponent(a.getAttribute("href")!.slice(1))),
+    );
+    const sections = Array.from(
+      document.querySelectorAll<HTMLElement>("h2, h3"),
+    ).filter((h) => h.id && listed.has(h.id));
+
+    const setActive = (id: string | null) => {
+      document
+        .querySelectorAll(".toc-tick, .toc-bar__item, .toc-bar__seg")
+        .forEach((item) => item.classList.remove("active"));
+      if (!id) return;
+
+      const railLink = document.querySelector(
+        `.toc-tick a[href="#${CSS.escape(id)}"]`,
+      );
+      const barLink = document.querySelector(
+        `.toc-bar__item a[href="#${CSS.escape(id)}"]`,
+      );
+
+      railLink?.parentElement?.classList.add("active");
+      const barItem = barLink?.parentElement;
+      barItem?.classList.add("active");
+
+      // Light the matching segment on the collapsed bar's mini scale, so the
+      // bar reports position even while closed.
+      if (barItem?.parentElement) {
+        const index = Array.prototype.indexOf.call(
+          barItem.parentElement.children,
+          barItem,
         );
-
         document
-          .querySelectorAll(".toc-tick, .toc-bar__item, .toc-bar__seg")
-          .forEach((item) => item.classList.remove("active"));
-
-        railLink?.parentElement?.classList.add("active");
-        const barItem = barLink?.parentElement;
-        barItem?.classList.add("active");
-
-        // Light the matching segment on the collapsed bar's mini scale, so the
-        // bar reports position even while closed.
-        if (barItem?.parentElement) {
-          const index = Array.prototype.indexOf.call(
-            barItem.parentElement.children,
-            barItem,
-          );
-          document
-            .querySelectorAll(".toc-bar__seg")
-            [index]?.classList.add("active");
-        }
-      });
+          .querySelectorAll(".toc-bar__seg")
+          [index]?.classList.add("active");
+      }
     };
 
-    observer = new IntersectionObserver(observerCallback, {
+    let activeId: string | null = null;
+    const syncActive = () => {
+      const line = window.innerHeight * ACTIVE_LINE;
+      let current: string | null = null;
+      // Document order is vertical order, so the last one above the line wins.
+      for (const heading of sections) {
+        if (heading.getBoundingClientRect().top > line) break;
+        current = heading.id;
+      }
+      // Above the first heading the reader is in the lede, which is no section:
+      // `current` stays null and nothing is lit.
+      if (current === activeId) return;
+      activeId = current;
+      setActive(current);
+    };
+
+    // The observer is only a cheap "something crossed, look again" signal — it
+    // replaces a scroll listener, it does not hold the state. Its bottom edge
+    // IS the reading line, so every crossing of that line wakes it in either
+    // direction; the top margin just adds harmless extra wake-ups.
+    observer = new IntersectionObserver(syncActive, {
       root: null,
-      rootMargin: "-100px 0px -60% 0px",
+      rootMargin: `-100px 0px -${Math.round((1 - ACTIVE_LINE) * 100)}% 0px`,
       threshold: 0,
     });
 
-    document
-      .querySelectorAll("h2, h3")
-      .forEach((heading) => observer?.observe(heading));
+    sections.forEach((heading) => observer?.observe(heading));
+    syncActive();
 
     // --- Occupy the slot the navbar vacates ---------------------------------
     // The header owns the scroll-direction logic (setupAutoHide in
