@@ -10,7 +10,19 @@
 // - First run gated on document.fonts.ready (kills the hard-refresh jitter).
 // - prefers-reduced-motion: sets the final number instantly, no roll.
 
-const DURATION_MS = 1600;
+// Duration scales with the DISTANCE rolled, clamped. A fixed duration has to
+// serve both a 1-stop change (4 -> 5) and a 13-stop one (0 -> 13 on load): at
+// 1600ms the short roll crawled, and the long one spent its first ~800ms showing
+// two half-clipped digits stacked in the window — the number was illegible for
+// longer than a filter click takes to feel done. Worse, the roll does not even
+// start until ~180ms after the click (fadeApply defers the data-count write by
+// 160ms, plus this file's double rAF), so the whole envelope was ~1.8s.
+// The clamp lands inside the site's existing motion vocabulary (0.15s/0.2s/0.3s
+// for state changes, 0.45s the longest non-hero transition): 1 stop = 280ms,
+// 9 stops = 600ms, 13 stops = 720ms.
+const MIN_MS = 240;
+const PER_STEP_MS = 40;
+const MAX_MS = 720;
 const EASE = "cubic-bezier(.12,.9,.18,1)"; // strong ease-out settle
 
 export function createOdometer(el: HTMLElement) {
@@ -35,12 +47,26 @@ export function createOdometer(el: HTMLElement) {
     from = Math.max(0, Math.round(from));
     target = Math.max(0, Math.round(target));
     el.textContent = "";
+    // Clicking a second filter mid-roll re-enters here with the host still part
+    // way through its width animation. Drop both, unanimated, so the new roll
+    // measures and starts from a clean box instead of easing out of a stale one.
+    el.style.transition = "none";
+    el.style.width = "";
 
-    // In-flow ghost: holds the line height + width AND defines the host baseline.
-    // It shows the widest number in the run so trailing text never shifts.
+    // In-flow ghost: holds the line height AND defines the host baseline. It
+    // shows the TARGET, not the widest number in the run, because it is what the
+    // host is left sized to once the roll settles — sizing it to the widest is
+    // what used to leave "13 pieces" -> "4 pieces" rendering as a single glyph
+    // right-aligned in a two-glyph column, i.e. a stray space after the "·".
+    // The same view then looked different depending on which register you arrived
+    // from (All 13 -> Essays 4 kept the gap; Notebook 4 -> Updates 5 did not).
+    //
+    // Width during the roll is handled separately, by animating the HOST (below):
+    // wide enough for the widest frame at the start, narrowing to the target in
+    // lockstep with the strip so the trailing text glides instead of jumping.
     const widest = Math.max(from, target);
     const ghost = document.createElement("span");
-    ghost.textContent = String(widest);
+    ghost.textContent = String(target);
     ghost.style.visibility = "hidden";
 
     // Build the sequence from -> target (inclusive), ascending or descending.
@@ -84,16 +110,39 @@ export function createOdometer(el: HTMLElement) {
 
     if (reduce) {
       strip.style.transform = "translateY(0)"; // last row (target) already at bottom
+      el.style.width = ""; // no roll, so nothing to reserve beyond the ghost
       return;
     }
+
+    // Measure the two widths off the ghost itself, so this stays correct for any
+    // font/size the host inherits (tabular-nums makes every digit equal, but the
+    // glyph width is still whatever the register's type gives us).
+    const targetW = ghost.offsetWidth;
+    ghost.textContent = String(widest);
+    const widestW = ghost.offsetWidth;
+    ghost.textContent = String(target);
+
+    const durationMs = Math.min(MAX_MS, MIN_MS + lastIndex * PER_STEP_MS);
+
     // Start showing `from` (first row) at the bottom: shift the strip DOWN so its
     // first row sits in the window, then animate to 0 so it rolls to the target.
     strip.style.transition = "none";
     strip.style.transform = `translateY(${lastIndex * rowH}px)`;
+    // Hold the widest frame's width up front. Same duration and ease as the roll,
+    // so the box is always at least as wide as the digits currently showing —
+    // the ease is a strong ease-out, so both the strip and the width are ~85% of
+    // the way there by a quarter of the duration, and the multi-digit rows are
+    // long gone by then. Clearing `width` afterwards hands sizing back to the
+    // ghost, which is already the target.
+    if (widestW !== targetW) el.style.width = `${widestW}px`;
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
-        strip.style.transition = `transform ${DURATION_MS}ms ${EASE}`;
+        strip.style.transition = `transform ${durationMs}ms ${EASE}`;
         strip.style.transform = "translateY(0)";
+        if (widestW !== targetW) {
+          el.style.transition = `width ${durationMs}ms ${EASE}`;
+          el.style.width = `${targetW}px`;
+        }
       }),
     );
   }
