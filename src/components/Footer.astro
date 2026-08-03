@@ -372,6 +372,15 @@ import { url } from "../utils/paths";
     );
     opacity: 0.6;
   }
+  /* Two columns, and they stop being two at ONE declared width (see the
+     --footer-stack breakpoint below). It used to be `flex-wrap: wrap` deciding
+     that implicitly from content width while a `max-width: 640px` query decided
+     the accompanying styling — two mechanisms answering the same question, and
+     they disagreed: the row actually wrapped at 757px, so from 641-757px the
+     footer stood in one column while still wearing its two-column dress (side
+     block right-aligned against a left-aligned name, "·" separators kept for a
+     nav row that was no longer beside anything). Driving both from the query
+     means the layout and its styling cannot drift apart again. */
   .footer-inner {
     position: relative;
     z-index: 1;
@@ -382,7 +391,6 @@ import { url } from "../utils/paths";
     justify-content: space-between;
     align-items: flex-start;
     gap: 2rem;
-    flex-wrap: wrap;
   }
   .footer-name {
     font-family: var(--font-serif);
@@ -452,9 +460,54 @@ import { url } from "../utils/paths";
     color: var(--color-accent);
   }
 
-  @media (max-width: 640px) {
+  /* 760px, just above the 758px at which the two columns stopped fitting side by
+     side. Everything that distinguishes the stacked footer from the side-by-side
+     one lives in here, so there is exactly one number to change if the name, the
+     quote or the nav ever grow. */
+  @media (max-width: 760px) {
+    /* Stacked, `gap` stops being the space BETWEEN TWO COLUMNS and becomes the
+       space between the identity block and the nav — a different quantity that
+       happens to share a property name. 2rem side-by-side is generous; the same
+       value stacked put 24px between the quote and the nav, 14px between the nav
+       and the icons, and 24px before the copyright, so identity, navigation and
+       legal all ran together as one undifferentiated slab while ~100px of empty
+       space sat above them. Stacked spacing is set on its own terms here. */
+    .footer-inner {
+      flex-direction: column;
+      gap: 2.75rem;
+      /* Centered once stacked. Side by side, the two columns anchor to opposite
+         edges and the left one shares the page's text edge, so left alignment is
+         what makes them read as a pair. Stacked there is no pair — just four
+         short blocks in a column, and hanging them off the left edge left the
+         social icons in particular looking dropped rather than placed. Centered,
+         the four read as one sign-off. */
+      align-items: center;
+      text-align: center;
+    }
+    /* Stacked, the side block sits UNDER the name rather than opposite it, so it
+       shares the name's left edge. Right-aligning it here was the tell that the
+       footer had gone one-column without noticing. */
     .footer-side {
-      align-items: flex-start;
+      align-items: center;
+      width: 100%;
+      /* Beside the name this gap separated two lines of one right-aligned
+         column; stacked it separates the nav row from the social icons, which
+         now read as two distinct rows and need more air between them. */
+      gap: 1.35rem;
+    }
+    .footer-nav {
+      justify-content: center;
+    }
+    /* 17rem, down from the 22rem tuned for a left-aligned column. At 22rem the
+       quote broke as a full line plus a two-word tail — barely noticeable ragged
+       right, but centered that stub is conspicuous. The narrower measure splits
+       it into two balanced lines instead. */
+    .footer-quote {
+      max-width: 17rem;
+      margin-inline: auto;
+    }
+    .footer-bottom {
+      text-align: center;
     }
     /* Narrow screens wrap the nav row, and the ::before dot travels WITH the
        link that follows it — a wrapped line then opens with an orphaned "·".
@@ -465,6 +518,13 @@ import { url } from "../utils/paths";
     }
     .footer-nav a + a::before {
       content: none;
+    }
+    /* .footer-bottom is a sibling of .footer-inner, so the flex `gap` above
+       never reaches it — side by side its own padding was enough, stacked it
+       left the copyright sitting 24px under the icons as if it belonged to
+       them. It's the third group, and it should read as one. */
+    .footer-bottom {
+      padding-top: 0.5rem;
     }
   }
 
