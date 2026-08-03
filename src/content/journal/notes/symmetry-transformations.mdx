@@ -1,16 +1,17 @@
 ---
 title: "Symmetry transformations of fields"
-description: "Draft."
+description: "How scalar, vector, covector, and general tensor fields transform under the symmetries of a group."
 pubDate: "2026-07-16"
 category: notebook
 topic: Physics
+featured: 3
 authors:
   - sergio-eraso
 tags:
   - field theory
   - group theory
   - symmetry
-draft: true # set to false to publish
+draft: false # set to false to publish
 ---
 
 import SideNote from "/src/components/SideNote.astro"
@@ -32,7 +33,7 @@ Because space is *homogeneous* -- there is no preferred or privileged position. 
   caption="Displacing the cup by $\bs{a}$ carries the field $\phi$ to a new field $\phi'$."
 />
 
-Evidently, the transformed temperature field $\phi'$ is now has support in a different region of space. This is a whole new function, it is an entirely different configuration of the coffee cup. The function $\phi$ is *not* invariant under translations, unlike the energy. This new function is defined by
+Evidently, the transformed temperature field $\phi'$ now has support in a different region of space. This is a whole new function, it is an entirely different configuration of the coffee cup. The function $\phi$ is *not* invariant under translations, unlike the energy. This new function is defined by
 
 $$
 \begin{align*}
@@ -92,13 +93,19 @@ $$
 so that the rotated field is defined entirely in terms of the untransformed field. This reveals an important distinction between symmetry transformations on scalar fields (Eq. [](#eq:scalar-transform)) and on vector fields: for vector fields, one must transform both the inputs *and* the outputs. From Eq. [](#eq:vector-rotation), it may appear that we should just transform the vector field opposite how we transform the base space, however, we can come up with an immediate counterexample. 
 
 Consider now a general rigid-body transformation $\bs{x}' = R\bs{x} + \bs{a}$. Translating the magnet should certainly not change the direction of the field, so only the rotation operator should act on $\bs{m}$, giving
-$$
+$
 \bs{m}'(\bs{x}') = R \bs{m}(R^{-1}(\bs{x}' - \bs{a})).
+$
+So, we see that the transformation acting on the vector field $\bs{m}$ is not simply the rigid body motion $g$. The proper transformation is given by the *Jacobian* of the rigid body motion $J(\bs{x}) = R$, 
+
 $$
-So, we see that the transformation acting on the vector field $\bs{m}$ is not simply the rigid body motion $g$. The proper transformation is given by the *Jacobian* of the rigid body motion $J(\bs{x}) = R$. The Jacobian may generally vary over space, but it is constant in this simple example. 
+\bs{m}'(\bs{x}) = J(g^{-1}\bs{x}) \bs{m}(g^{-1}\bs{x}).
+$$
+
+The Jacobian may vary over space for more general coordinate maps, but it is constant in this simple example. 
 
 <Derivation label="Derivation: Why the Jacobian shows up">
-Let $\Phi$ be an arbitrary coordinate transformation (an invertible, differentiable function) and let $\bs{v}$ represent a velocity field. Choose an arbitrary point $\bs{x}$ and define the curve $\gamma(t)$ such that $\gamma(0) = \bs{x}$ and $\dot{\gamma}(0) = \bs{v}(\bs{x})$ -- the curve passes through the chosen point and is tangent to the streamline through that point at $t = 0$. 
+Let $\Phi$ be an arbitrary coordinate transformation (an invertible, differentiable function) and let $\bs{v}$ represent a velocity field. Choose an arbitrary point $\bs{x}$ and define the curve $\gamma(t)$ such that $\gamma(0) = \bs{x}$ and $\dot{\gamma}(0) = \bs{v}(\bs{x})$ -- the curve passes through the chosen point and is tangent to the streamline at that point at $t = 0$. 
 
 <Figure
   svg={velocityTransform}
@@ -123,17 +130,55 @@ where we have identified the derivative of the coordinate map as the Jacobian, $
 
 </Derivation>
 
+## Covector Fields
+
+<SideNote label="Recall">
+Recall that a covector $\omega_{\bs{x}}$ is simply a linear map specified at a point $\bs{x}$ that eats a vector and returns a scalar. For instance, the bra's in quantum mechanics are covectors, or also a force field used to determine the amount of work done $\omega_x = \langle F(x) | \cdot \rangle$.
+</SideNote>
+
+A covector field $\omega$ must transform in such a way that its contraction with a vector is unchanged, since that is just a scalar,
+$$
+\omega_{\bs{x}'}'(\bs{v}'(\bs{x}')) 
+= \omega_{\bs{x}}(\bs{v}(\bs{x})).
+$$
+For example, you can think of $\omega$ as returning the amount of work done in a given direction vector $\bs{v}$ at a point $\bs{x}$. Since we know how vectors transform, $\bs{v}' = J\bs{v}$, the covector transformation rule follows immediately[^index],
+$$
+\begin{align}
+\omega'_k J^k{}_{j}v^j &= \omega_j v^j \\
+(\omega'_k J^k{}_j - \omega_j )v^j &= 0 \\
+\implies \omega'_i &= (J^{-1})^j{}_i \omega_j.
+\end{align}
+$$
+This is equivalent to
+$$
+\begin{align}
+\htmlId{eq:covector-transform}{
+  \omega'_{\bs{x}} = J^{-T}(g^{-1}\bs{x}) \omega_{g^{-1}\bs{x}}}
+\end{align}
+$$
+in index-free form.
+
+
 ## Tensor Fields
 
-The previous section motivates the transformation rule for general tensor fields. For a general group element $g$, a tensor field $T$ transforms as
+Now that we know how vectors and covectors transform, we can write down the transformation rule for arbitrary $(p,q)$-tensors. For a general group element $g\in G$, a tensor field $T$ transforms as
 
 $$
-(g \cdot T)(\bs{x}) = \rho(J(\bs{x})) T(g^{-1}\bs{x})
+(g \cdot T)(g\bs{x}) = \rho(J(\bs{x})) T(\bs{x})
 $$
 
-where $\rho$ is the representation of $g$ in the space of $T$ and $J$ is the Jacobian. As an example, let us consider the Cauchy stress, a $(2,0)$ tensor. 
+where
+
+$$
+\rho(J) = J^{\otimes p} \otimes ({J^{-T}}) ^{\otimes q}
+$$
+
+is a representation of $GL(n)$ on the space where $T$ lives. This simply says that the transformation rule for a tensor involves a copy of $J$ for each upper index and a copy of $J^{-T}$ for each lower index. As an example, let us consider the conductivity tensor that governs Ohm's law $j^i = \sigma^i{}_j E^j$. This is a $(1,1)$-tensor that transforms as
+$$
+\sigma'^i{}_j = J^i{}_m (J^{-1})^n{}_{j} \sigma^{m}{}_n.
+$$
+
+Since $(1,1)$ tensors transform by _similarity_ transformations, their eigenvalues and trace are invariant. This is why the principal axes of conductivity are meaningful physical quantities. 
 
 
-## Spinor Fields
-
-
+[^index]: Suppressing the base space evaluation points to avoid subscript hell

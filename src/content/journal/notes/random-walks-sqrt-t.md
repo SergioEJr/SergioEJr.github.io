@@ -7,7 +7,7 @@ topic: Physics
 authors:
   - sergio-eraso
 tags:
-  - stochastic processes
+  - stochasticity
 draft: false # set to true to unpublish
 ---
 
