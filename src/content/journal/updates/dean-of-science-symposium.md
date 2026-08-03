@@ -1,5 +1,5 @@
 ---
-title: "Spoke at the inaugural Dean of Science Symposium and Patron's Dinner"
+title: "Spoke at the inaugural Dean of Science Symposium and patron's dinner"
 description: "Represented physics at the inaugural symposium, and told my story at the Patron's Dinner."
 pubDate: "2026-04-10"
 category: updates

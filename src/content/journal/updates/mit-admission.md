@@ -1,11 +1,12 @@
 ---
-title: "Admitted to MIT Physics with Fellowship!"
+title: "Admitted to MIT Physics with fellowship!"
 description: "I'm going to be a doctor!"
 pubDate: "2023-03-21"
 category: updates
 authors:
   - sergio-eraso
 toc: false
+noLink: true
 tags:
   - awards
 heroImage: /src/assets/photos/mit-letter.png

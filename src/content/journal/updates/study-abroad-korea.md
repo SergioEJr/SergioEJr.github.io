@@ -1,15 +1,16 @@
 ---
-title: "My Study Abroad in Korea"
-description: "A semester in Seoul @ Yonsei — what I worked on, what I learned, and a few things that surprised me."
+title: "My study abroad in Korea"
+description: "I love bulgogi."
 pubDate: "2022-12-26"
 category: updates
 authors:
   - sergio-eraso
 toc: false
+noLink: true
 tags:
   - travel
-  - korea
-draft: true # unpublished — body is still a template placeholder; set false to publish
+  - emory
+draft: false # unpublished — body is still a template placeholder; set false to publish
 ---
 
 A standalone News post lives entirely here on the site, with its own page.

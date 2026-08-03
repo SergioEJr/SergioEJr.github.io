@@ -1,6 +1,6 @@
 ---
 title: "Back from the IHES summer school in Paris"
-description: "Statistical Aspects of Nonlinear Physics, at the Institut des Hautes Études Scientifiques."
+description: "Bless the urban designers of this city."
 pubDate: "2025-07-04"
 category: updates
 # Link-less for now: appears in the Journal as just a title + description.
