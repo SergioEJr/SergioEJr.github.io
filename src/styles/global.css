@@ -68,6 +68,9 @@
 
   /* Spacing & UI */
   --max-width: 960px;
+  /* Horizontal page inset. Widened through the 640-960px band further down —
+     this is the value everywhere else, and what edge-bleeding components cancel. */
+  --page-gutter: 1rem;
   --radius: 8px;
   --shadow-sm: 0 1px 3px rgba(23, 42, 72, 0.05);
   --shadow-md: 0 4px 6px rgba(23, 42, 72, 0.08);
@@ -228,6 +231,35 @@ main {
   max-width: var(--max-width);
   margin: 0 auto;
   padding: 3rem 1rem;
+}
+
+/* The gutter grows through the middle widths ONLY. A flat 1rem is right on a
+   phone, but at 820px it left the largest display type on the site 16px off the
+   viewport edge: `max-width` does not start centring the column until ~960px, and
+   below that nothing was widening the inset, so 640-960px got phone treatment at
+   tablet size. This ramp covers exactly that band — 16px at 640 (continuous with
+   the phone value), ~26px at 768, ~30px at 820, ~36px at 900, 40px at 960.
+
+   Bounded ABOVE as well as below, which is the part that matters: main's padding
+   sits inside its max-width, so a gutter that kept growing past 960px would come
+   straight out of the text column (48px each side would cost the desktop measure
+   64px). Above 960 the max-width is already holding content away from the screen
+   edge and the padding has no edge to defend, so it hands back to 1rem. That does
+   mean the column steps ~34px wider as you cross 960px — a resize-only artifact,
+   and the alternative is either a permanently narrower desktop measure or growing
+   --max-width, which is the shared alignment token for the navbar, the footer and
+   the TOC (and is itself overridden on the home page).
+
+   Kept as a --page-gutter custom property, not a bare value, because components
+   that bleed to the screen edges cancel this inset with negative margins (see
+   .j-nb-side in the Journal); they can reference it instead of restating 1rem. */
+@media (min-width: 640px) and (max-width: 960px) {
+  :root {
+    --page-gutter: clamp(1rem, 7.5vw - 2rem, 2.5rem);
+  }
+  main {
+    padding-inline: var(--page-gutter);
+  }
 }
 
 /* INSTANT page swaps — no view-transition animation at all.
