@@ -103,6 +103,13 @@ const titleHtml = link.external
     position: relative;
     transition: border-color 0.2s ease;
   }
+  /* The hairline is a SEPARATOR, so the last row has nothing to separate from.
+     Left on, it closed the list a second time ~48px above the footer's own rule.
+     :last-child covers both places these rows appear — the Essays view (.j-es-main)
+     and a front-page shelf, where the row is the last thing in .j-shelf. */
+  .j-essay:last-child {
+    border-bottom: none;
+  }
   .j-essay-eyebrow {
     font-size: 0.72rem;
     font-weight: 700;

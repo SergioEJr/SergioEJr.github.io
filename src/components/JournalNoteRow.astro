@@ -86,6 +86,11 @@ const keywords = post.data.tags ?? [];
     border-bottom: none;
     padding: 1.05rem 0;
   }
+  /* Same reasoning as .j-essay:last-child — on the front page these rows end a
+     shelf, and a separator under the last one divides it from nothing. */
+  .j-note:last-child {
+    border-bottom: none;
+  }
   .j-note-title {
     font-family: var(--font-serif);
     font-size: 1.18rem;
