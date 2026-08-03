@@ -9,6 +9,7 @@ import JournalEssayRow from "../../components/JournalEssayRow.astro";
 import JournalNoteRow from "../../components/JournalNoteRow.astro";
 import JournalUpdateEntry from "../../components/JournalUpdateEntry.astro";
 import JournalGlowField from "../../components/JournalGlowField.astro";
+import PhotoLightbox from "../../components/PhotoLightbox.astro";
 import { BLOG_CATEGORY_LABELS } from "../../utils/categories";
 
 type Cat = "all" | "updates" | "essays" | "notebook";
@@ -539,6 +540,10 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
         })();
       </script>
     </main>
+    {/* Mounted once for the whole page, outside <main> so the fixed overlay is
+        never inside a transformed/clipped ancestor. Every timeline photo opts in
+        via data-lightbox; see PhotoLightbox. */}
+    <PhotoLightbox />
     <Footer />
 
     <script is:inline define:vars={{ cats: CATS, counts }}>

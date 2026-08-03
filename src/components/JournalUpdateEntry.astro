@@ -11,7 +11,7 @@
 // never advertises a click that goes nowhere. The dot is the same on every
 // stop — it marks a point on the spine, not whether the entry is clickable.
 import type { CollectionEntry } from "astro:content";
-import { Image } from "astro:assets";
+import { Image, getImage } from "astro:assets";
 import { renderInline, bindTrailingIcon } from "../utils/inlineText";
 import { url } from "../utils/paths";
 import { postLink } from "../utils/posts";
@@ -23,6 +23,32 @@ interface Props {
 const { post, compact = false } = Astro.props;
 const link = postLink(post);
 const hero = post.data.heroImage;
+
+// The expanded (click-to-open) version of the hero.
+//
+// The thumbnail renders at width={680} densities={[1,2]}, so the build contains
+// nothing wider than 1360px — enough for the photo in place, not enough for the
+// thing a reader opens one of these FOR. The MIT acceptance letter is a document
+// scan whose body text is unreadable in a 340px column and merely soft at 1360.
+// So the large variant is generated separately, and only referenced from the
+// data attribute: the browser fetches it when someone actually expands the
+// photo, never as part of the timeline.
+//
+// Math.min guards the upscale case — Astro will not enlarge past the source, and
+// asking it to would silently hand back the original width anyway.
+const LIGHTBOX_WIDTH = 2040;
+const heroFull =
+  !compact && hero && typeof hero !== "string"
+    ? await getImage({
+        src: hero,
+        width: Math.min(LIGHTBOX_WIDTH, hero.width),
+        quality: 82,
+      })
+    : null;
+// A hero given as a plain string lives in public/ and bypasses the image
+// pipeline entirely, so the file as committed IS its full size.
+const heroFullSrc =
+  typeof hero === "string" ? url(hero) : (heroFull?.src ?? null);
 
 const dateLabel = post.data.pubDate.toLocaleDateString("en-US", {
   month: "short",
@@ -72,18 +98,39 @@ const titleHtml = link.href
   {
     !compact && hero && (
       <div class="j-stop-photo">
-        {typeof hero === "string" ? (
-          <img src={url(hero)} alt={post.data.description} loading="lazy" decoding="async" />
-        ) : (
-          <Image
-            src={hero}
-            width={680}
-            densities={[1, 2]}
-            quality={80}
-            alt={post.data.description}
-            loading="lazy"
-          />
-        )}
+        {/* A real <button>, not the <img> with a click handler: the photo is an
+            actual control here, and only a button gets keyboard activation, a
+            focus ring and a role announced for free. Safe against the Pagefind
+            "buttons are dropped from the index" rule because the whole listing
+            already carries data-pagefind-ignore.
+            alt falls back to the title: description is optional, and an image
+            with no alt at all is worse than one described by its entry. */}
+        <button
+          type="button"
+          class="j-stop-photo-btn"
+          data-lightbox
+          data-lightbox-src={heroFullSrc}
+          data-lightbox-alt={post.data.description ?? post.data.title}
+          aria-label={`Expand photo: ${post.data.description ?? post.data.title}`}
+        >
+          {typeof hero === "string" ? (
+            <img
+              src={url(hero)}
+              alt={post.data.description ?? post.data.title}
+              loading="lazy"
+              decoding="async"
+            />
+          ) : (
+            <Image
+              src={hero}
+              width={680}
+              densities={[1, 2]}
+              quality={80}
+              alt={post.data.description ?? post.data.title}
+              loading="lazy"
+            />
+          )}
+        </button>
       </div>
     )
   }
@@ -175,11 +222,18 @@ const titleHtml = link.href
   .j-stop-title a:hover {
     opacity: 1;
   }
-  .j-stop-title a::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-  }
+  /* NO stretched overlay on this row, unlike the Essay and Note rows.
+     Those have one link and nothing else to click, so spreading its hit area
+     over the whole row is free. An update can carry a photo, and the photo is
+     its own control (expand) — one rectangle cannot mean both "open the post"
+     and "enlarge the image", and whichever is on top silently wins. Separating
+     them also keeps a button out from under a link's hit area, which is
+     ambiguous to a pointer user and unpredictable to assistive tech.
+
+     The cost, taken deliberately: the tap target shrinks from the whole entry to
+     the title. The title is the conventional target, it carries the arrow that
+     already advertises the destination, and the photo now advertises its own
+     zoom-in cursor — so both actions are discoverable where they apply. */
   .j-t {
     position: relative;
     display: inline;
@@ -238,6 +292,23 @@ const titleHtml = link.href
   .j-stop-photo {
     margin-top: 0.85rem;
     max-width: 340px;
+  }
+  /* The button is a transparent wrapper — it must add no box of its own, or the
+     photo would gain a UA border, padding and an inline-block baseline gap. Its
+     only visible job is the cursor and the hover/focus cue. */
+  .j-stop-photo-btn {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: zoom-in;
+    border-radius: 8px; /* matches the image, so the focus ring follows its corners */
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .j-stop-photo-btn:hover :global(img) {
+      border-color: var(--color-text-muted);
+    }
   }
   .j-stop-photo :global(img) {
     display: block;
