@@ -130,8 +130,16 @@ const keywords = post.data.tags ?? [];
     transform-origin: left;
     transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
   }
-  .j-note:hover .j-t::after {
+  /* See JournalEssayRow: hover reveals are gated on a hover-capable pointer so
+     a scroll started on a title can't strand the underline. Keyboard focus is
+     handled outside the query. */
+  .j-note-title a:focus-visible .j-t::after {
     transform: scaleX(1);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .j-note:hover .j-t::after {
+      transform: scaleX(1);
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .j-t::after {

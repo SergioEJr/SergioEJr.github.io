@@ -373,8 +373,12 @@ for (const p of projects)
         object-fit: cover;
         transition: transform 0.6s ease;
       }
-      .project-card:hover .project-image img {
-        transform: scale(1.05);
+      /* A 0.6s zoom that sticks after a touch-scroll leaves the card visibly
+         mis-scaled, so it only runs for a real pointer. */
+      @media (hover: hover) and (pointer: fine) {
+        .project-card:hover .project-image img {
+          transform: scale(1.05);
+        }
       }
       .project-image-badges {
         position: absolute;

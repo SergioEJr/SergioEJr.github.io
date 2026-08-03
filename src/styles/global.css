@@ -308,9 +308,19 @@ a {
   transition: 0.2s;
 }
 
-a:hover {
-  opacity: 0.8;
-  text-decoration: underline;
+/* Gated on a hover-capable pointer. This is the site's most widespread hover
+   rule, and on touch it was also the most visible instance of stuck hover: a
+   touch browser synthesizes :hover on touchstart and holds it until you tap
+   elsewhere, so scrolling with a finger that happened to land on a link left it
+   underlined and faded with nothing pointing at it. Touch never had a real hover
+   to lose — :active and the platform tap highlight are what give feedback there.
+   Components that CANCEL this rule (.j-shelf-link, .j-essay-title a, …) simply
+   have nothing to cancel on touch, so they need no matching change. */
+@media (hover: hover) and (pointer: fine) {
+  a:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+  }
 }
 
 /* Buttons */

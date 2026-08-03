@@ -176,8 +176,21 @@ const titleHtml = link.external
   .j-t:has(.j-ext)::before {
     right: 0.9em;
   }
-  .j-essay:hover .j-t::before {
+  /* Hover reveals are gated on a pointer that can actually hover. A touch
+     browser synthesizes a hover on touchstart and HOLDS it until you tap
+     somewhere else, so a scroll that happens to begin on a title left the
+     underline drawn with nothing pointing at it. (hover: hover) removes the rule
+     from those devices entirely rather than trying to clear the state after the
+     fact, which is the failure mode of touchstart handlers.
+     :focus-visible stays OUTSIDE the query — a keyboard on a touchscreen laptop
+     reports (hover: none) and must still get the cue. */
+  .j-essay-title a:focus-visible .j-t::before {
     transform: scaleX(1);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .j-essay:hover .j-t::before {
+      transform: scaleX(1);
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .j-t::before {
@@ -196,8 +209,13 @@ const titleHtml = link.external
     opacity: 0.55;
     transition: opacity 0.2s ease;
   }
-  .j-essay:hover .j-t :global(.j-ext) {
+  .j-essay-title a:focus-visible .j-t :global(.j-ext) {
     opacity: 1;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .j-essay:hover .j-t :global(.j-ext) {
+      opacity: 1;
+    }
   }
   .j-essay-desc {
     color: var(--color-text-muted);

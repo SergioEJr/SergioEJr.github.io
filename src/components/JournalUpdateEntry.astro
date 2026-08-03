@@ -251,8 +251,19 @@ const titleHtml = link.href
     transform-origin: left;
     transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
   }
-  .j-stop:hover .j-t::before {
+  /* Keyed to the LINK, not the row. When the row owned the hover, moving the
+     pointer over the photo drew the title's underline and lit its arrow — the
+     row promising a navigation that a click there no longer performs. Now each
+     control shows only its own feedback: the title underlines on the title, the
+     photo gets its zoom-in cursor and border lift.
+     :focus-visible alongside :hover so the keyboard sees the same cue. */
+  .j-stop-title a:focus-visible .j-t::before {
     transform: scaleX(1);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .j-stop-title a:hover .j-t::before {
+      transform: scaleX(1);
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .j-t::before {
@@ -271,8 +282,13 @@ const titleHtml = link.href
     opacity: 0.5;
     transition: opacity 0.2s ease;
   }
-  .j-stop:hover .j-t :global(.j-go) {
+  .j-stop-title a:focus-visible .j-t :global(.j-go) {
     opacity: 1;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .j-stop-title a:hover .j-t :global(.j-go) {
+      opacity: 1;
+    }
   }
   /* Underline stops at the last word rather than running under the icon. */
   .j-t:has(.j-go)::before {

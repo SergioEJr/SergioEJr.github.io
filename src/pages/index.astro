@@ -829,8 +829,10 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         opacity: 0.35;
         transition: opacity 0.2s ease;
       }
-      .hero-card-link:hover::after {
-        opacity: 1;
+      @media (hover: hover) and (pointer: fine) {
+        .hero-card-link:hover::after {
+          opacity: 1;
+        }
       }
       .hero-card-link:focus-visible {
         outline: 2px solid var(--color-accent);
@@ -840,8 +842,10 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
       .hero-card-arrow {
         transition: transform 0.2s ease;
       }
-      .hero-card-link:hover .hero-card-arrow {
-        transform: translateX(4px);
+      @media (hover: hover) and (pointer: fine) {
+        .hero-card-link:hover .hero-card-arrow {
+          transform: translateX(4px);
+        }
       }
       .hero-card-link-muted {
         color: var(--color-text-muted);
@@ -1068,15 +1072,27 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           max-width 0.25s ease,
           opacity 0.2s ease;
       }
-      .home-rail-label-link:hover .rail-label-featured,
+      /* The label morph ("Featured" -> "All Notes") is gated on a hover-capable
+         pointer: on touch the synthesized hover sticks after a scroll that began
+         on the label, leaving it stuck mid-swap. Focus keeps its own ungated
+         rules so a keyboard still drives the morph. */
       .home-rail-label-link:focus-visible .rail-label-featured {
         max-width: 0;
         opacity: 0;
       }
-      .home-rail-label-link:hover .rail-label-s,
       .home-rail-label-link:focus-visible .rail-label-s {
         max-width: 1em;
         opacity: 1;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .home-rail-label-link:hover .rail-label-featured {
+          max-width: 0;
+          opacity: 0;
+        }
+        .home-rail-label-link:hover .rail-label-s {
+          max-width: 1em;
+          opacity: 1;
+        }
       }
       .rail-label-arrow {
         opacity: 0;
@@ -1086,15 +1102,23 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           opacity 0.2s ease,
           transform 0.2s ease;
       }
-      .home-rail-label-link:hover .rail-label-all,
       .home-rail-label-link:focus-visible .rail-label-all {
         max-width: 3em;
         opacity: 1;
       }
-      .home-rail-label-link:hover .rail-label-arrow,
       .home-rail-label-link:focus-visible .rail-label-arrow {
         opacity: 1;
         transform: none;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .home-rail-label-link:hover .rail-label-all {
+          max-width: 3em;
+          opacity: 1;
+        }
+        .home-rail-label-link:hover .rail-label-arrow {
+          opacity: 1;
+          transform: none;
+        }
       }
       .home-rail-label-link:focus-visible {
         outline: 2px solid var(--color-accent);
@@ -1346,8 +1370,10 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         opacity: 0.35;
         transition: opacity 0.2s ease;
       }
-      .home-more:hover::after {
-        opacity: 1;
+      @media (hover: hover) and (pointer: fine) {
+        .home-more:hover::after {
+          opacity: 1;
+        }
       }
       .home-more:focus-visible {
         outline: 2px solid var(--color-accent);
@@ -1357,8 +1383,10 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
       .home-more-arrow {
         transition: transform 0.2s ease;
       }
-      .home-more:hover .home-more-arrow {
-        transform: translateX(4px);
+      @media (hover: hover) and (pointer: fine) {
+        .home-more:hover .home-more-arrow {
+          transform: translateX(4px);
+        }
       }
 
       /* ---- Get in touch: the ask, in the same editorial grammar as the
