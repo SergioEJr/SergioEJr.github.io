@@ -116,15 +116,15 @@
   \draw[tvec] ({\xax},{\xay}) -- ({\tipLx},{\tipLy});
   \fill[dot] ({\xax},{\xay}) circle[radius=1.15];
 
-  % Labels. \bs{v} sits just off the top end of the outermost arc, so it reads as
+  % Labels. \boldsymbol{v} sits just off the top end of the outermost arc, so it reads as
   % naming the bundle rather than floating in the margin.
-  \node[lbl, text=ink,     anchor=east]  at (9,50.5)          {$\bs{v}$};
+  \node[lbl, text=ink,     anchor=east]  at (9,50.5)          {$\boldsymbol{v}$};
   \node[lbl, text=figred,  anchor=south] at (15,54)           {$\gamma(t)$};
-  \node[lbl, text=figred,  anchor=east]  at ({\xax-2.1},{\xay})  {$\bs{x}$};
+  \node[lbl, text=figred,  anchor=east]  at ({\xax-2.1},{\xay})  {$\boldsymbol{x}$};
   \node[lbl, text=ink,     anchor=west]  at ({\xax+2.1},{\xay})  {$t=0$};
   % Just the vector, not "gamma-dot(0) = v(x)": the paragraph this figure sits
   % under already states that identity, and the figure's own job is the geometry.
-  \node[lbl, text=figblue, anchor=west]  at (34.5,10)         {$\bs{v}(\bs{x})$};
+  \node[lbl, text=figblue, anchor=west]  at (34.5,10)         {$\boldsymbol{v}(\boldsymbol{x})$};
 
   % ===========================================================================
   % THE MAP -- Phi moves points and curves, its Jacobian J(x) moves tangent
@@ -135,7 +135,7 @@
   \draw[edge, ink, line cap=round, -{Stealth[length=3mm, width=2.3mm, round]}]
     (54,28) -- (82,28);
   \node[lbl, text=figred,  anchor=south] at (68,30.2) {$\Phi$};
-  \node[lbl, text=figblue, anchor=north] at (68,25.8) {$J(\bs{x})$};
+  \node[lbl, text=figblue, anchor=north] at (68,25.8) {$J(\boldsymbol{x})$};
 
   % ===========================================================================
   % RIGHT PANEL -- straightened field v'
@@ -183,11 +183,11 @@
     \fill[dot] ({\xbx},{\xby}) circle[radius=1.15];
 
     % Labels
-    \node[lbl, text=ink,     anchor=east]  at (5.5,50.5)          {$\bs{v}'$};
+    \node[lbl, text=ink,     anchor=east]  at (5.5,50.5)          {$\boldsymbol{v}'$};
     \node[lbl, text=figred,  anchor=south] at (17,53)             {$\Phi(\gamma(t))$};
-    \node[lbl, text=figred,  anchor=east]  at ({\xbx-2.1},{\xby}) {$\bs{x}'$};
+    \node[lbl, text=figred,  anchor=east]  at ({\xbx-2.1},{\xby}) {$\boldsymbol{x}'$};
     \node[lbl, text=ink,     anchor=west]  at ({\xbx+2.1},{\xby}) {$t=0$};
-    \node[lbl, text=figblue, anchor=west]  at (45,7)              {$\bs{v}'(\bs{x}')$};
+    \node[lbl, text=figblue, anchor=west]  at (45,7)              {$\boldsymbol{v}'(\boldsymbol{x}')$};
   \end{scope}
 \end{tikzpicture}
 \end{document}

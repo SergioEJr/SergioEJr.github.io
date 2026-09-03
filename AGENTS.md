@@ -223,6 +223,15 @@ listing pages at all.
 and the `mdx()` integration (`astro.config.mjs`), so commas in braces like
 `$2^{10,000}$` build correctly. `mdx.config.mjs` mirrors this for tooling.
 
+**No KaTeX macros — write standard LaTeX.** `katexMacros` in `astro.config.mjs`
+(and its mirror in `inlineText.ts`) is deliberately empty. A `\bs` ->
+`\boldsymbol` shorthand lived there until 2026-09-03 and was removed because
+post math now has three readers and the macro was invisible to two of them:
+Obsidian renders with MathJax and never loads it, and math pasted into Overleaf
+carries no preamble. Adding a macro back means also giving Obsidian a matching
+MathJax preamble and the figure preamble a matching `\newcommand` — which is
+the cost that retired the last one.
+
 ## Visual verification
 
 Use the **`visual-check` skill** (`.claude/skills/visual-check/`) to screenshot

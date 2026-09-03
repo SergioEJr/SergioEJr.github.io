@@ -24,13 +24,20 @@ import remarkWikilink from "./src/plugins/remark-wikilink.mjs";
 // Typed as any[]: the local .mjs plugins ship no unified type declarations, so
 // the inferred element type doesn't satisfy Pluggable[]/RehypePlugin[] even
 // though they run correctly. The cast keeps `astro check` green.
-// Site-wide KaTeX macros for post bodies. Defined here (not per math block) so
-// they exist in every $...$ across all posts. NOTE: captions/frontmatter render
-// via src/utils/inlineText.ts, a separate katex.renderToString call -- these
-// macros are mirrored there so \bs works in captions too.
-const katexMacros = {
-  "\\bs": "\\boldsymbol{#1}", // \bs{x} -> bold vector x
-};
+// Site-wide KaTeX macros for post bodies. DELIBERATELY EMPTY — post math is
+// written in standard LaTeX only.
+//
+// There used to be a `\bs` -> `\boldsymbol` shorthand here. It was removed on
+// 2026-09-03 because post math now has three readers, and a macro defined in
+// this file is invisible to two of them: Obsidian (where the Journal is
+// authored) renders with MathJax and never sees it, and math pasted into
+// Overleaf carries no preamble. A shorthand that only works in the one place
+// the text is *displayed* costs more than the keystrokes it saves.
+//
+// If a macro is ever genuinely worth it, mirror it in src/utils/inlineText.ts
+// (captions/frontmatter render through a separate katex.renderToString call)
+// AND give Obsidian a matching MathJax preamble.
+const katexMacros = {};
 
 // Shared by both pipelines, same as contentPlugins below. remarkWikilink runs
 // AFTER remarkMath so that `$...$` is already its own node type and a `[[`

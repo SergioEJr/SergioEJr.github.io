@@ -9,9 +9,9 @@
 
 \usepackage{amsmath}
 
-% Shorthand shared by all figures (mirrors the KaTeX \bs macro used in posts, so
-% figure labels and post math read the same). \bs{x} -> bold vector x.
-\newcommand{\bs}[1]{\boldsymbol{#1}}
+% No \bs shorthand here on purpose. Figure labels are written in standard LaTeX
+% so they read the same as post math and survive being pasted anywhere — see
+% astro.config.mjs for why the matching KaTeX macro was retired.
 
 % --- Palette: sentinel hexes = the LIGHT-theme values from DESIGN.md. ----------
 % The PDF proof / Overleaf output therefore look like the light rendering, and

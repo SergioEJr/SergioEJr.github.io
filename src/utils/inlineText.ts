@@ -16,9 +16,8 @@ import katex from "katex";
 // Site-wide KaTeX macros. Must mirror `katexMacros` in astro.config.mjs so the
 // same shorthands work in captions/frontmatter (rendered here) and post bodies
 // (rendered by rehype-katex). Keep the two in sync.
-const KATEX_MACROS = {
-  "\\bs": "\\boldsymbol{#1}", // \bs{x} -> bold vector x
-};
+// Deliberately empty — see the rationale in astro.config.mjs.
+const KATEX_MACROS = {};
 
 // Escape the five HTML-significant characters. Quotes are escaped too so the
 // result is safe in attribute contexts (e.g. `title="${escapeHtml(x)}"`), not
