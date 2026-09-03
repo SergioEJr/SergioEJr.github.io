@@ -7,7 +7,7 @@ authors:
   - sergio-eraso
 toc: false
 noLink: true
-tags:
+keywords:
   - awards
 heroImage: /src/assets/photos/mit-letter.png
 draft: false # set to true to unpublish

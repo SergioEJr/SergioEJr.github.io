@@ -43,8 +43,8 @@ const {
   showDate = true,
   categoryBadges = [],
   // Journal-only. The Projects and Research detail pages pass explicit props (no
-  // frontmatter spread), so they never supply tags and never render the strip.
-  tags = [],
+  // frontmatter spread), so they never supply keywords and never render the strip.
+  keywords = [],
 } = Astro.props;
 // Plain text (markers stripped) for metadata/alt; HTML form is used for the visible <h1>.
 const titleText = stripInline(title);
@@ -944,9 +944,9 @@ const numberedBody = numberCitations(renderedBody);
               }
               <Fragment set:html={numberedBody} />
               {
-                tags.length > 0 && (
+                keywords.length > 0 && (
                   <div class="post-keywords">
-                    <Keywords tags={tags} label="Keywords" />
+                    <Keywords keywords={keywords} label="Keywords" />
                   </div>
                 )
               }

@@ -7,7 +7,7 @@ subject: Ideas
 featured: 2
 # Pointer post: links straight to the op-ed on the Emory Wheel.
 externalUrl: https://www.emorywheel.com/article/f290c82c-fdd0-49ec-9181-774486430288
-tags:
+keywords:
   - opinion
   - education
 draft: false # set to true to unpublish

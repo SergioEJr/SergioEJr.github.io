@@ -7,7 +7,7 @@ authors:
   - sergio-eraso
 toc: false
 externalUrl: https://www.questbridge.org/
-tags:
+keywords:
   - awards
   - emory
 heroImage: /src/assets/photos/emory-cap.jpeg

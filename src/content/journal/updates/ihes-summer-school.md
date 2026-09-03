@@ -7,7 +7,7 @@ category: updates
 # When the writeup (and picture) are ready, delete `noLink`, write the body
 # below, and add a heroImage — the post then gets its own detail page.
 noLink: true
-tags: []
+keywords: []
 draft: false # set to true to unpublish
 ---
 

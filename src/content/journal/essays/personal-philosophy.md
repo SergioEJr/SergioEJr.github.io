@@ -1,15 +1,15 @@
 ---
-title: "My personal philosophy"
-pubDate: "2026-06-20"
+title: My personal philosophy
+pubDate: 2026-06-20
 category: essays
 subject: Ideas
 authors:
   - sergio-eraso
-tags:
+keywords:
   - life
   - philosophy
   - culture
-draft: true # set to false to publish
+draft: true
 ---
 
 What do I value?

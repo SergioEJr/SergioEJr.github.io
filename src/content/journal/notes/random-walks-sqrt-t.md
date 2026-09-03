@@ -6,7 +6,7 @@ category: notebook
 topic: Physics
 authors:
   - sergio-eraso
-tags:
+keywords:
   - stochasticity
 draft: false # set to true to unpublish
 ---

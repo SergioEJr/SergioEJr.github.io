@@ -36,9 +36,9 @@ interface Props {
 }
 const { post, showTopic = false } = Astro.props;
 const link = postLink(post);
-// Journal `tags` is optional() in the schema (unlike projects/research, which
+// Journal `keywords` is optional() in the schema (unlike projects/research, which
 // default to []), so normalize before reading .length.
-const keywords = post.data.tags ?? [];
+const keywords = post.data.keywords ?? [];
 ---
 
 <article class="j-note" data-topic={post.data.topic ?? ""}>
@@ -74,7 +74,7 @@ const keywords = post.data.tags ?? [];
        entirely rather than sitting empty. */
     !showTopic && keywords.length > 0 && (
       <div class="j-note-meta">
-        <Keywords tags={keywords} ignore />
+        <Keywords keywords={keywords} ignore />
       </div>
     )
   }

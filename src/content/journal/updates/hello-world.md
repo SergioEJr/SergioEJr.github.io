@@ -6,7 +6,7 @@ category: updates
 authors:
   - sergio-eraso
 toc: false # table of contents flag
-tags: []
+keywords: []
 draft: true # unpublished — theme demo/intro post; set false to publish
 ---
 

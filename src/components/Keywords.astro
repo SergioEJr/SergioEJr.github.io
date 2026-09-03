@@ -1,5 +1,5 @@
 ---
-// Keyword strip — a post's `tags`, rendered as DESCRIPTORS rather than links.
+// Keyword strip — a post's `keywords`, rendered as DESCRIPTORS rather than links.
 //
 // Tags used to be routes (/tags/<tag>). With 16 of 20 tags sitting on exactly
 // one post, those pages were dead ends, so they're gone. What tags are actually
@@ -40,20 +40,20 @@
 // specificity this component's scoped styles can't beat. No global rule targets
 // div/span there, so this shape needs no cascade fight.
 interface Props {
-  tags: string[];
+  keywords: string[];
   /** Exclude from the Pagefind index — for index pages, not detail pages. */
   ignore?: boolean;
   /** Optional eyebrow (post footer uses "Keywords"; inline meta lines don't). */
   label?: string;
 }
-const { tags, ignore = false, label } = Astro.props;
+const { keywords, ignore = false, label } = Astro.props;
 ---
 
 {
-  tags.length > 0 && (
+  keywords.length > 0 && (
     <div class="kw" {...(ignore ? { "data-pagefind-ignore": "" } : {})}>
       {label && <span class="kw-label">{label}</span>}
-      {tags.map((t, i) => (
+      {keywords.map((t, i) => (
         <>
           {/* A REAL space between terms, not just the CSS "·" separator.
               Pagefind reads the DOM, where generated content doesn't exist, so

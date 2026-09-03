@@ -6,7 +6,7 @@ category: updates
 authors:
   - sergio-eraso
 toc: false
-tags:
+keywords:
   - talks
 heroImage: /src/assets/photos/patrons-dinner.jpeg
 draft: false # set to true to unpublish

@@ -6,7 +6,7 @@ category: updates
 # Link-less update post: appears in the Journal as just a title + description.
 # No link is rendered and no detail page is generated. Any body text is ignored.
 noLink: true
-tags: []
+keywords: []
 draft: false # set to true to unpublish
 ---
 

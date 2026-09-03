@@ -115,8 +115,8 @@ this, and will it come back?**
   from everything), `externalUrl`/`linkTo`/`noLink` (pointer/update posts with
   no detail page — link resolution + the has-detail-page rule live in
   `postLink()`/`postHasDetailPage()` in `posts.ts`), `heroImage` (off by
-  default; lives in `src/assets/photos/`), `tags` (**keywords, not routes** — see
-  below).
+  default; lives in `src/assets/photos/`), `keywords` (descriptors, not routes —
+  see below; the field was called `tags` until 2026-09-03).
 - **projects** (`src/content/projects/`) — `categories` (Technical/Teaching),
   `image` (card thumbnail in `public/projects/`, gets pill overlay),
   `articleImage` (in-article, no overlay), `order` (optional manual override;
@@ -125,11 +125,11 @@ this, and will it come back?**
   LaTeX), `paper`/`poster`/`code` (button links), `bibtex` (inline dropdown).
   Sorted reverse-chronological; **no `order` field**.
 
-## Tags = keywords (and the Pagefind rules that shape them)
+## Keywords, not tags (and the Pagefind rules that shape them)
 
-Journal `tags` are **descriptors, not routes**. There are no `/tags/<tag>` pages —
-they were deleted because 16 of 20 tags sat on exactly one post, so every one
-was a dead end. Tags now do the two jobs they're actually good at: saying what a
+Journal `keywords` are **descriptors, not routes**. There are no `/tags/<tag>`
+pages — they were deleted because 16 of 20 sat on exactly one post, so every one
+was a dead end. They now do the two jobs they're actually good at: saying what a
 piece covers before the reader commits, and carrying **search terms the prose
 never spells out** ("thermodynamics" appears zero times in the body of *Why does
 ice melt?*). Clicking one opens the site search prefilled — the result set is
@@ -139,6 +139,16 @@ Rendered by **`src/components/Keywords.astro`**: in the post-detail footer (all
 registers, indexed) and on Notebook rows inside a topic group (`ignore` →
 `data-pagefind-ignore`, so the index page doesn't outrank the post for its own
 keywords). Essays and Updates rows deliberately show none.
+
+**The field is `keywords`, not `tags`, and the name is load-bearing.** Obsidian
+treats a frontmatter key named `tags` as a *typed* tag field where spaces are
+invalid, so 10 of these — `quantum field theory`, `visual proofs`, `statistical
+inference` — rendered red and struck through in the Properties panel, and were
+at risk of being rewritten on edit. Hyphenating them would have degraded the
+site, where they render as human-readable prose. Renaming the key sidesteps
+Obsidian's validation entirely and matches what this section already said they
+were. Projects and research still use `tags` (their values have spaces too, so
+they show the same warning; they are not authored in Obsidian).
 
 Three Pagefind facts that this markup depends on — **all measured, don't
 "simplify" them away**:

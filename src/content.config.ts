@@ -45,7 +45,7 @@ const journal = defineCollection({
       heroImage: image().optional(),
       authors: z.array(z.string()).optional(),
       toc: z.boolean().optional(),
-      tags: z.array(z.string()).optional(),
+      keywords: z.array(z.string()).optional(),
       // Journal register: how the reader engages, not the subject.
       //   updates  → timeline (announcements, milestones)
       //   essays   → pop-sci/pop-math, big-picture, accessible

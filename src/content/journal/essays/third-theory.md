@@ -5,7 +5,7 @@ pubDate: "2026-08-26"
 category: essays
 subject: Science
 # Pointer post: links straight to the op-ed on the Emory Wheel.
-tags:
+keywords:
   - statistical physics
   - science history
 draft: true # set to true to unpublish

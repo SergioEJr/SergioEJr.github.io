@@ -6,7 +6,7 @@ category: notebook
 topic: WebDev
 authors:
   - sergio-eraso
-tags:
+keywords:
   - astro
   - frameworks
   - webdev

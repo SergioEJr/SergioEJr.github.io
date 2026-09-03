@@ -7,7 +7,7 @@ authors:
   - sergio-eraso
 toc: false
 noLink: true
-tags:
+keywords:
   - travel
   - emory
 draft: false # unpublished — body is still a template placeholder; set false to publish
