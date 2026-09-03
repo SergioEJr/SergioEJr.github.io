@@ -211,6 +211,11 @@ listing pages at all.
   (adaptive `currentColor` SVG, light/dark image pair, or single-image card).
 - **`DESIGN.md`** (repo root) — light/dark color palette and theme-aware SVG
   rules. Read it before generating any diagram, chart, or `.svg`.
+- **`src/plugins/remark-wikilink.mjs`** — Obsidian-style `[[slug]]` /
+  `[[slug|alias]]` links in post bodies, resolved to `/journal/<slug>/`.
+  Registered on BOTH pipelines via `contentRemarkPlugins` in `astro.config.mjs`.
+  Unresolved targets (never written, or `draft: true`) render as **plain text**,
+  not broken links — see the Obsidian section below.
 
 ## Math in MDX
 
@@ -224,3 +229,37 @@ Use the **`visual-check` skill** (`.claude/skills/visual-check/`) to screenshot
 the dev server with Playwright instead of guessing at CSS. It reuses a running
 dev server (never `pkill` astro), measures exact positions, and notes the
 dev-vs-preview CSS gotcha. Helper: `scripts/shot.mjs`.
+
+
+## Authoring in Obsidian (the vault IS this repo)
+
+The Journal is written in Obsidian, pointed at this repo as its vault, so the
+files Obsidian edits are the files Astro builds. There is no sync step and no
+second copy — that was considered and rejected (a two-way `.md`/`.mdx` transform
+means the file you edit is not the file that ships). `.obsidian/` is gitignored.
+
+**Prefer `.md`; reach for `.mdx` only when a post needs a component.** Obsidian
+cannot open `.mdx` at all without a plugin, and a spike on 2026-09-03 measured
+what the `registerExtensions(['mdx'],'markdown')` plugins actually buy: the file
+becomes *editable*, but Obsidian's metadata cache still ignores it, so `.mdx`
+posts are **not** wikilink targets, **not** in full-text search, and **not** in
+the graph. Clicking `[[some-mdx-post]]` silently creates a stray empty file
+instead of resolving. (The two MDX plugins are also mutually exclusive — both
+claim the extension, so you get editing or preview, never both.) Math needs no
+`.mdx`: `remark-math` is registered on the Markdown processor too. Six posts are
+`.mdx` today because they use `Figure`/`SideNote`/`Derivation`/`Cite`.
+
+**Placeholder notes are the point.** Typing `[[an idea]]` mid-sentence and
+clicking it later is the capture gesture this whole setup exists to support, so
+prose will routinely reference notes that don't exist yet. Those render as plain
+text on the site rather than as visibly-broken "unwritten" links, because the
+Journal reads as a finished publication rather than a public garden. A link
+starts working on its own the day its target is published.
+
+**Not yet done** (deliberate; revisit when revising an `.mdx` post gets
+annoying): porting the four components to remark/rehype plugins so every post
+can be `.md`. That is a real cost — `.md` cannot invoke Astro components, so
+each one must be reimplemented to emit its own HTML, with a permanent tax on
+every future component. A generic `> [!callout]` bridge would cover the wrapper
+components (`SideNote`, `Derivation`) in one plugin; only `Figure` and `Cite`
+do enough real work to need bespoke code.

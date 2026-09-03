@@ -28,3 +28,7 @@ pnpm-debug.log*
 # Local MCP server config (chrome-devtools etc.) — keep out of VCS
 .mcp.json
 .superpowers/
+
+# Obsidian vault config — the vault IS this repo (see AGENTS.md). workspace.json
+# rewrites on every pane move, so the whole folder stays out of VCS.
+.obsidian/

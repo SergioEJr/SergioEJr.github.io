@@ -9,6 +9,7 @@ import remarkMath from "remark-math";
 import rehypeEqref from "./src/plugins/rehype-eqref.mjs";
 import rehypeFootnoteHistory from "./src/plugins/rehype-footnote-history.mjs";
 import rehypeMathPunctuation from "./src/plugins/rehype-math-punctuation.mjs";
+import remarkWikilink from "./src/plugins/remark-wikilink.mjs";
 
 // Shared by both pipelines below so Markdown and MDX behave identically.
 // - rehypeKatex: `trust` enables \htmlId, which is how an equation gets a link
@@ -30,6 +31,12 @@ import rehypeMathPunctuation from "./src/plugins/rehype-math-punctuation.mjs";
 const katexMacros = {
   "\\bs": "\\boldsymbol{#1}", // \bs{x} -> bold vector x
 };
+
+// Shared by both pipelines, same as contentPlugins below. remarkWikilink runs
+// AFTER remarkMath so that `$...$` is already its own node type and a `[[`
+// inside math is never mistaken for a wikilink.
+/** @type {any[]} */
+const contentRemarkPlugins = [remarkMath, remarkWikilink];
 
 /** @type {any[]} */
 const contentPlugins = [
@@ -87,7 +94,7 @@ export default defineConfig({
     // `$2^{10,000}$`. Registering remark-math on the MDX pipeline makes the math
     // tokenizer claim `$...$` before the expression parser sees the braces.
     mdx({
-      remarkPlugins: [remarkMath],
+      remarkPlugins: contentRemarkPlugins,
       rehypePlugins: contentPlugins,
     }),
     sitemap(),
@@ -100,7 +107,7 @@ export default defineConfig({
       },
     },
     processor: unified({
-      remarkPlugins: [remarkMath],
+      remarkPlugins: contentRemarkPlugins,
       rehypePlugins: contentPlugins,
     }),
   },
