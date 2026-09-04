@@ -270,6 +270,11 @@ listing pages at all.
 and the `mdx()` integration (`astro.config.mjs`), so commas in braces like
 `$2^{10,000}$` build correctly. `mdx.config.mjs` mirrors this for tooling.
 
+**Stick to size macros MathJax also has.** `\footnotesize` is a KaTeX/LaTeX
+command that MathJax does not implement, so it renders as an error in Obsidian.
+Use `\small` or `\scriptsize`, which both engines support. Same rule as the
+macros below: the math has three readers, so prefer what all three understand.
+
 **No KaTeX macros — write standard LaTeX.** `katexMacros` in `astro.config.mjs`
 (and its mirror in `inlineText.ts`) is deliberately empty. A `\bs` ->
 `\boldsymbol` shorthand lived there until 2026-09-03 and was removed because

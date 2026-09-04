@@ -26,9 +26,9 @@ If your friend asks you for the time, you’re likely to round to the nearest qu
 Here's another example: suppose you have a box with $1,000$ coins inside. You vigorously shake the box and let out one coin at a time writing down the resulting sequence of heads and tails. Each sequence -- e.g. $HTTHHT$ -- constitutes a microstate while a coarse-grained quantity, such as the total number of heads $\#H$, forms a macrostate. Entropy[^natural] is simply a way to count how many full-detail microstates belong to each coarse-grained macrostate. More precisely, if $M$ is a macrostate,
 
 $$
-\underbrace{S(M)}_{\textcolor{gray}{\mathclap{\footnotesize\text{entropy}}}}
+\underbrace{S(M)}_{\textcolor{gray}{\mathclap{\small\text{entropy}}}}
 \;=\; \log
-\overbrace{\Omega(M)}^{\textcolor{gray}{\mathclap{\footnotesize\text{number of microstates}}}}
+\overbrace{\Omega(M)}^{\textcolor{gray}{\mathclap{\small\text{number of microstates}}}}
 $$
 
 If logarithms are a distant memory, don't worry. The log is just a convenient way of writing astronomically large counts as manageable numbers; all you need for this essay is that the more microstates a macrostate contains, the higher its entropy.
