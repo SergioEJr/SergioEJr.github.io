@@ -1,15 +1,15 @@
 ---
-title: "i love you, bro"
-description: "Men are given little social leniency to be physically and emotionally intimate with other men in a way that is race-dependent. This has led to the intersection of male intimacy and race being used as a comedic punchline both in social media trends and Hollywood films. "
-pubDate: "2022-05-03"
+title: i love you, bro
+description: Men are given little social leniency to be physically and emotionally intimate with other men in a way that is race-dependent. This has led to the intersection of male intimacy and race being used as a comedic punchline both in social media trends and Hollywood films.
+pubDate: 2022-05-03
 category: essays
 subject: Ideas
 authors:
- - sergio-eraso
+  - sergio-eraso
 keywords:
- - culture
- - masculinity
-draft: false # set to false to publish
+  - culture
+  - masculinity
+draft: false
 ---
 
 > [!warning] A note on this essay
