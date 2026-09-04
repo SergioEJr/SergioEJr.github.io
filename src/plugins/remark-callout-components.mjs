@@ -11,15 +11,20 @@
 //   > [!note] recall             -> a note in the reading column
 //   > Entropy counts microstates.
 //
-//   > [!note-margin] recall      -> the same note, floated into the right gutter
+//   > [!note|margin] recall      -> the same note, floated into the right gutter
 //   > Entropy counts microstates.
 //
 // Generic types are note / tip / warning / danger / example, and ANY of them
-// takes a `-margin` suffix. Placement is a modifier rather than part of the
-// type name, so a warning can live in the margin without inventing a type for
-// it. The `-margin` variants are unknown to Obsidian and fall back to its
-// default callout styling there; a vault snippet restores their colour. The
-// float is site-only — Obsidian has no gutter.
+// takes `|margin`. Placement is a modifier rather than part of the type name,
+// so a warning can live in the margin without inventing a type for it.
+//
+// `|margin` uses OBSIDIAN'S OWN metadata slot: `[!type|meta]` sets
+// data-callout="type" and data-callout-metadata="meta" natively. That matters
+// because the type stays a real type, so Obsidian and any theme style it
+// correctly with no help from us. The earlier spelling, `[!note-margin]`, was
+// an unknown type there and fell back to Obsidian's stock colours — which
+// looked wrong under any theme that restyles the standard types. The float
+// itself is site-only; Obsidian has no gutter.
 //
 //   > [!example]- Why the Jacobian shows up     -> collapsible, starts collapsed
 //   > Let $\Phi$ be a coordinate transformation...
@@ -61,8 +66,9 @@ import { visit } from "unist-util-visit";
 
 const DIAGRAMS = path.resolve("src/assets/diagrams");
 
-// `[!type]`, optional Obsidian fold marker, optional title on the same line.
-const CALLOUT = /^\[!([a-zA-Z][\w-]*)\]([+-]?)[ \t]*/;
+// `[!type]`, optional `|metadata`, optional Obsidian fold marker, optional
+// title — all on the same line, exactly as Obsidian parses it.
+const CALLOUT = /^\[!([a-zA-Z][\w-]*)(?:\|([^\]]*))?\]([+-]?)[ \t]*/;
 // `![[name.svg]]` or `![[name.svg|420]]`.
 const EMBED = /!\[\[([^[\]|]+?)(?:\|([^[\]]*))?\]\]/;
 
@@ -320,10 +326,15 @@ export default function remarkCalloutComponents() {
       if (lead?.type !== "text") return;
       const m = CALLOUT.exec(lead.value);
       if (!m) return;
-      const type = m[1].toLowerCase();
-      // `-margin` is a PLACEMENT modifier, not part of the type.
-      const margin = type.endsWith("-margin");
-      const base = margin ? type.slice(0, -"-margin".length) : type;
+      const base = m[1].toLowerCase();
+      // Obsidian's metadata slot, `|`-separated. Placement is a modifier here,
+      // never part of the type name.
+      const meta = (m[2] || "")
+        .toLowerCase()
+        .split("|")
+        .map((t) => t.trim())
+        .filter(Boolean);
+      const margin = meta.includes("margin");
       // Anything else passes through as the ordinary blockquote it already is.
       if (base !== "figure" && !CALLOUT_TYPES.includes(base)) return;
 
@@ -344,7 +355,7 @@ export default function remarkCalloutComponents() {
         }
         body.push(...node.children.slice(1));
         if (!body.length) {
-          file.fail(`[!${type}] callout has no body text.`, node);
+          file.fail(`[!${base}] callout has no body text.`, node);
         }
         // A one-paragraph callout renders its text directly inside
         // .callout__content, with no <p> wrapper — which is what
@@ -357,7 +368,7 @@ export default function remarkCalloutComponents() {
             : body;
         // Obsidian's fold marker, and its exact meaning there: bare is static,
         // `+` is collapsible and open, `-` is collapsible and collapsed.
-        const fold = m[2];
+        const fold = m[3];
         if (fold) {
           collapsibleSeq += 1;
           parent.children.splice(

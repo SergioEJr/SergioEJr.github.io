@@ -411,6 +411,81 @@ idempotent; it also defines `window.__openDerivationFor`, which the eqref jump
 handlers call to reveal an equation inside a collapsed block.
 
 **Generic callouts: `note`, `tip`, `warning`, `danger`, `example`**, each with
+its own colour and icon, plus `|margin` to float into the right gutter instead
+of sitting in the reading column:
+
+```markdown
+> [!warning] A note on this essay     ← in-column
+> [!note|margin] recall               ← floats into the gutter (the old SideNote)
+> [!tip|margin] worth trying          ← placement is a modifier, not a type
+```
+
+`|margin` is **Obsidian's own metadata slot**: `[!type|meta]` natively sets
+`data-callout="type"` and `data-callout-metadata="meta"`. Using it means the
+type stays a real type, so Obsidian and whatever theme is active style it
+correctly with no CSS from us. An earlier design spelled this `[!note-margin]`,
+which was an *unknown* type in Obsidian — it fell back to stock colours and
+looked visibly wrong under any theme that restyles the standard types. Don't go
+back to it. The float is site-only; Obsidian has no gutter, so `margin` is inert
+metadata there.
+
+The title is the label, defaulting to the capitalised type. Unrecognised types
+and unrecognised metadata both pass through harmlessly.
+
+**A new type is one icon and one CSS rule.** Add a lucide path to `ICON_PATHS`
+in `remark-callout-components.mjs` and a `.callout--<type> { --callout-color }`
+rule in `global.css`; one custom property drives the whole card. Colours come
+from the `--fig-*` tokens, which DESIGN.md already keeps theme-aware.
+
+**Collapsibility is a modifier too, and it is Obsidian's fold marker.** A bare
+`[!type]` is static, `[!type]+` is collapsible and starts open, `[!type]-` is
+collapsible and starts collapsed — exactly what those markers already mean in
+Obsidian. There is no collapsible *type*; the old `[!derivation]` was one, which
+was the same mistake as `aside`/`note`, since a collapsible box has nothing to
+do with mathematics.
+
+```markdown
+> [!example]- Derivation: Why the Jacobian shows up
+> Let $\Phi$ be a coordinate transformation...
+>
+> > [!figure] A nested figure works
+> > ![[velocity-field-transform.svg]]
+```
+
+Content is ALWAYS in the DOM and only `hidden` is toggled — required so
+`rehype-eqref` and KaTeX's counter see equations inside a *closed* block, and
+why this is not `<details>`. Note `.callout__content[hidden]` has to restore
+`display: none` explicitly: `.callout__content { display: block }` is a class
+selector and outranks the user-agent `[hidden]` rule, so without it a collapsed
+callout toggles the attribute and stays visible. The toggle script lives in
+`BlogPost.astro` (delegated and idempotent, one copy serves every callout) and
+defines `window.__openCollapsibleFor`, which the eqref handlers call to reveal
+an equation inside a collapsed block.
+
+**Link between posts with `[[wikilinks]]`, not site-absolute paths.** A
+`[Title](/journal/slug/)` link works on the site but is dead in Obsidian, which
+cannot resolve `/journal/...` as a vault path and offers to CREATE a note
+instead. `[[slug|Title]]` resolves in both. Emphasis wraps it fine:
+`_[[slug|Title]]_`.
+
+**Label equations with `\label{eq:foo}`, reference them with
+`[eq:foo](#eq:foo)`.** `src/plugins/remark-eq-label.mjs` rewrites `\label` into
+the `\htmlId{eq:foo}{}` that KaTeX needs (KaTeX *throws* on `\label`; MathJax
+and Overleaf both want it, and neither understands `\htmlId`). The empty second
+argument is deliberate and sufficient — the id still lands and the equation still
+gets its `eqn-num`, which is all `rehype-eqref` needs. References carry visible
+text because `rehype-eqref` now always overwrites it with the number; the old
+`[](#eq:foo)` form was invisible and unclickable everywhere except this site.
+
+**Derivations are `> [!derivation]- Label`**, where Obsidian's fold marker IS
+the open/closed state: `-` collapses (the component's `open={false}` default),
+bare or `+` stays open. Nesting works — the figure inside one is authored as
+`> > [!figure]`. The toggle script lives in `BlogPost.astro`, not the component,
+because derivations now come from two places and the handler is delegated and
+idempotent; it also defines `window.__openDerivationFor`, which the eqref jump
+handlers call to reveal an equation inside a collapsed block.
+
+**Generic callouts: `note`, `tip`, `warning`, `danger`, `example`**, each with
 its own colour and icon, plus a `-margin` suffix on ANY of them to float into
 the right gutter instead of sitting in the reading column:
 

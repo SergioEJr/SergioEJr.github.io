@@ -17,4 +17,4 @@ Universality says that details don't matter.
 
 Car traffic is a neat example of universality.
 
-People from different countries, speaking different languages, accustomed to different traffic laws, if you put enough of them on a road would cause a traffic jam.
+People from different countries, speaking different languages, accustomed to different traffic laws and signals, Yet still, if you put enough of them on a road, there would generically be traffic jams.
