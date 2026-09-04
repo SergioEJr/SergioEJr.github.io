@@ -58,5 +58,43 @@ sed -E \
   s/currentColor/var(--color-text-main, currentColor)/g;
 ' > "src/assets/diagrams/$n.svg"
 
+# --- Sidecar metadata -------------------------------------------------------
+# Alt text describes the DRAWING, not the article that includes it: it is the
+# same wherever the figure is used, and it is long enough to wreck the prose if
+# inlined. So it lives beside the drawing, in the .tex, and is emitted here as
+# JSON for the site's remark plugin to read.
+#
+#   % alt: first line of the description, wrapped as needed
+#   %   continuation lines start with a percent and THREE spaces
+#   % width: 420          <- optional display width in CSS px
+#
+# The continuation marker is explicit rather than "any following comment line"
+# because alt prose legitimately contains colons ("% right: a single...") and a
+# heuristic would swallow or truncate on them.
+#
+# A missing `% alt:` is a hard error. Shipping an inaccessible figure should not
+# be something you can do by forgetting a line.
+alt=$(awk '
+  /^% alt:/      { sub(/^% alt:[ \t]*/, ""); buf = $0; grab = 1; next }
+  grab && /^%   / { sub(/^%[ \t]*/, ""); buf = buf " " $0; next }
+  grab           { grab = 0 }
+  END            { print buf }
+' "figures/$n.tex")
+if [ -z "$alt" ]; then
+  echo "error: figures/$n.tex has no '% alt:' line." >&2
+  echo "       Every figure needs alt text; it lives with the drawing, not the post." >&2
+  exit 1
+fi
+width=$(sed -n 's/^% width:[[:space:]]*\([0-9][0-9]*\).*/\1/p' "figures/$n.tex" | head -1)
+
+# JSON-escape the alt (backslash and double quote), then emit the sidecar.
+esc_alt=$(printf '%s' "$alt" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')
+if [ -n "$width" ]; then
+  printf '{\n  "alt": "%s",\n  "width": %s\n}\n' "$esc_alt" "$width" > "src/assets/diagrams/$n.json"
+else
+  printf '{\n  "alt": "%s"\n}\n' "$esc_alt" > "src/assets/diagrams/$n.json"
+fi
+
 echo "web    -> src/assets/diagrams/$n.svg"
+echo "meta   -> src/assets/diagrams/$n.json"
 echo "paper  -> build/$n.pdf"

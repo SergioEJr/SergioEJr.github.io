@@ -2,6 +2,13 @@
 % of a right triangle with base 1 and hypotenuse L = sec(theta). Rotating by
 % dtheta sweeps the corner through L*dtheta, and dividing that leg by cos(theta)
 % gives dt = L*dtheta/cos(theta) = sec^2(theta) dtheta.
+% alt: A right triangle with base 1 and angle theta at the origin, its
+%   hypotenuse extended past the unit circle to the tangent line, where the
+%   vertical leg has length t; rotating by delta-theta sweeps the corner
+%   through a perpendicular leg ell delta-theta, forming a small right
+%   triangle whose hypotenuse is delta-t and whose remaining side, delta-ell,
+%   is the growth of the hypotenuse
+% width: 360
 \ifnum\pdfoutput>0
   \documentclass[tikz,border=3pt]{standalone}         % pdflatex → PDF proof
 \else
