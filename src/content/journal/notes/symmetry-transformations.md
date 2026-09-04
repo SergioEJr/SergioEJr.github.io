@@ -33,7 +33,7 @@ This is the most straightforward way to describe the transformation, however, it
 
 $$
 \begin{align}
- \label{eq:scalar-translation}
+ % \label{eq:scalar-translation}
  \phi'(\boldsymbol{x}') = \phi(\boldsymbol{x})
  = \phi(\boldsymbol{x}' - \boldsymbol{a}).
 \end{align}
@@ -41,7 +41,7 @@ $$
 In general, if $g$ is an element of a group $G$, then the transformed scalar field $g \cdot \phi$ is
 $$
 \begin{align}
- \label{eq:scalar-transform}
+ % \label{eq:scalar-transform}
  (g \cdot \phi)(\boldsymbol{x}) = \phi(g^{-1} \boldsymbol{x}).
 \end{align}
 $$
@@ -70,7 +70,7 @@ $$
 Letting $\boldsymbol{x}' = R \boldsymbol{x}$, we can again express this as a pullback function,
 $$
 \begin{align}
- \label{eq:vector-rotation}
+ % \label{eq:vector-rotation}
  \boldsymbol{m}'(\boldsymbol{x}')
  = R\boldsymbol{m}(R^{-1}\boldsymbol{x}')
 \end{align}
@@ -126,7 +126,7 @@ $$
 This is equivalent to
 $$
 \begin{align}
-\label{eq:covector-transform}
+% \label{eq:covector-transform}
  \omega'_{\boldsymbol{x}} = J^{-T}(g^{-1}\boldsymbol{x}) \omega_{g^{-1}\boldsymbol{x}}
 \end{align}
 $$

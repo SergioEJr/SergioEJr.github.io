@@ -348,8 +348,13 @@ cannot resolve `/journal/...` as a vault path and offers to CREATE a note
 instead. `[[slug|Title]]` resolves in both. Emphasis wraps it fine:
 `_[[slug|Title]]_`.
 
-**Label equations with `\label{eq:foo}`, reference them with
-`[eq:foo](#eq:foo)`.** `src/plugins/remark-eq-label.mjs` rewrites `\label` into
+**Label equations with `% \label{eq:foo}` — COMMENTED — and reference them with
+`[eq:foo](#eq:foo)`.** The `%` is load-bearing: MathJax keeps a GLOBAL label
+registry, so a bare `\label` renders once and then errors with "multiply
+defined" as soon as Obsidian re-typesets the note, which it does every time you
+leave and come back. Commenting it makes both engines skip it and the plugin
+uncomments it for KaTeX. The label is then inert if pasted into Overleaf —
+uncomment it there; that is rarer than opening a note twice. `src/plugins/remark-eq-label.mjs` rewrites `\label` into
 the `\htmlId{eq:foo}{}` that KaTeX needs (KaTeX *throws* on `\label`; MathJax
 and Overleaf both want it, and neither understands `\htmlId`). The empty second
 argument is deliberate and sufficient — the id still lands and the equation still

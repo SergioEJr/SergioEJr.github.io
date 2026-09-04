@@ -1,4 +1,4 @@
-// `\label{eq:foo}` in display math -> the `\htmlId{eq:foo}{}` KaTeX needs.
+// `% \label{eq:foo}` in display math -> the `\htmlId{eq:foo}{}` KaTeX needs.
 //
 // Equations are labelled with LaTeX's own `\label`, because the same math now
 // has three readers and only one of them is KaTeX:
@@ -13,6 +13,17 @@
 // keeps the authored file correct everywhere and confines the KaTeX-specific
 // spelling to the one pipeline that needs it.
 //
+// THE LABEL IS COMMENTED OUT: `% \label{eq:foo}`, not a bare `\label{eq:foo}`.
+// MathJax keeps a GLOBAL label registry, so a bare \label renders fine the first
+// time a note is typeset and then errors with "multiply defined" the moment
+// Obsidian re-typesets it — which happens every time you leave the note and come
+// back. Commenting it makes both engines skip it entirely; this plugin uncomments
+// it for KaTeX. (The same workaround Obsidian's Auto Equation Numbering plugin
+// applies, for the same reason.)
+//
+// The cost is that the label is inert if the equation is pasted into Overleaf —
+// uncomment it there. That is a rarer moment than opening a note twice.
+//
 // `\htmlId{id}{}` with EMPTY content is deliberate and sufficient: it still
 // emits `id="..."`, and the equation still gets its `eqn-num`, which is all
 // rehype-eqref needs to hoist the id onto the .katex-display and number it.
@@ -25,7 +36,10 @@
 
 import { visit } from "unist-util-visit";
 
-const LABEL = /\\label\s*\{([^{}]+)\}/g;
+// Commented form first (the one to author), then a bare \label as a fallback so
+// an un-commented one still builds rather than throwing in KaTeX.
+const LABEL_COMMENTED = /%[ \t]*\\label\s*\{([^{}]+)\}/g;
+const LABEL_BARE = /\\label\s*\{([^{}]+)\}/g;
 
 export default function remarkEqLabel() {
   return (tree) => {
@@ -34,10 +48,9 @@ export default function remarkEqLabel() {
       if (typeof node.value !== "string" || !node.value.includes("\\label")) {
         return;
       }
-      const rewritten = node.value.replace(
-        LABEL,
-        (_m, id) => `\\htmlId{${id.trim()}}{}`,
-      );
+      const rewritten = node.value
+        .replace(LABEL_COMMENTED, (_m, id) => `\\htmlId{${id.trim()}}{}`)
+        .replace(LABEL_BARE, (_m, id) => `\\htmlId{${id.trim()}}{}`);
       node.value = rewritten;
       // remark-math copies the source into data.hChildren, and THAT is what
       // reaches rehype-katex after mdast-to-hast. Updating node.value alone
