@@ -21,11 +21,16 @@
 // default callout styling there; a vault snippet restores their colour. The
 // float is site-only — Obsidian has no gutter.
 //
-//   > [!derivation]- Why the Jacobian shows up   -> Derivation, collapsed
+//   > [!example]- Why the Jacobian shows up     -> collapsible, starts collapsed
 //   > Let $\Phi$ be a coordinate transformation...
 //   >
 //   > > [!figure] A nested figure works
 //   > > ![[velocity-field-transform.svg]]
+//
+// COLLAPSIBILITY IS A MODIFIER, exactly as in Obsidian: a bare `[!type]` is
+// static, `[!type]+` is collapsible and starts open, `[!type]-` is collapsible
+// and starts collapsed. There is no separate collapsible TYPE — same reason
+// placement is `-margin` rather than a type name of its own.
 //
 // Obsidian shows a callout containing the real diagram; the site emits the same
 // <figure> markup Figure.astro produces. See
@@ -140,9 +145,9 @@ function findEmbed(nodes) {
   return null;
 }
 
-// Lifted verbatim from Derivation.astro so the two renderings are identical.
+// Chevron and collapse icons for collapsible callouts (from the old Derivation component).
 const CHEVRON_ICON =
-  '<svg class="derivation__chevron" xmlns="http://www.w3.org/2000/svg"' +
+  '<svg class="callout__chevron" xmlns="http://www.w3.org/2000/svg"' +
   ' width="14" height="14" viewBox="0 0 24 24" fill="none"' +
   ' stroke="currentColor" stroke-width="2.5" stroke-linecap="round"' +
   ' stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6">' +
@@ -154,15 +159,21 @@ const COLLAPSE_ICON =
   '<path d="m18 15-6-6-6 6"></path></svg>';
 
 // The content is ALWAYS in the DOM; collapsing only toggles `hidden`. That is
-// required so rehype-eqref and KaTeX's CSS counter see equations inside a
-// closed block -- an inner equation keeps its place in the global numbering and
-// stays referenceable from anywhere. Do not "optimise" this into <details>.
-function buildDerivation(label, bodyNodes, open, id) {
+// required so rehype-eqref and KaTeX's counter see equations inside a closed
+// block — an inner equation keeps its place in the global numbering and stays
+// referenceable from anywhere. Do not "optimise" this into <details>.
+//
+// The trailing Collapse button is deliberate: a long open block can run past a
+// screen, and scrolling back to the header to close it is the annoyance it
+// exists to remove.
+function collapsible(type, label, bodyNodes, open, id, margin) {
+  const className = ["callout", `callout--${type}`, "callout--collapsible"];
+  if (margin) className.push("callout--margin");
   return {
     type: "paragraph",
     data: {
-      hName: "section",
-      hProperties: { className: ["derivation"], "data-derivation": "" },
+      hName: "div",
+      hProperties: { className, "data-callout-collapsible": "" },
     },
     children: [
       {
@@ -171,16 +182,17 @@ function buildDerivation(label, bodyNodes, open, id) {
           hName: "button",
           hProperties: {
             type: "button",
-            className: ["derivation__head"],
+            className: ["callout__head", "callout__head--button"],
             "aria-expanded": open ? "true" : "false",
             "aria-controls": id,
           },
           hChildren: [
             { type: "raw", value: CHEVRON_ICON },
+            { type: "raw", value: icon(type) },
             {
               type: "element",
               tagName: "span",
-              properties: { className: ["derivation__label"] },
+              properties: { className: ["callout__label"] },
               children: [{ type: "text", value: label }],
             },
           ],
@@ -192,7 +204,7 @@ function buildDerivation(label, bodyNodes, open, id) {
         data: {
           hName: "div",
           hProperties: {
-            className: ["derivation__content"],
+            className: ["callout__content"],
             id,
             ...(open ? {} : { hidden: true }),
           },
@@ -205,7 +217,7 @@ function buildDerivation(label, bodyNodes, open, id) {
               hName: "button",
               hProperties: {
                 type: "button",
-                className: ["derivation__collapse"],
+                className: ["callout__collapse"],
               },
               hChildren: [
                 { type: "raw", value: COLLAPSE_ICON },
@@ -253,20 +265,21 @@ function icon(type) {
   );
 }
 
-// <span>s rather than <div>s: inherited from SideNote, which had to be valid
-// INSIDE a paragraph. Harmless, and it keeps a callout legal anywhere a phrase
-// is.
+// <div>s, not the <span>s inherited from SideNote. SideNote used spans because
+// it had to be valid inside a paragraph; a callout always comes from a
+// blockquote, so it is block-level by construction and a span wrapping
+// paragraphs was invalid HTML.
 function buildCallout(type, label, bodyNodes, margin) {
   const className = ["callout", `callout--${type}`];
   if (margin) className.push("callout--margin");
   return {
     type: "paragraph",
-    data: { hName: "span", hProperties: { className } },
+    data: { hName: "div", hProperties: { className } },
     children: [
       {
         type: "paragraph",
         data: {
-          hName: "span",
+          hName: "div",
           hProperties: { className: ["callout__head"] },
           hChildren: [
             { type: "raw", value: icon(type) },
@@ -283,7 +296,7 @@ function buildCallout(type, label, bodyNodes, margin) {
       {
         type: "paragraph",
         data: {
-          hName: "span",
+          hName: "div",
           hProperties: { className: ["callout__content"] },
         },
         children: bodyNodes,
@@ -294,9 +307,10 @@ function buildCallout(type, label, bodyNodes, margin) {
 
 export default function remarkCalloutComponents() {
   return (tree, file) => {
-    // Deterministic ids, unique within the page. The component used
-    // Math.random(); a counter keeps the built output reproducible.
-    let derivationSeq = 0;
+    // Deterministic ids for aria-controls, unique within the page. The old
+    // component used Math.random(); a counter keeps the built output
+    // reproducible.
+    let collapsibleSeq = 0;
 
     visit(tree, "blockquote", (node, index, parent) => {
       if (!parent || typeof index !== "number") return;
@@ -311,46 +325,12 @@ export default function remarkCalloutComponents() {
       const margin = type.endsWith("-margin");
       const base = margin ? type.slice(0, -"-margin".length) : type;
       // Anything else passes through as the ordinary blockquote it already is.
-      if (
-        base !== "figure" &&
-        base !== "derivation" &&
-        !CALLOUT_TYPES.includes(base)
-      ) {
-        return;
-      }
+      if (base !== "figure" && !CALLOUT_TYPES.includes(base)) return;
 
       // Drop the "[!type]" marker, then separate the title line from the body.
       const children = [...first.children];
       children[0] = { ...lead, value: lead.value.slice(m[0].length) };
       const [captionNodes, bodyNodes] = splitAtFirstNewline(children);
-
-      if (base === "derivation") {
-        const label =
-          captionNodes
-            .map((n) => (n.type === "text" ? n.value : ""))
-            .join("")
-            .trim() || "Derivation";
-        // Obsidian's fold marker IS the open/closed state: `[!x]-` collapses,
-        // bare or `[!x]+` stays open. That maps exactly onto the `open` prop.
-        const open = m[2] !== "-";
-        const body = [];
-        if (bodyNodes.length)
-          body.push({ type: "paragraph", children: bodyNodes });
-        body.push(...node.children.slice(1));
-        if (!body.length) {
-          file.fail("[!derivation] callout has no body.", node);
-        }
-        derivationSeq += 1;
-        parent.children.splice(
-          index,
-          1,
-          buildDerivation(label, body, open, `derivation-${derivationSeq}`),
-        );
-        // Return `index`, not index + 1: the replacement is re-entered so that
-        // callouts NESTED inside the derivation (a figure, typically) are still
-        // visited. The replacement is not a blockquote, so this cannot loop.
-        return index;
-      }
 
       if (CALLOUT_TYPES.includes(base)) {
         const label =
@@ -375,11 +355,35 @@ export default function remarkCalloutComponents() {
           body.length === 1 && body[0].type === "paragraph"
             ? body[0].children
             : body;
-        parent.children.splice(
-          index,
-          1,
-          buildCallout(base, label, content, margin),
-        );
+        // Obsidian's fold marker, and its exact meaning there: bare is static,
+        // `+` is collapsible and open, `-` is collapsible and collapsed.
+        const fold = m[2];
+        if (fold) {
+          collapsibleSeq += 1;
+          parent.children.splice(
+            index,
+            1,
+            collapsible(
+              base,
+              label,
+              // A collapsible block holds block content, so keep its paragraphs
+              // rather than unwrapping a lone one.
+              body,
+              fold === "+",
+              `callout-${collapsibleSeq}`,
+              margin,
+            ),
+          );
+        } else {
+          parent.children.splice(
+            index,
+            1,
+            buildCallout(base, label, content, margin),
+          );
+        }
+        // Return `index`, not index + 1: the replacement is re-entered so that
+        // callouts NESTED inside it (a figure, typically) are still visited.
+        // The replacement is not a blockquote, so this cannot loop.
         return index;
       }
 

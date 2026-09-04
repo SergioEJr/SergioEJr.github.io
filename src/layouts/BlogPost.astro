@@ -886,26 +886,26 @@ const numberedBody = numberCitations(renderedBody);
     </main>
     <Footer />
     <!-- Derivation toggle. Lives here rather than in Derivation.astro because
-         derivations now come from TWO places -- that component (.mdx posts) and
-         the `> [!derivation]` callout remark-callout-components compiles from
-         .md posts -- and this handler is delegated and idempotent, so one copy
-         on the shared article layout serves both. It also defines
-         window.__openDerivationFor, which the eqref jump handlers below call to
-         reveal an equation hidden inside a collapsed block. -->
+         ANY callout type can be collapsible -- `> [!type]-` or `[!type]+`, the
+         same fold marker Obsidian uses -- and this handler is delegated and
+         idempotent, so one copy on the shared article layout serves every one
+         of them. It also defines window.__openCollapsibleFor, which the eqref
+         jump handlers below call to reveal an equation hidden inside a
+         collapsed block. -->
     <script is:inline data-astro-rerun>
-      // Toggle derivation blocks open/closed. Delegated + idempotent so it survives
-      // ClientRouter navigation (astro:page-load) and multiple derivations on a
+      // Toggle collapsible callouts open/closed. Delegated + idempotent so it survives
+      // ClientRouter navigation (astro:page-load) and multiple collapsibles on a
       // page. (Inline so it's reliably emitted even when the component is used in MDX,
       // matching SideNote.astro.)
       //
       // History: the controls are <button>s and this handler only mutates the DOM
       // (hidden, aria-expanded) plus scrollIntoView — it never calls
       // history.pushState/replaceState or changes location.hash, so opening/closing a
-      // derivation never adds a back/forward entry.
+      // callout never adds a back/forward entry.
       (function () {
         function setOpen(block, isOpen) {
-          var head = block.querySelector(".derivation__head");
-          var content = block.querySelector(".derivation__content");
+          var head = block.querySelector(".callout__head--button");
+          var content = block.querySelector(".callout__content");
           if (!head || !content) return;
           head.setAttribute("aria-expanded", isOpen ? "true" : "false");
           content.hidden = !isOpen;
@@ -923,24 +923,24 @@ const numberedBody = numberCitations(renderedBody);
         // the viewport? If so, collapsing shouldn't scroll — the reader can already
         // see where the block starts, and a jump would be disorienting.
         function headerFullyInView(block) {
-          var head = block.querySelector(".derivation__head");
+          var head = block.querySelector(".callout__head--button");
           if (!head) return false;
           var r = head.getBoundingClientRect();
           return r.top >= navBottom() && r.bottom <= window.innerHeight;
         }
 
         function onClick(e) {
-          var head = e.target.closest(".derivation__head");
+          var head = e.target.closest(".callout__head--button");
           if (head) {
-            var block = head.closest("[data-derivation]");
+            var block = head.closest("[data-callout-collapsible]");
             if (!block) return;
             var open = head.getAttribute("aria-expanded") === "true";
             setOpen(block, !open);
             return;
           }
-          var collapse = e.target.closest(".derivation__collapse");
+          var collapse = e.target.closest(".callout__collapse");
           if (collapse) {
-            var b = collapse.closest("[data-derivation]");
+            var b = collapse.closest("[data-callout-collapsible]");
             if (!b) return;
             // Measure BEFORE collapsing (collapsing changes layout, but the header's
             // own position doesn't move until content above it does — and there is
@@ -949,7 +949,7 @@ const numberedBody = numberCitations(renderedBody);
             setOpen(b, false);
             // Only bring the header back below the sticky navbar if it WASN'T already
             // fully in view — a short block that's entirely on screen shouldn't jump.
-            // scroll-margin-top on .derivation clears the navbar. scrollIntoView does
+            // scroll-margin-top on .callout clears the navbar. scrollIntoView does
             // not touch history. Honor prefers-reduced-motion (as BlogPost.astro does).
             if (!alreadyVisible) {
               var reduce = window.matchMedia(
@@ -960,22 +960,22 @@ const numberedBody = numberCitations(renderedBody);
           }
         }
 
-        if (!window.__derivationBound) {
+        if (!window.__calloutFoldBound) {
           document.addEventListener("click", onClick);
-          window.__derivationBound = true;
+          window.__calloutFoldBound = true;
         }
 
         // Expose a way for other scripts (e.g. eqref jumps in BlogPost.astro) to
-        // open the derivation that CONTAINS a given element, so a reference to an
+        // open the collapsible callout that CONTAINS a given element, so a reference to an
         // equation hidden inside a collapsed block reveals it before scrolling.
         // Idempotent, DOM-only (no history), and safe to call on an already-open or
         // non-contained element (returns whether it actually opened one).
-        if (!window.__openDerivationFor) {
-          window.__openDerivationFor = function (el) {
+        if (!window.__openCollapsibleFor) {
+          window.__openCollapsibleFor = function (el) {
             if (!el) return false;
-            var content = el.closest(".derivation__content[hidden]");
+            var content = el.closest(".callout__content[hidden]");
             if (!content) return false;
-            var block = content.closest("[data-derivation]");
+            var block = content.closest("[data-callout-collapsible]");
             if (!block) return false;
             setOpen(block, true);
             return true;
@@ -1132,10 +1132,10 @@ const numberedBody = numberCitations(renderedBody);
           );
           if (!target) return;
           e.preventDefault();
-          // If the target equation is hidden inside a collapsed derivation,
+          // If the target equation is hidden inside a collapsed callout,
           // open that block first — otherwise it's display:none and the scroll
           // lands nowhere. (No-op if it isn't inside a collapsed block.)
-          if (window.__openDerivationFor) window.__openDerivationFor(target);
+          if (window.__openCollapsibleFor) window.__openCollapsibleFor(target);
           const reduce = window.matchMedia(
             "(prefers-reduced-motion: reduce)",
           ).matches;
@@ -1163,7 +1163,7 @@ const numberedBody = numberCitations(renderedBody);
 
       // A page opened directly at #eq:foo gets the same flash. The browser has
       // usually scrolled by now; this adds the highlight. But if the target is
-      // inside a collapsed derivation it was display:none when the browser
+      // inside a collapsed callout it was display:none when the browser
       // tried to anchor, so nothing scrolled — open the block, then scroll to it
       // ourselves before flashing.
       if (location.hash) {
@@ -1172,7 +1172,7 @@ const numberedBody = numberCitations(renderedBody);
         );
         if (el) {
           const opened =
-            window.__openDerivationFor && window.__openDerivationFor(el);
+            window.__openCollapsibleFor && window.__openCollapsibleFor(el);
           if (opened) {
             const reduce = window.matchMedia(
               "(prefers-reduced-motion: reduce)",

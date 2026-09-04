@@ -85,7 +85,7 @@ $$
 
 The Jacobian may vary over space for more general coordinate maps, but it is constant in this simple example.
 
-> [!derivation]- Derivation: Why the Jacobian shows up
+> [!example]- Derivation: Why the Jacobian shows up
 > Let $\Phi$ be an arbitrary coordinate transformation (an invertible, differentiable function) and let $\boldsymbol{v}$ represent a velocity field. Choose an arbitrary point $\boldsymbol{x}$ and define the curve $\gamma(t)$ such that $\gamma(0) = \boldsymbol{x}$ and $\dot{\gamma}(0) = \boldsymbol{v}(\boldsymbol{x})$ -- the curve passes through the chosen point and is tangent to the streamline at that point at $t = 0$.
 >
 > > [!figure] The curve $\gamma(t)$ need not follow the field, but it is tangent to it at $\boldsymbol{x}$ — so its velocity there is exactly $\boldsymbol{v}(\boldsymbol{x})$. Carrying the curve through $\Phi$ and differentiating at $t=0$ sends that tangent vector to $\boldsymbol{v}'(\boldsymbol{x}')$, so the field is carried by the Jacobian rather than by $\Phi$ itself.
