@@ -53,7 +53,7 @@ Now, let's consider a bar magnet whose local magnetization is described by a vec
 
 Because in addition to being homogeneous, space is also *isotropic* -- there is no preferred or privileged direction. That means the energy of the bar magnet $F[\boldsymbol{m}]$ is not only invariant under translations $\mathbb{R}^3$, but also under the group of rotations $O(3)$. Together, these transformations make up the *Euclidean* group $E(3)$, the fundamental group of symmetries for flat three-dimensional space. Let's see how our magnetic field transforms under a rotation:
 
-> [!aside] aside
+> [!note-margin] aside
 > For relativistic systems, the fundamental group of symmetries is the Poincaré group $P(1,3)$, which is the combination of spacetime translations $\mathbb{R}^{(1,3)}$ and spacetime rotations $O(1,3)$.
 
 > [!figure] To transform a vector field, both the positions $\boldsymbol{x}$ and the vectors $\boldsymbol{m}$ must rotate together (bottom right). Rotating only one leaves the magnetization misaligned with the bar.
@@ -107,7 +107,7 @@ The Jacobian may vary over space for more general coordinate maps, but it is con
 
 ## Covector Fields
 
-> [!aside] Recall
+> [!note-margin] Recall
 > Recall that a covector $\omega_{\boldsymbol{x}}$ is simply a linear map specified at a point $\boldsymbol{x}$ that eats a vector and returns a scalar. For instance, the bra's in quantum mechanics are covectors, or also a force field used to determine the amount of work done $\omega_x = \langle F(x) | \cdot \rangle$.
 
 A covector field $\omega$ must transform in such a way that its contraction with a vector is unchanged, since that is just a scalar,

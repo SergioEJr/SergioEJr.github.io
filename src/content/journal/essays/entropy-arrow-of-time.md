@@ -38,10 +38,9 @@ If logarithms are a distant memory, don't worry. The log is just a convenient wa
 
 ## Majority rule
 
-Even though each sequence of heads and tails is equally likely, there is only one single sequence that produces exactly $1,000$ heads. With only one possibility, the entropy is as low as it gets: $S(\#H = 1000) = \log 1 = 0$.
-On the other hand, there are more sequences with $500$ heads than there are atoms in the entire observable universe!
+Even though each sequence of heads and tails is equally likely, there is only one single sequence that produces exactly $1,000$ heads. With only one possibility, the entropy is as low as it gets: $S(\#H = 1000) = \log 1 = 0$. On the other hand, there are more sequences with $500$ heads than there are atoms in the entire observable universe!
 
-> [!aside] aside
+> [!note-margin] Aside
 > The number of ways to get $500$ heads from our box is $\binom{1000}{500} \approx 10^{299}$ giving an entropy of $S(\#H = 500) \approx 299 \log 10$. There are only about $10^{80}$ atoms in the entire observable universe.
 
 Therefore, after shaking the box, our system naturally favors the outcome with the most possibilities and on-average we see sequences with close to $500$ heads. This is the essence of the second law.

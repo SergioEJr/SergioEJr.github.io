@@ -671,73 +671,6 @@ const numberedBody = numberCitations(renderedBody);
       .prose :global(section[data-footnotes] p) {
         text-align: left;
       }
-      .prose :global(.callout) {
-        --callout-accent: var(--color-accent);
-        --callout-surface: rgba(0, 51, 102, 0.08);
-        position: relative;
-        margin: 2rem 0;
-        padding: 1rem 1.2rem 1rem 1.25rem;
-        border: 1px solid
-          color-mix(in srgb, var(--callout-accent) 22%, var(--color-border));
-        border-left: 4px solid var(--callout-accent);
-        border-radius: 16px;
-        background:
-          linear-gradient(135deg, var(--callout-surface) 0%, transparent 100%),
-          var(--color-bg-offset);
-        box-shadow: var(--shadow-sm);
-      }
-      .prose :global(.callout::before) {
-        content: attr(data-callout);
-        display: inline-flex;
-        align-items: center;
-        margin-bottom: 0.7rem;
-        padding: 0.32rem 0.62rem;
-        border-radius: 999px;
-        background: color-mix(in srgb, var(--callout-accent) 14%, transparent);
-        color: var(--callout-accent);
-        font-size: 0.72rem;
-        font-weight: 800;
-        letter-spacing: 0.08em;
-        line-height: 1;
-        text-transform: uppercase;
-      }
-      .prose :global(.callout p) {
-        margin: 0.35rem 0;
-        text-align: left;
-      }
-      .prose :global(.callout p:first-child) {
-        margin-top: 0;
-      }
-      .prose :global(.callout p:last-child) {
-        margin-bottom: 0;
-      }
-      .prose :global(.callout strong) {
-        color: var(--color-text-main);
-      }
-      .prose :global(.callout[data-callout="note"]) {
-        --callout-accent: #7c3aed;
-        --callout-surface: rgba(124, 58, 237, 0.12);
-      }
-      .prose :global(.callout[data-callout="info"]) {
-        --callout-accent: #2563eb;
-        --callout-surface: rgba(37, 99, 235, 0.12);
-      }
-      .prose :global(.callout[data-callout="tip"]) {
-        --callout-accent: #0f766e;
-        --callout-surface: rgba(15, 118, 110, 0.12);
-      }
-      .prose :global(.callout[data-callout="success"]) {
-        --callout-accent: #15803d;
-        --callout-surface: rgba(21, 128, 61, 0.12);
-      }
-      .prose :global(.callout[data-callout="warning"]) {
-        --callout-accent: #d97706;
-        --callout-surface: rgba(217, 119, 6, 0.14);
-      }
-      .prose :global(.callout[data-callout="danger"]) {
-        --callout-accent: #dc2626;
-        --callout-surface: rgba(220, 38, 38, 0.12);
-      }
 
       .title {
         margin-bottom: 1em;
@@ -826,10 +759,6 @@ const numberedBody = numberCitations(renderedBody);
           right: 0.75rem;
           padding: 0.4rem 0.7rem;
           font-size: 0.72rem;
-        }
-        .prose :global(.callout) {
-          padding: 0.95rem 1rem;
-          border-radius: 14px;
         }
       }
     </style>

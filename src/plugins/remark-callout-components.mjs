@@ -8,11 +8,18 @@
 //   > [!figure] Entropy essentially counts the arrows into each bin.
 //   > ![[coin-macrostates.svg|400]]
 //
-//   > [!aside] recall            -> SideNote, floats into the right margin
+//   > [!note] recall             -> a note in the reading column
 //   > Entropy counts microstates.
 //
-//   > [!note] Note               -> SideNote inline, stays in the reading column
-//   > A framing note too important for the margin.
+//   > [!note-margin] recall      -> the same note, floated into the right gutter
+//   > Entropy counts microstates.
+//
+// Generic types are note / tip / warning / danger / example, and ANY of them
+// takes a `-margin` suffix. Placement is a modifier rather than part of the
+// type name, so a warning can live in the margin without inventing a type for
+// it. The `-margin` variants are unknown to Obsidian and fall back to its
+// default callout styling there; a vault snippet restores their colour. The
+// float is site-only — Obsidian has no gutter.
 //
 //   > [!derivation]- Why the Jacobian shows up   -> Derivation, collapsed
 //   > Let $\Phi$ be a coordinate transformation...
@@ -218,41 +225,55 @@ function buildDerivation(label, bodyNodes, open, id) {
   };
 }
 
-// Lifted verbatim from SideNote.astro so the two renderings are identical.
-const SIDENOTE_ICON =
-  '<svg class="sidenote__icon" xmlns="http://www.w3.org/2000/svg" width="14"' +
-  ' height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
-  ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round"' +
-  ' aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121' +
-  ' 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path></svg>';
+// One icon per callout type, matching Obsidian's own choices so the two
+// renderers agree at a glance (note=pencil, tip=flame, warning=triangle,
+// danger=zap, example=list). Lucide paths, 14px, stroked with currentColor so
+// each inherits its type's --callout-color.
+const ICON_PATHS = {
+  note: '<path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>',
+  tip: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>',
+  warning:
+    '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path>',
+  danger:
+    '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>',
+  example:
+    '<path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path>',
+};
 
-// SideNote renders as <span>s, not <div>s, because the component had to be
-// valid INSIDE a paragraph. The compiled form keeps that markup so one set of
-// CSS serves both, even though a callout is always block-level.
-function buildSideNote(label, bodyNodes, inline) {
+const CALLOUT_TYPES = Object.keys(ICON_PATHS);
+
+function icon(type) {
+  return (
+    '<svg class="callout__icon" xmlns="http://www.w3.org/2000/svg" width="14"' +
+    ' height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
+    ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round"' +
+    ' aria-hidden="true">' +
+    ICON_PATHS[type] +
+    "</svg>"
+  );
+}
+
+// <span>s rather than <div>s: inherited from SideNote, which had to be valid
+// INSIDE a paragraph. Harmless, and it keeps a callout legal anywhere a phrase
+// is.
+function buildCallout(type, label, bodyNodes, margin) {
+  const className = ["callout", `callout--${type}`];
+  if (margin) className.push("callout--margin");
   return {
     type: "paragraph",
-    data: {
-      hName: "span",
-      hProperties: {
-        className: inline
-          ? ["sidenote__body", "sidenote__body--inline"]
-          : ["sidenote__body"],
-        "data-sidenote": inline ? "inline" : "",
-      },
-    },
+    data: { hName: "span", hProperties: { className } },
     children: [
       {
         type: "paragraph",
         data: {
           hName: "span",
-          hProperties: { className: ["sidenote__head"] },
+          hProperties: { className: ["callout__head"] },
           hChildren: [
-            { type: "raw", value: SIDENOTE_ICON },
+            { type: "raw", value: icon(type) },
             {
               type: "element",
               tagName: "span",
-              properties: { className: ["sidenote__label"] },
+              properties: { className: ["callout__label"] },
               children: [{ type: "text", value: label }],
             },
           ],
@@ -263,7 +284,7 @@ function buildSideNote(label, bodyNodes, inline) {
         type: "paragraph",
         data: {
           hName: "span",
-          hProperties: { className: ["sidenote__content"] },
+          hProperties: { className: ["callout__content"] },
         },
         children: bodyNodes,
       },
@@ -286,15 +307,24 @@ export default function remarkCalloutComponents() {
       const m = CALLOUT.exec(lead.value);
       if (!m) return;
       const type = m[1].toLowerCase();
+      // `-margin` is a PLACEMENT modifier, not part of the type.
+      const margin = type.endsWith("-margin");
+      const base = margin ? type.slice(0, -"-margin".length) : type;
       // Anything else passes through as the ordinary blockquote it already is.
-      if (!["figure", "aside", "note", "derivation"].includes(type)) return;
+      if (
+        base !== "figure" &&
+        base !== "derivation" &&
+        !CALLOUT_TYPES.includes(base)
+      ) {
+        return;
+      }
 
       // Drop the "[!type]" marker, then separate the title line from the body.
       const children = [...first.children];
       children[0] = { ...lead, value: lead.value.slice(m[0].length) };
       const [captionNodes, bodyNodes] = splitAtFirstNewline(children);
 
-      if (type === "derivation") {
+      if (base === "derivation") {
         const label =
           captionNodes
             .map((n) => (n.type === "text" ? n.value : ""))
@@ -322,15 +352,12 @@ export default function remarkCalloutComponents() {
         return index;
       }
 
-      if (type === "aside" || type === "note") {
-        // The title is the label; SideNote.astro defaults it to "Note".
+      if (CALLOUT_TYPES.includes(base)) {
         const label =
           captionNodes
             .map((n) => (n.type === "text" ? n.value : ""))
             .join("")
-            .trim() || "Note";
-        // Body = the rest of the title paragraph, plus any further blockquote
-        // children (a callout may hold several paragraphs).
+            .trim() || base[0].toUpperCase() + base.slice(1);
         const body = [];
         if (bodyNodes.length) {
           body.push({ type: "paragraph", children: bodyNodes });
@@ -339,8 +366,8 @@ export default function remarkCalloutComponents() {
         if (!body.length) {
           file.fail(`[!${type}] callout has no body text.`, node);
         }
-        // A one-paragraph note renders its text directly inside
-        // .sidenote__content, with no <p> wrapper -- which is what
+        // A one-paragraph callout renders its text directly inside
+        // .callout__content, with no <p> wrapper — which is what
         // <SideNote>inline text</SideNote> produced. Wrapping it would add
         // paragraph margins the component never had. Multi-paragraph bodies
         // keep their paragraphs.
@@ -351,7 +378,7 @@ export default function remarkCalloutComponents() {
         parent.children.splice(
           index,
           1,
-          buildSideNote(label, content, type === "note"),
+          buildCallout(base, label, content, margin),
         );
         return index;
       }

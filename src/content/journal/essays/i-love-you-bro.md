@@ -12,7 +12,7 @@ keywords:
 draft: false # set to false to publish
 ---
 
-> [!note] Note
+> [!warning] A note on this essay
 > This is a cultural-analysis essay I wrote in 2022 for a Gender & Sexuality Studies course at Emory University. It starts from something most men will recognize: how little room men are given to be physically or emotionally close with other men without it reading as gay. The essay looks at who gets to be intimate and who gets mocked for it, and how that line falls along race. It's academic in register, though the reader is warned that the essay is R-rated due to the films and content it analyses. Read on if that's your thing.
 
 ## How men lost touch

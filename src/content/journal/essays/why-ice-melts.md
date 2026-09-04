@@ -28,7 +28,7 @@ We know large collections of atoms undergo phase transitions at specific tempera
 
 Entropy seems to make our question worse before it makes it better. If entropy always increases, shouldn't a block of ice spontaneously melt, regardless of the temperature, thus releasing its molecules into the surrounding air to increase the entropy of the universe?
 
-> [!aside] recall
+> [!note-margin] recall
 > Recall that entropy counts the number of microscopic arrangements that produce the same big-picture state, with closed systems drifting toward the state with the most arrangements. Free-roaming vapor molecules have vastly more arrangements available to them than molecules locked in an ice crystal.
 
 The short answer is that we have forgotten to take the conservation of energy into account. If the room is sealed off from the rest of the world, then the ice and the room together form a closed system, and their total energy must be conserved. It takes energy to rip molecules out of a rigid crystal, so the air in the room must give up some of its own heat to melt the cube, and parting with heat costs the air entropy. This competition between the energy and entropy of the system (the ice) and the environment (the room) is key to how physicists study phase transitions. To quantify the competition, physicists use a quantity known as the free energy.
