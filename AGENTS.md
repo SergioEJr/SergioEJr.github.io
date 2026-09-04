@@ -247,10 +247,10 @@ listing pages at all.
 - **`src/utils/categories.ts`** — canonical Project category colors + labels for
   the Projects page and OG image route. (Journal register/subject colors are CSS
   vars in `global.css` — `--cat-*` / `--subj-*` — not this file.)
-- **`src/components/SideNote.astro`** — margin notes (`.mdx` only); inline math
-  works, display math doesn't (MDX limitation).
-- **`src/components/Figure.astro`** — diagrams that adapt to light/dark
-  (adaptive `currentColor` SVG, light/dark image pair, or single-image card).
+- **`src/plugins/remark-cite.mjs`** — Pandoc-style citations: `[@key]` to cite,
+  `[@key]: entry` (at the END of the post, blank-line separated) to define. Emits
+  the markers `src/utils/numberCitations.ts` numbers and collects into the
+  References list at page-render time.
 - **`DESIGN.md`** (repo root) — light/dark color palette and theme-aware SVG
   rules. Read it before generating any diagram, chart, or `.svg`.
 - **`src/plugins/remark-wikilink.mjs`** — Obsidian-style `[[slug]]` /
@@ -302,8 +302,9 @@ posts are **not** wikilink targets, **not** in full-text search, and **not** in
 the graph. Clicking `[[some-mdx-post]]` silently creates a stray empty file
 instead of resolving. (The two MDX plugins are also mutually exclusive — both
 claim the extension, so you get editing or preview, never both.) Math needs no
-`.mdx`: `remark-math` is registered on the Markdown processor too. Six posts are
-`.mdx` today because they use `Figure`/`SideNote`/`Derivation`/`Cite`.
+`.mdx`: `remark-math` is registered on the Markdown processor too. **The journal
+is now entirely `.md`** — every post, including the ones that use figures, side
+notes, derivations and citations.
 
 **Placeholder notes are the point.** Typing `[[an idea]]` mid-sentence and
 clicking it later is the capture gesture this whole setup exists to support, so
@@ -372,10 +373,14 @@ version: a callout is a blockquote and degrades gracefully in any renderer;
 `:::figure` renders as literal text everywhere that has not opted in, Obsidian
 included.
 
-**Not yet done** (deliberate; revisit when revising an `.mdx` post gets
-annoying): porting the four components to remark/rehype plugins so every post
-can be `.md`. That is a real cost — `.md` cannot invoke Astro components, so
-each one must be reimplemented to emit its own HTML, with a permanent tax on
-every future component. A generic `> [!callout]` bridge would cover the wrapper
-components (`SideNote`, `Derivation`) in one plugin; only `Figure` and `Cite`
-do enough real work to need bespoke code.
+**`Figure.astro`, `SideNote.astro`, `Derivation.astro` and `Cite.astro` are
+GONE** (deleted 2026-09-04). `.md` cannot invoke Astro components, so each was
+reimplemented as plugin output plus rules in `global.css`; keeping the
+components alongside would have been two definitions of one visual, free to
+drift. Look for them in git history, not in `src/components/`.
+
+**Adding a new post component** now means: a callout type in
+`remark-callout-components.mjs` (usually a few lines — the wrapper shape is
+already there), its CSS in `global.css`, and an authoring form Obsidian renders
+natively. That is the permanent tax this architecture charges; the callout
+bridge is what keeps it small for the common case.

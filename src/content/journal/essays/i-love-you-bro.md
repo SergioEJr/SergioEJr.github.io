@@ -5,38 +5,28 @@ pubDate: "2022-05-03"
 category: essays
 subject: Ideas
 authors:
-  - sergio-eraso
+ - sergio-eraso
 keywords:
-  - culture
-  - masculinity
+ - culture
+ - masculinity
 draft: false # set to false to publish
 ---
 
-import SideNote from '/src/components/SideNote.astro';
-import Cite from '/src/components/Cite.astro';
-
-<SideNote inline label="Note">
-This is a cultural-analysis essay I wrote in 2022 for a Gender & Sexuality Studies
-course at Emory University. It starts from something most men will recognize:
-how little room men are given to be physically or emotionally close with other men
-without it reading as gay. The essay looks at who gets to be intimate and who gets
-mocked for it, and how that line falls along race. It's academic in register, though
-the reader is warned that the essay is R-rated due to the films and content it analyses.
-Read on if that's your thing.
-</SideNote>
+> [!note] Note
+> This is a cultural-analysis essay I wrote in 2022 for a Gender & Sexuality Studies course at Emory University. It starts from something most men will recognize: how little room men are given to be physically or emotionally close with other men without it reading as gay. The essay looks at who gets to be intimate and who gets mocked for it, and how that line falls along race. It's academic in register, though the reader is warned that the essay is R-rated due to the films and content it analyses. Read on if that's your thing.
 
 ## How men lost touch
 
 Contrary to public belief, male same-sex friendships can be quite complex. Before
 the modern era, men were often physically intimate, emotional, and endearing
-toward other male friends.<Cite id="ibson">Ibson, J. (2002). _Picturing Men: A Century of Male Relationships in Everyday American Photography._ University of Chicago Press.</Cite> In the 1900s, Freud's _Three Essays on the
+toward other male friends.[@ibson] In the 1900s, Freud's _Three Essays on the
 Theory of Sexuality_ (1905) introduced sexuality as a social construction of
 one's upbringing, a culturally malleable phenomenon. Growing awareness of
 homosexuality in America led to the stigmatization of a homosexuality that could
 supposedly develop from "feminine" upbringings, those where men received
-emotional nurturing and support.<Cite id="cancian">Cancian, F. (1986). The feminization of love. _Signs,_ 11(4), 692–709. [DOI](https://doi.org/10.1086/494272)</Cite> So for the greater part of the 20th
+emotional nurturing and support.[@cancian] So for the greater part of the 20th
 century, straight male friendships were socially disallowed the physical and
-emotional intimacy that had become associated with homosexuality.<Cite id="diamond">Diamond, L. M., Savin-Williams, R. C., & Dubé, E. M. (1999). Sex, dating, passionate friendships, and romance: Intimate peer relations among lesbian, gay, and bisexual adolescents. In W. Furman, B. B. Brown, & C. Feiring (Eds.), _The Development of Romantic Relationships in Adolescence_ (pp. 175–210). Cambridge University Press.</Cite> Only
+emotional intimacy that had become associated with homosexuality.[@diamond] Only
 recently, with the increased visibility and acceptance of homosexuality, have some
 groups of mostly white straight men been allowed to once again publicly
 participate in physically and emotionally intimate same-sex friendship, or
@@ -48,11 +38,11 @@ In contrast to the early 1900s, the dominant narrative in America today is one o
 an innate, stable sexual orientation. There are several reasons for this shift.
 Studies during the 1990s, including a widely covered 1991 study that reported
 neural-structure differences between straight and gay men, laid a biological
-foundation for the cause of homosexuality.<Cite id="levay">LeVay, S. (1991). A difference in hypothalamic structure between heterosexual and homosexual men. _Science,_ 253(5023), 1034–1037. [DOI](https://doi.org/10.1126/science.1887219)</Cite> Extensive media coverage of
+foundation for the cause of homosexuality.[@levay] Extensive media coverage of
 these discoveries gave rise to a determinism-versus-choice debate and inspired the
 search for a "gay gene." Research in attribution theory finds that people are more
 likely to support homosexuality when it is seen as outside one's control;
-otherwise it can be read as a flawed choice or personal failure.<Cite id="lewis">Lewis, G. B. (2009). Does believing homosexuality is innate increase support for gay rights? _Policy Studies Journal,_ 37, 669–693. [DOI](https://doi.org/10.1111/j.1541-0072.2009.00330.x)</Cite> So these
+otherwise it can be read as a flawed choice or personal failure.[@lewis] So these
 biological narratives were also widely used, whether intentionally or not, as an
 effective political device to generate support for LGBTQ rights. This is easy to
 see in the pop culture around the same-sex marriage movement. Take Macklemore and
@@ -66,7 +56,7 @@ partly responsible for why straight white men are now allowed more of the
 homosociality they enjoyed in the past.
 
 A study by Robinson et al. (2018) on "bromances" followed the same-sex friendships
-of 30 heterosexual white undergraduates in the UK.<Cite id="robinson">Robinson, S., Anderson, E. & White, A. (2018). The bromance: Undergraduate male friendships and the expansion of contemporary homosocial boundaries. _Sex Roles,_ 78, 94–106. [DOI](https://doi.org/10.1007/s11199-017-0768-5)</Cite> These men showed
+of 30 heterosexual white undergraduates in the UK.[@robinson] These men showed
 high support for male homosexuality, which correlates with physical and intimate
 homosociality. Nearly all of the 30 reported being publicly intimate with their
 bromances: kissing them on the mouth, hugging them, sharing a bed, even
@@ -85,18 +75,18 @@ the Black community. This may not be surprising. Ingrained expectations of Black
 hypermasculinity perpetuate the policing of "feminine" behaviors, vulnerability,
 tactility, open expression, of the kind that was prevalent in the 1900s. That
 hypermasculinity is audible in gangsta rap, where violent and sexist themes
-advertise male toughness,<Cite id="oware">Oware, M. (2011). Brotherly love: Homosociality and Black masculinity in gangsta rap music. _Journal of African American Studies,_ 15(1), 22–39. [DOI](https://doi.org/10.1007/s12111-010-9123-4)</Cite> and visible on social media. Consider the "flip
+advertise male toughness,[@oware] and visible on social media. Consider the "flip
 the switch challenge," a trend in which couples swap clothing to Drake's
 _Nonstop_: it drew criticism from several Black rappers. Waka Flocka posted,
 "Never will I act or dress like a female … where's the be a real man challenge."
-Casanova filmed his own version of the trend in disapproval.<Cite id="casanova">Casanova — Flip the Switch Challenge. YouTube. [Video](https://www.youtube.com/watch?v=5Xcm5emVDTc)</Cite> This
+Casanova filmed his own version of the trend in disapproval.[@casanova] This
 hypermasculinity carries over into policing the intimacy allowed in Black male
 friendship. The level of intimacy in Robinson et al.'s study is close to unheard
 of in Black communities. In fact, it is hard for almost any intimacy between Black
 men to read as socially acceptable. Film reflects this. In bromance comedies like
 _The 40-Year-Old Virgin_ (2005), _Pineapple Express_ (2008), and _Forgetting
 Sarah Marshall_ (2008), Black characters are relegated to scenery, used as the
-butt of jokes, and easily discarded.<Cite id="yoseph">Yoseph, S. (2009, October 2). Male nudity, illicit substances and ill-timed professions of love. _The Root._</Cite> These films feature primarily white
+butt of jokes, and easily discarded.[@yoseph] These films feature primarily white
 casts, and the few Black characters present are never shown needing the emotional
 attention the white characters receive, which makes them forgettable and distills
 them to their extreme masculinity. As Saaret Yoseph puts it, "if _this_ is what it
@@ -126,7 +116,7 @@ Ironically, as Robinson et al. and Jane Ward both point out, homosexual contact 
 a major component of white heterosexual bromance. In _Not Gay_ (2015), Ward
 describes how white men can practice unquestioned, context-dependent
 heteroflexibility by manufacturing "opportunities for sexual contact with other
-men."<Cite id="ward">Ward, J. (2015). _Not Gay: Sex Between Straight White Men._ NYU Press. (Reviewed in _Sexualities,_ 19(8), 1001–1003.)</Cite> She recounts a fraternity ritual in which straight white men strip
+men."[@ward] She recounts a fraternity ritual in which straight white men strip
 naked and insert their thumbs into each other's rectums to "build brotherhood." A
 more recent version is the "acting sus" trend on TikTok, in which presumably
 heterosexual men perform homosexual advances toward other straight men for laughs.
@@ -143,7 +133,7 @@ Ward argues these encounters are most common in hyper-masculine heterosexual
 settings: the military, sports teams, fraternities. There, white men can use their
 privilege and presumed-static heterosexuality to dissociate homosexuality from
 same-sex contact. Military initiation, like fraternity hazing, can involve
-cross-dressing, nipple piercing, anal penetration, and simulated sex.<Cite id="ward" /> Yet
+cross-dressing, nipple piercing, anal penetration, and simulated sex.[@ward] Yet
 these acts are never read as homosexual, because associating homosexuality with
 the military would puncture its hyper-masculine image. Movies do the same work in
 the cliché locker-room scene, staging "homosexual accidents" as comedy for the
@@ -171,3 +161,22 @@ and Black men alike. Studies like Robinson's suggest these depictions are not fa
 from the current state of male homosociality. But we need far more research into
 Black homosociality to understand the role race plays in men's relationships.
 
+[@ibson]: Ibson, J. (2002). _Picturing Men: A Century of Male Relationships in Everyday American Photography._ University of Chicago Press.
+
+[@cancian]: Cancian, F. (1986). The feminization of love. _Signs,_ 11(4), 692–709. [DOI](https://doi.org/10.1086/494272)
+
+[@diamond]: Diamond, L. M., Savin-Williams, R. C., & Dubé, E. M. (1999). Sex, dating, passionate friendships, and romance: Intimate peer relations among lesbian, gay, and bisexual adolescents. In W. Furman, B. B. Brown, & C. Feiring (Eds.), _The Development of Romantic Relationships in Adolescence_ (pp. 175–210). Cambridge University Press.
+
+[@levay]: LeVay, S. (1991). A difference in hypothalamic structure between heterosexual and homosexual men. _Science,_ 253(5023), 1034–1037. [DOI](https://doi.org/10.1126/science.1887219)
+
+[@lewis]: Lewis, G. B. (2009). Does believing homosexuality is innate increase support for gay rights? _Policy Studies Journal,_ 37, 669–693. [DOI](https://doi.org/10.1111/j.1541-0072.2009.00330.x)
+
+[@robinson]: Robinson, S., Anderson, E. & White, A. (2018). The bromance: Undergraduate male friendships and the expansion of contemporary homosocial boundaries. _Sex Roles,_ 78, 94–106. [DOI](https://doi.org/10.1007/s11199-017-0768-5)
+
+[@oware]: Oware, M. (2011). Brotherly love: Homosociality and Black masculinity in gangsta rap music. _Journal of African American Studies,_ 15(1), 22–39. [DOI](https://doi.org/10.1007/s12111-010-9123-4)
+
+[@casanova]: Casanova — Flip the Switch Challenge. YouTube. [Video](https://www.youtube.com/watch?v=5Xcm5emVDTc)
+
+[@yoseph]: Yoseph, S. (2009, October 2). Male nudity, illicit substances and ill-timed professions of love. _The Root._
+
+[@ward]: Ward, J. (2015). _Not Gay: Sex Between Straight White Men._ NYU Press. (Reviewed in _Sexualities,_ 19(8), 1001–1003.)

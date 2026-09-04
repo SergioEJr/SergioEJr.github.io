@@ -302,7 +302,7 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     // read the resolved seconds back. This keeps JS perfectly in lockstep with
     // the CSS no matter how --intro-sim-at is authored.
     function readSimIntroDelayMs(): number {
-      const FALLBACK = 1750;
+      const FALLBACK = 250;
       try {
         const probe = document.createElement("div");
         probe.style.position = "absolute";
@@ -493,38 +493,47 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     }
     // t is ms since the sim intro phase began (canvas starting to appear);
     // negative before that. The GAS fades in uniformly (no flicker) over the
-    // first ~600ms; during this the name is INVISIBLE (activation still 0), so
-    // there's a clear "uniform gas, no name" beat before the name ignites.
+    // first ~300ms (half its original 600 — a plain fade compresses cleanly);
+    // during this the name is INVISIBLE (activation still 0), so there's a
+    // clear "uniform gas, no name" beat before the name ignites at 400.
     function ambientIntroAlpha(t: number) {
       if (!isFinite(t)) return 1;
       if (t <= 0) return 0;
-      return clamp01(t / 600);
+      return clamp01(t / 300);
     }
     // The ACTIVATION (inside-name color+glow) ignites like a neon tube AFTER the
     // gas is fully up: held off through the gas fade, then a few stutter pulses,
     // then settles fully on. This is the ONLY thing that flickers — the gas and
     // grid never do.
+    // Unlike the gas fade, this timeline is NOT halved with the consolidated
+    // intro: halving squeezed every pulse to 20–35ms — one or two frames,
+    // which read as rendering glitches. The pulses keep the ORIGINAL 50–80ms
+    // widths (the texture that reads as neon) and only the lead-in moved up;
+    // settling at 1020ms still fits inside the nav phase's critical path
+    // (--intro-nav-fade + --intro-glow-dur ≈ 1.3s from page load), so the
+    // full drama costs the consolidated intro no extra time. Keep the
+    // activationEnd constant in index.astro's initHomeIntro in sync.
     function activatedIntroAlpha(t: number) {
       if (!isFinite(t)) return 1;
-      if (t < 750) return 0; // gas-only beat; name hidden
-      if (t < 800) return 0.25; // first stutter on
-      if (t < 870) return 0; // off
-      if (t < 915) return 0.7; // flick
-      if (t < 955) return 0.05; // off
-      if (t < 1010) return 0.9; // bright flick
-      if (t < 1055) return 0.18; // dip
-      if (t < 1110) return 0.55; // half flick
-      if (t < 1150) return 0.1; // off
-      if (t < 1210) return 1; // on
-      if (t < 1255) return 0.45; // final little stutter
+      if (t < 400) return 0; // gas-only beat; name hidden
+      if (t < 460) return 0.25; // first stutter on
+      if (t < 520) return 0; // off
+      if (t < 590) return 0.7; // flick
+      if (t < 640) return 0.05; // off
+      if (t < 720) return 0.9; // bright flick
+      if (t < 780) return 0.18; // dip
+      if (t < 860) return 0.55; // half flick
+      if (t < 910) return 0.1; // off
+      if (t < 970) return 1; // on
+      if (t < 1020) return 0.45; // final little stutter
       return 1; // settled, fully lit
     }
     // LIGHT-MODE intro glow envelope: a temporary neon flare that sells the "ink
     // neon" theme during ignition, then fades to the flat ink dots. 1 while the
     // name is igniting (through the flicker), then eases to 0 over GLOW_FADE_MS so
     // the resting state is the flat (glow-free) light sprite. Dark ignores this.
-    const GLOW_HOLD_MS = 1255; // matches activatedIntroAlpha settling point
-    const GLOW_FADE_MS = 2520; // fade-out duration after settle (longer = gentler)
+    const GLOW_HOLD_MS = 1020; // matches activatedIntroAlpha settling point
+    const GLOW_FADE_MS = 1260; // fade-out duration after settle (longer = gentler)
     const GLOW_PEAK = 0.7; // max flare strength (<1 = subtler neon)
     function introGlowFade(t: number) {
       if (!isFinite(t)) return 0; // no intro / already over → no flare

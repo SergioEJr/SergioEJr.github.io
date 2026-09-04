@@ -59,9 +59,10 @@ const imageUrl =
         const stored = localStorage.getItem("theme");
         if (stored === "dark" || stored === "light") return stored;
       } catch {}
-      return matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
+      // Site default is DARK regardless of the OS preference — the design is
+      // dark-first (the landing sim, the blueprint grid) and light mode is the
+      // opt-in variant. An explicit toggle choice (stored above) still wins.
+      return "dark";
     };
     const paintTheme = (theme) => {
       const dark = theme === "dark";
@@ -96,20 +97,20 @@ const imageUrl =
 </script>
 <style is:inline>
   /* CSS variables inline — available immediately in all modes (dev + prod),
-     before any external CSS. LIGHT-THEME VALUES MUST MATCH the :root block in
-     global.css ("daylight lab" palette); if they drift, the first paint flashes
-     the wrong ground before the external sheet loads — the exact FOUC this block
-     exists to prevent. */
+     before any external CSS. The site default is DARK (see the head script), so
+     the bare :root carries the DARK palette: any pre-script paint is already
+     dark, for every visitor, on every OS. DARK VALUES MUST MATCH the
+     [data-theme="dark"] block in global.css and the light values must match its
+     :root; if they drift, the first paint flashes the wrong ground before the
+     external sheet loads — the exact FOUC this block exists to prevent.
+
+     Flash accounting (Chromium paint-hold on reload): dark-by-default closes
+     the old white-flash gap for everyone. The one remaining case is its mirror
+     — a returning visitor who explicitly chose LIGHT can catch a single dark
+     frame before the head script applies their stored choice. CSS can't read
+     localStorage, so that frame is unavoidable; it's brief and only affects
+     the explicit-light minority. */
   :root {
-    --color-bg: #f6f8fa;
-    --color-bg-offset: #ffffff;
-    --color-bg-header: rgba(246, 248, 250, 0.85);
-    --color-text-main: #18222e;
-    --color-text-muted: #49586a;
-    --color-accent: #003366;
-    --color-border: #dce3eb;
-  }
-  [data-theme="dark"] {
     --color-bg: #0f172a;
     --color-bg-offset: #0f172a;
     --color-bg-header: rgba(15, 23, 42, 0.8);
@@ -118,25 +119,14 @@ const imageUrl =
     --color-accent: #60a5fa;
     --color-border: #334155;
   }
-  /* WHITE-FLASH-ON-RELOAD FIX (Chromium): the :root vars above default to LIGHT,
-     and dark only applies once the head script sets [data-theme="dark"]. On reload
-     Chromium can paint a frame from the parsed CSS BEFORE that script's attribute
-     mutation is committed, so the body briefly resolves --color-bg to #ffffff — a
-     white flash (only on reload, only in Chromium's paint-hold behavior). Making
-     the dark values the DEFAULT when the OS prefers dark removes that gap: a
-     pre-script paint is already dark. `:not([data-theme="light"])` keeps an
-     explicit light choice winning. The head script still sets the attribute for
-     the authoritative, OS-independent theme. */
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --color-bg: #0f172a;
-      --color-bg-offset: #0f172a;
-      --color-bg-header: rgba(15, 23, 42, 0.8);
-      --color-text-main: #e2e8f0;
-      --color-text-muted: #94a3b8;
-      --color-accent: #60a5fa;
-      --color-border: #334155;
-    }
+  [data-theme="light"] {
+    --color-bg: #f6f8fa;
+    --color-bg-offset: #ffffff;
+    --color-bg-header: rgba(246, 248, 250, 0.85);
+    --color-text-main: #18222e;
+    --color-text-muted: #49586a;
+    --color-accent: #003366;
+    --color-border: #dce3eb;
   }
   html,
   body {
@@ -154,12 +144,6 @@ const imageUrl =
     scrollbar-gutter: stable;
     scrollbar-width: thin;
     scrollbar-color: var(--color-border) var(--color-bg);
-  }
-  @media (prefers-color-scheme: dark) {
-    html:not([data-theme="light"]),
-    html:not([data-theme="light"]) body {
-      background-color: var(--color-bg);
-    }
   }
   html[data-theme="dark"],
   html[data-theme="dark"] body {
@@ -220,7 +204,9 @@ const imageUrl =
   href={new URL("rss.xml", Astro.site)}
 />
 <meta name="generator" content={Astro.generator} />
-<meta name="color-scheme" content="light dark" />
+{/* dark first: the UA's pre-CSS default rendering should assume the site
+    default (dark), matching the :root palette in the critical CSS above. */}
+<meta name="color-scheme" content="dark light" />
 
 <style
   is:inline

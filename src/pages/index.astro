@@ -157,7 +157,11 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
            collapse — every svh-sized hero box then resizes with the URL bar,
            shoving the whole page (the 2026-07 "page jumps on bar resize" bug).
            The 1svh fallback covers SSR/no-JS. */
-        --hero-travel: calc(var(--hero-svh, 1svh) * 115);
+        /* 80svh (down from 115): a wheel user needed ~7 notches to reach the
+           assembled card, which read as an obstacle course to a first-time
+           visitor scanning for information. Together with the front-loaded
+           bands below, the full card is on screen after ~4 notches. */
+        --hero-travel: calc(var(--hero-svh, 1svh) * 80);
         --hero-progress: 0;
         /* 0→1 across the hold segment; drives the card's slow drift. */
         --hero-hold: 0;
@@ -170,17 +174,21 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
            while its contents transform. The stacked fallbacks (mobile,
            reduced-motion) pin every band to its end state. */
         /* Bands OVERLAP so the timeline has no empty trough: the gas lingers
-           to p=0.5 while the photo starts at 0.2 — around p≈0.35–0.45
-           something is always at meaningful presence (previously the gas died
-           at 0.4 before the copy started at 0.48, leaving ~2 near-blank
-           tenths of blueprint grid on a slow scroll). */
-        --b-gas: clamp(0, calc(1 - var(--hero-progress) / 0.5), 1);
-        --b-photo: clamp(0, calc((var(--hero-progress) - 0.2) / 0.38), 1);
-        --b-eyebrow: clamp(0, calc((var(--hero-progress) - 0.44) / 0.14), 1);
-        --b-tick: clamp(0, calc((var(--hero-progress) - 0.48) / 0.12), 1);
-        --b-name: clamp(0, calc((var(--hero-progress) - 0.51) / 0.2), 1);
-        --b-bio: clamp(0, calc((var(--hero-progress) - 0.59) / 0.19), 1);
-        --b-links: clamp(0, calc((var(--hero-progress) - 0.67) / 0.17), 1);
+           to p=0.42 while the photo starts at 0.16 — around p≈0.2–0.35
+           something is always at meaningful presence.
+           FRONT-LOADED on desktop: the card finishes assembling by p≈0.66
+           (it used to run to 0.84), so the information arrives in the first
+           two-thirds of the scrub and the rest is settle room — a scanning
+           visitor stops scrolling into a finished card, not a half-built one.
+           Desktop only: the mobile block below pins the original stagger
+           (mobile's short 70svh travel already paced well). */
+        --b-gas: clamp(0, calc(1 - var(--hero-progress) / 0.42), 1);
+        --b-photo: clamp(0, calc((var(--hero-progress) - 0.16) / 0.3), 1);
+        --b-eyebrow: clamp(0, calc((var(--hero-progress) - 0.34) / 0.12), 1);
+        --b-tick: clamp(0, calc((var(--hero-progress) - 0.38) / 0.1), 1);
+        --b-name: clamp(0, calc((var(--hero-progress) - 0.4) / 0.16), 1);
+        --b-bio: clamp(0, calc((var(--hero-progress) - 0.46) / 0.15), 1);
+        --b-links: clamp(0, calc((var(--hero-progress) - 0.52) / 0.14), 1);
         position: relative;
         height: calc(var(--hero-svh, 1svh) * 100 - var(--header-h) + var(--hero-travel));
         /* Visible overflow so HeroSim's full-bleed canvas/grid feather past the
@@ -205,13 +213,24 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
            Phase 3  simulation fades+flicks[SIM_AT .. +SIM]      (INDEPENDENT —
                     may start any time, including mid-Phase-2; see --intro-sim-at)
            The JS removes data-home-intro after the LATEST phase completes. */
-        --intro-nav-fade: 1.1s; /* phase 1: nav fade-in (slow + dramatic) */
-        --intro-glow-dur: 1.3s; /* phase 2: nav flicker (after fade-in) */
-        --intro-sim-dur: 0.7s; /* phase 3: sim grid+canvas flicker-in */
+        /* Timings are ~half their original values (nav 1.1s / glow 1.3s /
+           sim 0.7s): the full sequence settled around 2.4s, which read as an
+           obstacle to a first-time visitor scanning for information. Same
+           choreography, half the wait — settled with the cue up by ~1.4s.
+           IMPORTANT: durations can't be compressed in isolation — a keyframe
+           timeline scales every pulse with it, and a flick under ~40ms is one
+           or two frames, which reads as a rendering glitch, not a neon
+           stutter. So the flicker SKELETONS (the @keyframes below and
+           HeroSim's activation timeline) are re-authored for this window:
+           fewer, wider pulses instead of the original five squeezed thin.
+           Keep the JS cue/end constants (initHomeIntro) in sync. */
+        --intro-nav-fade: 0.55s; /* phase 1: nav fade-in */
+        --intro-glow-dur: 0.75s; /* phase 2: nav flicker (after fade-in) */
+        --intro-sim-dur: 0.4s; /* phase 3: sim grid+canvas flicker-in */
         /* Phase 2 starts shortly BEFORE the fade fully finishes (the nav is
            already mostly visible by then), trimming the dead gap between the
            fade-in and the flicker. Lower the offset to overlap more. */
-        --intro-glow-at: calc(var(--intro-nav-fade) - 0.35s);
+        --intro-glow-at: calc(var(--intro-nav-fade) - 0.2s);
         /* --intro-sim-at: WHEN the simulation phase begins, as an ABSOLUTE time
            from page load. It no longer has to wait for Phase 2 to finish — set it
            to whatever you like and the sim (gas fade + name flicker) will start
@@ -221,9 +240,9 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
            (overlapping all of Phase 2); raise it to delay, lower it to overlap
            earlier. Examples:
              var(--intro-glow-at)                         → starts with Phase 2
-             calc(var(--intro-glow-at) + 0.65s)           → mid Phase 2
+             calc(var(--intro-glow-at) + 0.35s)           → mid Phase 2
              calc(var(--intro-nav-fade) + var(--intro-glow-dur)) → after Phase 2 */
-        --intro-sim-at: calc(var(--intro-glow-at) - 0.2s);
+        --intro-sim-at: calc(var(--intro-glow-at) - 0.1s);
       }
 
       /* Phase 1 — the whole navbar fades in first (before any glow). */
@@ -264,26 +283,31 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           both;
       }
       /* Per-link offsets (hand-picked to look scattered, not sequential). The
-         delay adds onto --intro-glow-at; the duration tweak shifts the rhythm. */
+         delay adds onto --intro-glow-at; the duration tweak shifts the rhythm.
+         Delays are ~0.55× their originals (the glow window shrank 1.3s→0.75s
+         with the consolidated intro) and the duration multipliers are floored
+         at 0.78 so the narrowest on-flash in the skeleton below never drops
+         under ~45ms — thinner flashes read as glitches, not neon. All still
+         finish inside Phase 2 (worst case ≈ 0.87s after glow-at < 0.95s). */
       :global(html[data-home-intro] .internal-links a:nth-child(1)) {
-        animation-delay: calc(var(--intro-glow-at, 0.45s) + 0.12s);
-        animation-duration: calc(var(--gd) * 0.86);
+        animation-delay: calc(var(--intro-glow-at, 0.45s) + 0.07s);
+        animation-duration: calc(var(--gd) * 0.88);
       }
       :global(html[data-home-intro] .internal-links a:nth-child(2)) {
-        animation-delay: calc(var(--intro-glow-at, 0.45s) + 0.4s);
-        animation-duration: calc(var(--gd) * 0.78);
+        animation-delay: calc(var(--intro-glow-at, 0.45s) + 0.22s);
+        animation-duration: calc(var(--gd) * 0.8);
       }
       :global(html[data-home-intro] .internal-links a:nth-child(3)) {
         animation-delay: calc(var(--intro-glow-at, 0.45s) + 0s);
-        animation-duration: calc(var(--gd) * 0.92);
+        animation-duration: calc(var(--gd) * 0.94);
       }
       :global(html[data-home-intro] .internal-links a:nth-child(4)) {
-        animation-delay: calc(var(--intro-glow-at, 0.45s) + 0.52s);
-        animation-duration: calc(var(--gd) * 0.74);
+        animation-delay: calc(var(--intro-glow-at, 0.45s) + 0.28s);
+        animation-duration: calc(var(--gd) * 0.78);
       }
       :global(html[data-home-intro] .internal-links a:nth-child(5)) {
-        animation-delay: calc(var(--intro-glow-at, 0.45s) + 0.26s);
-        animation-duration: calc(var(--gd) * 0.83);
+        animation-delay: calc(var(--intro-glow-at, 0.45s) + 0.14s);
+        animation-duration: calc(var(--gd) * 0.85);
       }
       /* The magicbar's RESTING state already glows, so its intro flicker must end
          IN the glowing state (not fade to none) for a seamless handoff. */
@@ -301,20 +325,20 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           both;
       }
       :global(html[data-home-intro] .header-actions > *:nth-child(1) svg) {
-        animation-delay: calc(var(--intro-glow-at, 0.45s) + 0.34s);
-        animation-duration: calc(var(--gd) * 0.8);
+        animation-delay: calc(var(--intro-glow-at, 0.45s) + 0.19s);
+        animation-duration: calc(var(--gd) * 0.82);
       }
       :global(html[data-home-intro] .header-actions > *:nth-child(2) svg) {
-        animation-delay: calc(var(--intro-glow-at, 0.45s) + 0.06s);
+        animation-delay: calc(var(--intro-glow-at, 0.45s) + 0.03s);
         animation-duration: calc(var(--gd) * 0.9);
       }
       :global(html[data-home-intro] .header-actions > *:nth-child(3) svg) {
-        animation-delay: calc(var(--intro-glow-at, 0.45s) + 0.48s);
-        animation-duration: calc(var(--gd) * 0.72);
+        animation-delay: calc(var(--intro-glow-at, 0.45s) + 0.26s);
+        animation-duration: calc(var(--gd) * 0.78);
       }
       :global(html[data-home-intro] .header-actions > *:nth-child(4) svg) {
-        animation-delay: calc(var(--intro-glow-at, 0.45s) + 0.2s);
-        animation-duration: calc(var(--gd) * 0.85);
+        animation-delay: calc(var(--intro-glow-at, 0.45s) + 0.11s);
+        animation-duration: calc(var(--gd) * 0.86);
       }
 
       /* Phase 3 — simulation gas fades in (uniform, no flicker); the NAME
@@ -355,39 +379,34 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
          JS adds .cue-in at the right moment to trigger the transition. */
       :global(html[data-home-intro] .hero-scroll-cue) {
         opacity: 0;
-        transition: opacity 0.6s ease-out;
+        transition: opacity 0.3s ease-out;
       }
       :global(html[data-home-intro] .hero-scroll-cue.cue-in) {
         opacity: 1;
       }
-      /* Each glow flickers like a neon tube warming up: four quick stepped
-         pulses (tight adjacent-% pairs read as instant on/off even under linear
-         timing) through ~40%, then a SHORT sustained "on" (41–62%), then a smooth
-         ramp DOWN to none by 100% so the glow fades out instead of snapping off.
-         Off frames: 0–8, 12–15, 19–22, 26–30, 35–40. On frames: 9–11, 16–18,
-         23–25, 31–34, 41–62. */
+      /* Each glow flickers like a neon tube warming up: TWO wide stutter
+         flicks (adjacent-% pairs read as near-instant edges even under linear
+         timing), then the sustained ignition (44–62%), then a smooth ramp
+         DOWN to none by 100% so the glow fades out instead of snapping off.
+         The pulse widths are authored for the 0.75s window (1% ≈ 7.5ms):
+         every on-flash stays ≥ ~45ms even at the shortest per-link duration.
+         (The original five-pulse skeleton squeezed into this window produced
+         one-frame flashes that read as rendering bugs, not neon stutter.)
+         Off frames: 0–5, 17–23, 37–42. On frames: 7–15, 25–35, 44–62. */
       @keyframes introLogoPrimaryGlow {
         0%,
-        8%,
-        12%,
-        15%,
-        19%,
-        22%,
-        26%,
-        30%,
-        35%,
-        40% {
+        5%,
+        17%,
+        23%,
+        37%,
+        42% {
           filter: none;
         }
-        9%,
-        11%,
-        16%,
-        18%,
-        23%,
+        7%,
+        15%,
         25%,
-        31%,
-        34%,
-        41%,
+        35%,
+        44%,
         62% {
           filter: drop-shadow(0 0 6px var(--brand-glow-primary))
             drop-shadow(0 0 16px var(--brand-glow-primary));
@@ -409,26 +428,18 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
       }
       @keyframes introLogoSecondaryGlow {
         0%,
-        8%,
-        12%,
-        15%,
-        19%,
-        22%,
-        26%,
-        30%,
-        35%,
-        40% {
+        5%,
+        17%,
+        23%,
+        37%,
+        42% {
           filter: none;
         }
-        9%,
-        11%,
-        16%,
-        18%,
-        23%,
+        7%,
+        15%,
         25%,
-        31%,
-        34%,
-        41%,
+        35%,
+        44%,
         62% {
           filter: drop-shadow(0 0 6px var(--brand-glow-secondary))
             drop-shadow(0 0 16px var(--brand-glow-secondary));
@@ -447,26 +458,18 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
       }
       @keyframes introTextGlow {
         0%,
-        8%,
-        12%,
-        15%,
-        19%,
-        22%,
-        26%,
-        30%,
-        35%,
-        40% {
+        5%,
+        17%,
+        23%,
+        37%,
+        42% {
           text-shadow: none;
         }
-        9%,
-        11%,
-        16%,
-        18%,
-        23%,
+        7%,
+        15%,
         25%,
-        31%,
-        34%,
-        41%,
+        35%,
+        44%,
         62% {
           text-shadow:
             0 0 6px var(--nav-glow, var(--color-accent)),
@@ -490,26 +493,18 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
       }
       @keyframes introIconGlow {
         0%,
-        8%,
-        12%,
-        15%,
-        19%,
-        22%,
-        26%,
-        30%,
-        35%,
-        40% {
+        5%,
+        17%,
+        23%,
+        37%,
+        42% {
           filter: none;
         }
-        9%,
-        11%,
-        16%,
-        18%,
-        23%,
+        7%,
+        15%,
         25%,
-        31%,
-        34%,
-        41%,
+        35%,
+        44%,
         62% {
           filter: drop-shadow(0 0 5px var(--nav-glow, var(--color-accent)))
             drop-shadow(0 0 12px var(--nav-glow, var(--color-accent)));
@@ -528,26 +523,18 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
       }
       @keyframes introUnderlineGlow {
         0%,
-        8%,
-        12%,
-        15%,
-        19%,
-        22%,
-        26%,
-        30%,
-        35%,
-        40% {
+        5%,
+        17%,
+        23%,
+        37%,
+        42% {
           box-shadow: none;
         }
-        9%,
-        11%,
-        16%,
-        18%,
-        23%,
+        7%,
+        15%,
         25%,
-        31%,
-        34%,
-        41%,
+        35%,
+        44%,
         100% {
           /* Hold the glow all the way to 100% — the magicbar's resting state
              glows, so ending lit makes the handoff seamless (no fade-out). */
@@ -1430,10 +1417,25 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
              against the composited scroll, worst while the URL bar animates.
              Root-cause of the 2026-07 mobile jitter bug; html/body's clip
              already contains any sideways overflow. */
-          /* Much shorter travel than desktop's 115svh: one energetic thumb
-             flick should carry through the whole transition + hold. The JS
+          /* Shorter travel than desktop's 80svh: one energetic thumb flick
+             should carry through the whole transition + hold. The JS
              metrics() reads geometry, so the scrub/hold split follows. */
           --hero-travel: calc(var(--hero-svh, 1svh) * 70);
+          /* Mobile keeps the ORIGINAL choreography stagger (the desktop
+             bands were front-loaded to finish by p≈0.66 for wheel users;
+             mobile's short travel already paced well, so its feel is pinned
+             here unchanged — card completes at p=0.84). */
+          --b-gas: clamp(0, calc(1 - var(--hero-progress) / 0.5), 1);
+          --b-photo: clamp(0, calc((var(--hero-progress) - 0.2) / 0.38), 1);
+          --b-eyebrow: clamp(
+            0,
+            calc((var(--hero-progress) - 0.44) / 0.14),
+            1
+          );
+          --b-tick: clamp(0, calc((var(--hero-progress) - 0.48) / 0.12), 1);
+          --b-name: clamp(0, calc((var(--hero-progress) - 0.51) / 0.2), 1);
+          --b-bio: clamp(0, calc((var(--hero-progress) - 0.59) / 0.19), 1);
+          --b-links: clamp(0, calc((var(--hero-progress) - 0.67) / 0.17), 1);
         }
         .hero-card-inner {
           grid-template-columns: 1fr;
@@ -2660,8 +2662,8 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         // now (the sim may start mid-flicker), so the end is the latest of:
         //   - Phase 2 nav flicker end   (nav-fade + glow)
         //   - sim CSS fade end          (--intro-sim-at + --intro-sim-dur)
-        //   - sim activation flicker end(--intro-sim-at + ~1300ms)
-        //   - scroll-cue fade-in end    (--intro-sim-at + 1.3s + 0.6s)
+        //   - sim activation flicker end(--intro-sim-at + ~1060ms)
+        //   - scroll-cue fade-in end    (--intro-sim-at + 0.3s + 0.3s)
         const cs = getComputedStyle(root);
         const ms = (name, fallback) => {
           const raw = cs.getPropertyValue(name).trim();
@@ -2684,24 +2686,24 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
             const r = getComputedStyle(probe).animationDelay;
             probe.remove();
             const v = r.endsWith("ms") ? parseFloat(r) : parseFloat(r) * 1000;
-            return isFinite(v) ? v : 1750;
+            return isFinite(v) ? v : 250;
           } catch {
-            return 1750;
+            return 250;
           }
         };
         const navFlickerEnd =
-          ms("--intro-nav-fade", 1100) + ms("--intro-glow-dur", 1300);
+          ms("--intro-nav-fade", 550) + ms("--intro-glow-dur", 750);
         const simAt = resolveSimAt();
         const cssEnd = Math.max(
           navFlickerEnd,
-          simAt + ms("--intro-sim-dur", 700),
+          simAt + ms("--intro-sim-dur", 400),
         );
-        const activationEnd = simAt + 1300; // matches HeroSim activatedIntroAlpha end
+        const activationEnd = simAt + 1060; // matches HeroSim activatedIntroAlpha end (~1020) + slack
 
         // Final beat: trigger the scroll-cue fade-in (CSS transition) once the
         // name has finished igniting.
-        const CUE_AT = simAt + 600; // start of the cue fade (earlier: as the name ignites)
-        const CUE_DUR = 600; // must match the CSS transition duration
+        const CUE_AT = simAt + 300; // start of the cue fade (earlier: as the name ignites)
+        const CUE_DUR = 300; // must match the CSS transition duration
         const cueEnd = CUE_AT + CUE_DUR;
         window.setTimeout(showCue, CUE_AT);
 

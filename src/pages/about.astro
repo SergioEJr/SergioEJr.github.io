@@ -1,86 +1,336 @@
 ---
-import Layout from "../layouts/BlogPost.astro";
+import { Image } from "astro:assets";
+import BaseHead from "../components/BaseHead.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import BlueprintGrid from "../components/BlueprintGrid.astro";
+import { CONTACT, CV_URL, SOCIAL_LINKS } from "../consts";
+import { CV_AVAILABLE } from "../utils/cv";
+import { url } from "../utils/paths";
+import { pageFade } from "../utils/pageTransition";
+import aboutPhoto from "../assets/photos/colorado.jpeg";
+
+// Purpose-built funnel page, NOT an article: who Sergio is in two short
+// paragraphs, then straight to email / CV / LinkedIn / GitHub. Everything the
+// CV already carries (background, toolkit, service) was deliberately cut —
+// this page routes readers to the PDF instead of restating it. Design speaks
+// the homepage's editorial grammar (blueprint grid, eyebrow + hot tick, serif
+// display, hairline arrow links) so About no longer wears the blog template.
+const contactEmail = CONTACT.emails[0];
+const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
+const linkedin = SOCIAL_LINKS.find((l) => l.icon === "linkedin");
+const github = SOCIAL_LINKS.find((l) => l.icon === "github");
 ---
 
-<Layout
-  title="About"
-  description="About Sergio Eraso — physicist, modeler, and builder."
-  pubDate={new Date("2026-06-10")}
-  showDate={false}
-  heroImage="/about/about.jpeg"
->
-  <p>
-    I'm <strong>Sergio Eraso</strong>, a physicist who likes turning hard, messy
-    problems into models you can actually compute with. I'm currently a PhD
-    researcher in the <a href="https://physics.mit.edu/"
-      >Department of Physics at MIT</a
-    >
-    (Dean of Science Fellow), advised by
-    <a href="https://physics.mit.edu/faculty/mehran-kardar/">Mehran Kardar</a>,
-    working on nonequilibrium statistical physics and biophysics.
-  </p>
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead
+      title="About"
+      description="Sergio Eraso, PhD candidate in physics at MIT."
+      image={aboutPhoto}
+    />
+    <style>
+      .about-hero {
+        position: relative;
+        padding: 2.5rem 0 4.5rem;
+      }
+      /* Blueprint-grid backdrop, same device as the Projects header. Fixed
+         height so the grid (and its baked-in downward fade) dies well before
+         the funnel links — prose never sits on more than the fade's tail. */
+      .about-grid {
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 24rem;
+        pointer-events: none;
+      }
+      /* Above the absolutely-positioned canvas so grid lines can never paint
+         through the glyphs. */
+      .about-inner {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(16rem, 23rem);
+        column-gap: 3.5rem;
+        align-items: center;
+      }
+      .about-eyebrow {
+        margin: 0 0 1rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--color-accent);
+        display: flex;
+        align-items: center;
+      }
+      .about-tick {
+        display: inline-block;
+        width: 1.1rem;
+        height: 3px;
+        background: var(--color-hot);
+        margin-right: 0.55rem;
+      }
+      .about-title {
+        margin: 0 0 1.4rem;
+        font-family: var(--font-serif);
+        font-weight: 700;
+        font-size: clamp(2.3rem, 4.5vw, 3rem);
+        line-height: 1.08;
+        color: var(--color-text-main);
+      }
+      .about-copy p:not(.about-eyebrow) {
+        margin: 0 0 1.1rem;
+        max-width: 30rem;
+        font-size: 1.02rem;
+        line-height: 1.65;
+      }
+      /* The colon hand-off: the last prose line points at the links, so the
+         funnel needs no section heading of its own. */
+      .about-copy p.about-reach {
+        margin-bottom: 1.3rem;
+      }
+      .about-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem 2rem;
+      }
+      /* Editorial text links — the hero card / home-contact language. */
+      .about-link {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding-bottom: 0.3rem;
+        color: var(--color-accent);
+        font-weight: 600;
+        font-size: 0.98rem;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .about-link::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: 1px;
+        background: currentColor;
+        opacity: 0.35;
+        transition: opacity 0.2s ease;
+      }
+      .about-link:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 3px;
+        border-radius: 2px;
+      }
+      .about-link-arrow {
+        transition: transform 0.2s ease;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .about-link:hover::after {
+          opacity: 1;
+        }
+        .about-link:hover .about-link-arrow {
+          transform: translateX(4px);
+        }
+      }
+      /* LinkedIn/GitHub sit quieter than the two primary asks (email, CV) —
+         same muted treatment as the hero card's secondary link. */
+      .about-link-muted {
+        color: var(--color-text-muted);
+        transition: color 0.2s ease;
+      }
+      .about-link-muted:hover {
+        color: var(--color-accent);
+      }
+      /* The photo stays in COLOR, unlike the homepage's grayscale portrait —
+         deliberately (the Colombian shirt is the point). The 4-edge feather
+         is what ties it to the site's photo language instead. */
+      .about-photo {
+        justify-self: end;
+        width: 100%;
+      }
+      .about-photo img {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 4 / 5;
+        object-fit: cover;
+        /* The source is 3:4, so the 4:5 box shows ~92% of the frame — this
+           is the photo's own composition (small figure, big vista), not a
+           tight crop. Bias toward the bottom: the sliver that goes is sky,
+           never the jersey or the summit rocks. */
+        object-position: 50% 85%;
+        -webkit-mask-image: linear-gradient(
+            to right,
+            transparent 0,
+            #000 9%,
+            #000 91%,
+            transparent 100%
+          ),
+          linear-gradient(
+            to bottom,
+            transparent 0,
+            #000 9%,
+            #000 91%,
+            transparent 100%
+          );
+        -webkit-mask-composite: source-in;
+        mask-image: linear-gradient(
+            to right,
+            transparent 0,
+            #000 9%,
+            #000 91%,
+            transparent 100%
+          ),
+          linear-gradient(
+            to bottom,
+            transparent 0,
+            #000 9%,
+            #000 91%,
+            transparent 100%
+          );
+        mask-composite: intersect;
+      }
+      @media (max-width: 768px) {
+        .about-hero {
+          padding-top: 1.5rem;
+        }
+        .about-inner {
+          grid-template-columns: 1fr;
+          row-gap: 1.75rem;
+        }
+        /* Photo becomes a compact landscape band on top (the mobile hero
+           card's composition), showing the full scene instead of the
+           portrait crop. */
+        .about-photo {
+          order: -1;
+          justify-self: stretch;
+        }
+        .about-photo img {
+          /* Taller band than the hero card's 16/10: the portrait source
+             crops hard in a wide band, and 3/2 keeps face, jersey, and a
+             ridge line in the slice. */
+          aspect-ratio: 3 / 2;
+          object-position: 50% 70%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <Header />
+    <main transition:animate={pageFade}>
+      <section class="about-hero">
+        <div class="about-grid" aria-hidden="true">
+          <BlueprintGrid />
+        </div>
+        <div class="about-inner">
+          <div class="about-copy">
+            <p class="about-eyebrow">
+              <span class="about-tick" aria-hidden="true"></span>About
+            </p>
+            <h1 class="about-title">Hi, I'm Sergio.</h1>
+            <p>
+              What I do: 
+              I'm a PhD candidate in physics at MIT, a Dean of Science Fellow
+              working with <a
+                href="https://physics.mit.edu/faculty/mehran-kardar/"
+                >Mehran Kardar</a
+              >. My interests are broad, but primarily in the fields of
+              biophysics and statistical physics. Before MIT, 
+              I studied physics and math as an undergrad at Emory University.
+            </p>
+            <p>
+              Who I am:
+              My life is guided by three core values
+              and one core belief: the virtues of curiosity, creativity, connection,
+              and the belief that education is the ultimate tool for personal and
+              social mobility/growth. From a young age, I've been
+              passionate about studying how things work as well as how 
+              to communicate my own learning to others, especially to those with 
+              systematically less opportunities. 
 
-  <p>
-    My research is about how simple, local rules give rise to predictable
-    large-scale behavior in living systems — from bacterial swarms to expanding
-    populations. Day to day, that means <strong
-      >mathematical modeling, stochastic simulation, and statistical inference</strong
-    >: building models, running them on clusters, and pulling signal out of
-    noisy data. I care a lot about explaining that work clearly, to fellow
-    researchers and to students seeing it for the first time.
-  </p>
+              A student once asked me what my proudest achievement of my scientific
+              career was. For me, it is not a particular discovery or prestige,
+              it is the opportunity to inspire and share it with others.
 
-  <p>
-    I'm increasingly interested in applying these skills beyond academia — on
-    problems in industry where modeling, simulation, and data turn uncertainty
-    into decisions. If that overlaps with what you're working on, I'd love to
-    chat.
-  </p>
 
-  <h2>Background</h2>
-  <ul>
-    <li>
-      <strong>Ph.D. in Physics</strong>, MIT — 2023–present (Dean of Science
-      Fellow)
-    </li>
-    <li>
-      <strong>B.S. in Physics &amp; Mathematics</strong>, Emory University —
-      2019–2023, <em>magna cum laude</em>
-    </li>
-    <li>Study abroad, Yonsei University, Seoul (2022)</li>
-  </ul>
 
-  <h2>Toolkit</h2>
-  <ul>
-    <li>
-      <strong>Programming:</strong> Python, Julia, Mathematica, LaTeX; NumPy, SciPy,
-      matplotlib, multiprocessing, Git
-    </li>
-    <li>
-      <strong>Modeling &amp; simulation:</strong> stochastic processes &amp; SDEs,
-      Fokker–Planck and master equations, Monte Carlo, dynamical systems
-    </li>
-    <li>
-      <strong>Statistics &amp; computation:</strong> statistical inference, maximum-likelihood
-      estimation, hypothesis testing, simulated annealing, genetic algorithms
-    </li>
-    <li>
-      <strong>Languages:</strong> Spanish (native), English (fluent), Korean (basic)
-    </li>
-  </ul>
-
-  <h2>Beyond research</h2>
-  <p>
-    I serve as a graduate-student representative on the MIT Physics Education
-    Committee and on the executive board of the MIT Latino Graduate Student
-    Association, and I mentor students through the MIT Directed Reading Program.
-  </p>
-
-  <h2>Get in touch</h2>
-  <p>
-    The best way to reach me is by
-    <a href="mailto:sergioerasojr@gmail.com">email</a>. You can also find me on
-    <a href="https://github.com/SergioEJr">GitHub</a> and
-    <a href="https://www.linkedin.com/in/sergio-eraso-jr/">LinkedIn</a>.
-  </p>
-</Layout>
+              Outside of science, I have a profound appreciation for music and I spend much
+              of my free time playing my guitar/bass or dancing salsa. I also spend some of my
+              free time learning random topics having nothing to do with my research or work, which you can read about in my journal.
+              
+              Being a first-generation immigrant, I education and accessibility
+              education and accessibility
+            </p>
+            <p class="about-reach">The fastest ways to reach me:</p>
+            <div class="about-links">
+              <a href={`mailto:${contactEmail}`} class="about-link">
+                Email<span class="about-link-arrow" aria-hidden="true"
+                  >&rarr;</span
+                >
+              </a>
+              {
+                cvHref && (
+                  <a
+                    href={cvHref}
+                    target="_blank"
+                    class="about-link"
+                    data-umami-event="cv-download"
+                    data-umami-event-location="about"
+                  >
+                    CV
+                    <span class="about-link-arrow" aria-hidden="true">
+                      &rarr;
+                    </span>
+                  </a>
+                )
+              }
+              {
+                linkedin && (
+                  <a
+                    href={linkedin.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="about-link about-link-muted"
+                  >
+                    LinkedIn
+                    <span class="about-link-arrow" aria-hidden="true">
+                      &rarr;
+                    </span>
+                  </a>
+                )
+              }
+              {
+                github && (
+                  <a
+                    href={github.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="about-link about-link-muted"
+                  >
+                    GitHub
+                    <span class="about-link-arrow" aria-hidden="true">
+                      &rarr;
+                    </span>
+                  </a>
+                )
+              }
+            </div>
+          </div>
+          <div class="about-photo">
+            <Image
+              src={aboutPhoto}
+              alt="Sergio Eraso in a Colombia football jersey on a mountain summit in Colorado"
+              width={384}
+              densities={[1, 2]}
+              loading="eager"
+            />
+          </div>
+        </div>
+      </section>
+    </main>
+    <Footer />
+  </body>
+</html>

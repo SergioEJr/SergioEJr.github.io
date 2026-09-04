@@ -10,6 +10,7 @@ import rehypeEqref from "./src/plugins/rehype-eqref.mjs";
 import rehypeFootnoteHistory from "./src/plugins/rehype-footnote-history.mjs";
 import rehypeMathPunctuation from "./src/plugins/rehype-math-punctuation.mjs";
 import remarkCalloutComponents from "./src/plugins/remark-callout-components.mjs";
+import remarkCite from "./src/plugins/remark-cite.mjs";
 import remarkEqLabel from "./src/plugins/remark-eq-label.mjs";
 import remarkWikilink from "./src/plugins/remark-wikilink.mjs";
 
@@ -50,6 +51,7 @@ const katexMacros = {};
 const contentRemarkPlugins = [
   remarkMath,
   remarkEqLabel,
+  remarkCite,
   remarkCalloutComponents,
   remarkWikilink,
 ];

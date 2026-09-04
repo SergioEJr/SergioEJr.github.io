@@ -49,8 +49,8 @@ const {
 // Plain text (markers stripped) for metadata/alt; HTML form is used for the visible <h1>.
 const titleText = stripInline(title);
 
-// Capture the rendered post body and number any <Cite> markers in it. <Cite>
-// renders real HTML only at this point (page render), which is why numbering
+// Capture the rendered post body and number any cite markers in it. A `[@key]`
+// marker becomes real HTML only at this point (page render), which is why numbering
 // is a string transform here rather than a rehype plugin — see
 // src/utils/numberCitations.ts's header for the full rationale.
 const renderedBody = await Astro.slots.render("default");
@@ -965,7 +965,7 @@ const numberedBody = numberCitations(renderedBody);
          reveal an equation hidden inside a collapsed block. -->
     <script is:inline data-astro-rerun>
       // Toggle derivation blocks open/closed. Delegated + idempotent so it survives
-      // ClientRouter navigation (astro:page-load) and multiple <Derivation> uses on a
+      // ClientRouter navigation (astro:page-load) and multiple derivations on a
       // page. (Inline so it's reliably emitted even when the component is used in MDX,
       // matching SideNote.astro.)
       //
@@ -1203,7 +1203,7 @@ const numberedBody = numberCitations(renderedBody);
           );
           if (!target) return;
           e.preventDefault();
-          // If the target equation is hidden inside a collapsed <Derivation>,
+          // If the target equation is hidden inside a collapsed derivation,
           // open that block first — otherwise it's display:none and the scroll
           // lands nowhere. (No-op if it isn't inside a collapsed block.)
           if (window.__openDerivationFor) window.__openDerivationFor(target);
@@ -1234,7 +1234,7 @@ const numberedBody = numberCitations(renderedBody);
 
       // A page opened directly at #eq:foo gets the same flash. The browser has
       // usually scrolled by now; this adds the highlight. But if the target is
-      // inside a collapsed <Derivation> it was display:none when the browser
+      // inside a collapsed derivation it was display:none when the browser
       // tried to anchor, so nothing scrolled — open the block, then scroll to it
       // ourselves before flashing.
       if (location.hash) {
