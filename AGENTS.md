@@ -94,6 +94,28 @@ this, and will it come back?**
   theme-locked hexes. Never hand-edit an SVG here — regenerate it. (Pointing the
   checker at a dedicated folder also stops it theme-checking SVGs that aren't
   figures; it used to scan a stray `logo.svg`.)
+
+  `fig.sh` also emits **`<name>.json`** beside each SVG, carrying the figure's
+  `alt` text and default `width`. Both come from the `.tex`:
+
+  ```tex
+  % alt: A rectangle of area f·g with two thin strips added along its edges
+  %   continuation lines start with a percent and THREE spaces
+  % width: 360
+  ```
+
+  Alt text describes the DRAWING, not the article — it is the same wherever the
+  figure is used, and long enough to wreck the prose if inlined. A `.tex` with
+  no `% alt:` line is a **hard error**: shipping an inaccessible figure should
+  not be possible by forgetting a line. The continuation marker is explicit
+  because alt prose legitimately contains colons and a "next comment line"
+  heuristic would truncate on them.
+
+  **`fig.sh` is not byte-deterministic.** dvisvgm emits a figure's `@font-face`
+  blocks in a varying order, so regenerating an unchanged figure can still
+  produce a diff. The content is identical as an unordered set; verify that
+  before assuming a real change, and prefer reverting the churn to committing
+  it.
 - **`photos/`** is irreplaceable input. **Downscale before committing**: heroes
   render at `width={1020}` with `densities={[1,2]}`, so Astro never emits a
   variant wider than **2040px** and anything above that is discarded at build
@@ -216,6 +238,11 @@ listing pages at all.
   Registered on BOTH pipelines via `contentRemarkPlugins` in `astro.config.mjs`.
   Unresolved targets (never written, or `draft: true`) render as **plain text**,
   not broken links — see the Obsidian section below.
+- **`src/plugins/remark-callout-components.mjs`** — compiles Obsidian callouts
+  into the site's article components. Runs BEFORE `remark-wikilink` (so it can
+  claim the `[[...]]` inside a figure embed) and AFTER `remark-math`. Today it
+  handles `[!figure]`; an unrecognised callout type passes through as the
+  ordinary blockquote it already is.
 
 ## Math in MDX
 
@@ -264,6 +291,26 @@ prose will routinely reference notes that don't exist yet. Those render as plain
 text on the site rather than as visibly-broken "unwritten" links, because the
 Journal reads as a finished publication rather than a public garden. A link
 starts working on its own the day its target is published.
+
+**Figures are authored as callouts, not components:**
+
+```markdown
+> [!figure] Entropy essentially counts the arrows into each bin.
+> ![[coin-macrostates.svg|400]]
+```
+
+Obsidian renders a callout containing the real diagram (theme-aware for free —
+`fig.sh` passes `--currentcolor`); the site emits the same `<figure>` markup
+`Figure.astro` produces. `|400` is Obsidian's native image-width syntax, in CSS
+pixels, numerically identical to the old `width` prop; omit it to take the
+figure's default from its sidecar. Captions go through the normal pipeline, so
+`$...$` and `*emphasis*` work — no `renderInline` bypass.
+
+The reasoning, and why this is NOT `remark-directive`, is in
+`docs/superpowers/specs/2026-09-04-markdown-as-ground-truth-design.md`. Short
+version: a callout is a blockquote and degrades gracefully in any renderer;
+`:::figure` renders as literal text everywhere that has not opted in, Obsidian
+included.
 
 **Not yet done** (deliberate; revisit when revising an `.mdx` post gets
 annoying): porting the four components to remark/rehype plugins so every post

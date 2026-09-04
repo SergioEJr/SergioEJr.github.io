@@ -135,6 +135,14 @@ export default function remarkWikilink() {
         }
         last = m.index + full.length;
 
+        // `![[...]]` is an Obsidian EMBED, not a link. Figure embeds are claimed
+        // by remark-callout-components (which runs first); anything else is left
+        // exactly as written rather than silently turned into a link.
+        if (node.value[m.index - 1] === "!") {
+          out.push({ type: "text", value: full });
+          continue;
+        }
+
         // Obsidian may write a path, an extension, or a heading anchor —
         // `notes/product-rule.mdx#a-heading`. The collection keys on basename.
         const slug = path

@@ -13,20 +13,12 @@ keywords:
 draft: false # set to true to unpublish
 ---
 
-import Figure from '/src/components/Figure.astro';
-import productRule from '/src/assets/diagrams/product-rule.svg?raw';
-import cubeX3 from '/src/assets/diagrams/cube-x3.svg?raw';
-
 We want the derivative of a product $f \cdot g$, which we can picture as the area
 of a rectangle with sides $f$ and $g$. Nudging the input by a small amount grows each
 side by its own differential, $df$ and $dg$:
 
-<Figure
-  svg={productRule}
-  width={360}
-  alt="A rectangle of area f·g with two thin strips added along its edges"
-  caption="The change in area is the two strips plus a vanishing corner."
-/>
+> [!figure] The change in area is the two strips plus a vanishing corner.
+> ![[product-rule.svg]]
 
 The new area exceeds the old by two thin strips plus a small corner. The strips
 have areas $g \,df $ and $f\,dg$, whereas the corner $df\,dg$ is a
@@ -48,9 +40,5 @@ derivative of $x^3$. There are some remaining pieces: three long edges of order
 $x\,dx^2$ and a single corner cube $dx^3$. Those are higher order and vanish in
 the limit.
 
-<Figure
-  svg={cubeX3}
-  width={520}
-  alt="A cube of volume x³ growing by dx on three faces: three x²dx slabs plus a faint higher-order corner"
-  caption="Growing the cube adds three x²dx slabs, giving the derivative 3x². The faint subleading contributions are of order $dx^2$ or higher and vanish in the limit."
-/>
+> [!figure] Growing the cube adds three x²dx slabs, giving the derivative 3x². The faint subleading contributions are of order $dx^2$ or higher and vanish in the limit.
+> ![[cube-x3.svg]]

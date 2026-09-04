@@ -9,6 +9,7 @@ import remarkMath from "remark-math";
 import rehypeEqref from "./src/plugins/rehype-eqref.mjs";
 import rehypeFootnoteHistory from "./src/plugins/rehype-footnote-history.mjs";
 import rehypeMathPunctuation from "./src/plugins/rehype-math-punctuation.mjs";
+import remarkCalloutComponents from "./src/plugins/remark-callout-components.mjs";
 import remarkWikilink from "./src/plugins/remark-wikilink.mjs";
 
 // Shared by both pipelines below so Markdown and MDX behave identically.
@@ -39,11 +40,17 @@ import remarkWikilink from "./src/plugins/remark-wikilink.mjs";
 // AND give Obsidian a matching MathJax preamble.
 const katexMacros = {};
 
-// Shared by both pipelines, same as contentPlugins below. remarkWikilink runs
-// AFTER remarkMath so that `$...$` is already its own node type and a `[[`
-// inside math is never mistaken for a wikilink.
+// Shared by both pipelines, same as contentPlugins below. ORDER IS LOAD-BEARING:
+// both plugins run AFTER remarkMath, so `$...$` is already its own node type --
+// a `[[` inside math is never mistaken for a wikilink, and a caption's math
+// reaches KaTeX through the normal pipeline. remarkCalloutComponents runs
+// BEFORE remarkWikilink so it can claim the `[[...]]` inside a figure embed.
 /** @type {any[]} */
-const contentRemarkPlugins = [remarkMath, remarkWikilink];
+const contentRemarkPlugins = [
+  remarkMath,
+  remarkCalloutComponents,
+  remarkWikilink,
+];
 
 /** @type {any[]} */
 const contentPlugins = [

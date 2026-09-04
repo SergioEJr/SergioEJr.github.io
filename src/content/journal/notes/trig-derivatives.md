@@ -13,11 +13,6 @@ keywords:
 draft: false # set to true to unpublish
 ---
 
-import Figure from '/src/components/Figure.astro';
-import trigDerivatives from '/src/assets/diagrams/trig-derivatives.svg?raw';
-import tangentDerivative from '/src/assets/diagrams/tangent-derivative.svg?raw';
-import cotangentDerivative from '/src/assets/diagrams/cotangent-derivative.svg?raw';
-
 Trigonometry is inherently geometric, yet, students are often taught to memorize the derivatives of various trigonometric functions through formulas and tables. Let's put the geometry back into trigonometry with some simple visual proofs.
 
 ## The derivatives of sine and cosine
@@ -25,12 +20,8 @@ Trigonometry is inherently geometric, yet, students are often taught to memorize
 Sine and cosine are the coordinates of a point on the unit circle,
 $x = \cos\theta$ and $y = \sin\theta$. To find their derivative, we study how those coordinates change as the point slides around the circle by a small angle $\delta\theta$.
 
-<Figure
-  svg={trigDerivatives}
-  width={520}
-  alt="A unit circle with a radius at angle theta; nudging the angle by delta-theta traces a short tangent segment, forming a small right triangle with legs delta-x and delta-y, shown enlarged alongside"
-  caption="Moving the point along the unit circle, we can create a small triangle to find the changes in $x$ and $y$."
-/>
+> [!figure] Moving the point along the unit circle, we can create a small triangle to find the changes in $x$ and $y$.
+> ![[trig-derivatives.svg]]
 
 The legs of the small similar triangle are precisely the change in the coordinates of the point on the unit circle. As $\delta\theta$ vanishes, the length of the hypotenuse of the small triangle approaches the arc length $\delta\theta$. Therefore,
 
@@ -50,12 +41,8 @@ $$
 
 The tangent is given by the vertical leg of the triangle drawn below -- we just extended the hypotenuse of the triangle determined by $\theta$ past the unit circle. We denote the length of this leg by $t = \tan\theta$. Since the base of the triangle has length $1$, that leg stands on the line tangent to the circle, which is where the function gets its name from.
 
-<Figure
-  svg={tangentDerivative}
-  width={360}
-  alt="A right triangle with base 1 and angle theta at the origin, its hypotenuse extended past the unit circle to the tangent line, where the vertical leg has length t; rotating by delta-theta sweeps the corner through a perpendicular leg ell delta-theta, forming a small right triangle whose hypotenuse is delta-t and whose remaining side, delta-ell, is the growth of the hypotenuse"
-  caption="Extending the radius line of the unit circle, we can create a larger triangle whose vertical leg is exactly the tangent function."
-/>
+> [!figure] Extending the radius line of the unit circle, we can create a larger triangle whose vertical leg is exactly the tangent function.
+> ![[tangent-derivative.svg]]
 
 Nudging the angle by $\delta\theta$ extends the vertical leg by an amount $\delta t$. This allows us to create a small triangle that is almost similar to the large triangle, the only difference being the angle $\alpha = \theta + \delta\theta$. In the limit, $\alpha \to \theta$, so we can read from the small triangle
 
@@ -80,12 +67,8 @@ $$
 
 Taking our triangle construction from above and resting its hypotenuse on the $x$-axis lets us extend one of its legs until it collides with the $y$-axis. A few lines of trig shows us that the $y$-intercept is $\tilde{\ell} = \csc\theta$ and that the segment from the point on the unit circle point to the intercept has length $\tilde{t} = \cot\theta$. This is where the prefixes "co" come from: the contact point splits the line into $t$ and $\tilde{t}$, and its two intercepts sit at distances $\ell$ and $\tilde{\ell}$ from the origin.
 
-<Figure
-  svg={cotangentDerivative}
-  width={560}
-  alt="A line tangent to the unit circle at a marked point, meeting the y axis at ell-tilde and the x axis at ell, with the tangent point splitting it into t toward the x axis and t-tilde toward the y axis. Increasing the angle slides the tangent point along the line and lowers the y intercept. The corner at the y intercept is magnified on the right as a right triangle with angle theta, hypotenuse delta-ell-tilde, perpendicular leg t-tilde delta-theta, and third leg delta-ell-tilde cos theta. Two orange segments mark the pieces lost from t-tilde at each end."
-  caption="Resting the hypotenuse of the triangle we built above on the $x$-axis reveals the symmetry between the tangent and cotangent as well as the secant and cosecant. It is a mirror symmetry. Since mirrors reverse the sense of rotation, the co-functions carry a minus sign."
-/>
+> [!figure] Resting the hypotenuse of the triangle we built above on the $x$-axis reveals the symmetry between the tangent and cotangent as well as the secant and cosecant. It is a mirror symmetry. Since mirrors reverse the sense of rotation, the co-functions carry a minus sign.
+> ![[cotangent-derivative.svg]]
 
 Nudging the angle drops the intercept by $\delta\tilde{\ell}$ and swings the line by a distance of $\tilde{t}\,\delta\theta$. The magnified triangle carries the angle $\theta$ between the $y$-axis and the line. Taking the sine of this angle yields,
 

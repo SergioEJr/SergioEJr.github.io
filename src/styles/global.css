@@ -676,3 +676,65 @@ a.eqref {
 a.eqref:hover {
   text-decoration: underline;
 }
+
+/* --- Figures ---------------------------------------------------------------
+   Shared by BOTH renderers of a figure: the `> [!figure]` callout that
+   remark-callout-components compiles from .md posts, and Figure.astro, which
+   the remaining .mdx posts still use. The rules live here rather than in the
+   component's scoped <style> so there is exactly ONE definition while both
+   paths coexist; see
+   docs/superpowers/specs/2026-09-04-markdown-as-ground-truth-design.md. */
+.figure {
+  margin: 2rem auto;
+  text-align: center;
+}
+
+/* Adaptive SVG: inherits the page text color via currentColor. */
+.figure__svg {
+  color: var(--color-text-main);
+  line-height: 0; /* no stray inline-svg gap */
+}
+.figure__svg svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Image modes share sizing. */
+.figure__img {
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  /* Override the global dark-mode dimming so diagrams stay crisp. */
+  filter: none !important;
+}
+
+/* Single image gets a neutral card so it reads on both themes. Card uses the
+   page ground (not --color-bg-offset) so theme-aware SVG figures — whose face
+   fills are var(--color-bg) to be "invisible against the page" — stay invisible
+   on the card too. The border still delineates the figure. */
+.figure__img--card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Light/dark pair: show the one matching the theme. */
+.figure__img--dark {
+  display: none;
+}
+html[data-theme="dark"] .figure__img--light {
+  display: none;
+}
+html[data-theme="dark"] .figure__img--dark {
+  display: inline-block;
+}
+
+.figure__caption {
+  margin-top: 0.7rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  text-align: center;
+}
