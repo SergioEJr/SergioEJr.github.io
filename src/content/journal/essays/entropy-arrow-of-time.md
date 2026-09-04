@@ -23,7 +23,7 @@ If your friend asks you for the time, you’re likely to round to the nearest qu
 
 ## The entropy equation
 
-Here's another example: suppose you have a box with $1,000$ coins inside. You vigorously shake the box and let out one coin at a time writing down the resulting sequence of heads and tails. Each sequence -- e.g. $HTTHHT$ -- constitutes a microstate while a coarse-grained quantity, such as the total number of heads $ \#H $, forms a macrostate. Entropy[^natural] is simply a way to count how many full-detail microstates belong to each coarse-grained macrostate. More precisely, if $M$ is a macrostate,
+Here's another example: suppose you have a box with $1,000$ coins inside. You vigorously shake the box and let out one coin at a time writing down the resulting sequence of heads and tails. Each sequence -- e.g. $HTTHHT$ -- constitutes a microstate while a coarse-grained quantity, such as the total number of heads $\#H$, forms a macrostate. Entropy[^natural] is simply a way to count how many full-detail microstates belong to each coarse-grained macrostate. More precisely, if $M$ is a macrostate,
 
 $$
 \underbrace{S(M)}_{\textcolor{gray}{\mathclap{\footnotesize\text{entropy}}}}
@@ -42,9 +42,9 @@ Even though each sequence of heads and tails is equally likely, there is only on
 On the other hand, there are more sequences with $500$ heads than there are atoms in the entire observable universe!
 
 > [!aside] aside
-> The number of ways to get $500$ heads from our box is $\binom{1000}{500} \approx 10^{299} $ giving an entropy of $S(\#H = 500) \approx 299 \log 10$. There are only about $10^{80}$ atoms in the entire observable universe.
+> The number of ways to get $500$ heads from our box is $\binom{1000}{500} \approx 10^{299}$ giving an entropy of $S(\#H = 500) \approx 299 \log 10$. There are only about $10^{80}$ atoms in the entire observable universe.
 
-Therefore, after shaking the box, our system naturally favors the outcome with the most possiblities and on-average we see sequences with close to $500$ heads. This is the essence of the second law.
+Therefore, after shaking the box, our system naturally favors the outcome with the most possibilities and on-average we see sequences with close to $500$ heads. This is the essence of the second law.
 
 ## The arrow of time
 
@@ -54,7 +54,7 @@ Now, record a video of the smoke starting from the corner of the room and play t
 
 ## Entropy is counting
 
-I hope entropy now feels a little less mysterious. In essence, it is counting. Shake anything, a box of coins, a room full of air, the universe, and it drifts toward the arrangement with the most possibilities. But this leaves a puzzle. If entropy always increases, why doesn't every ice cube fly apart into vapor to boost the entropy of the universe? Why do solids exist at all? That question deserves its own essay: [[why-ice-melts|Why does ice melt?]]
+I hope entropy now feels a little less mysterious. In essence, it is counting. Shake anything, a box of coins, a room full of air, the universe, and it drifts toward the arrangement with the most possibilities. But this leaves a puzzle. If entropy always increases, why doesn't every ice cube fly apart into vapor to boost the entropy of the universe? Why do solids exist at all? That question deserves its own essay: _[[why-ice-melts|Why does ice melt?]]_
 
 [^natural]: We assume natural units $k_B = 1$, so entropy is just a number.
 [^time]: From the point of view of statistical physics, time is an emergent phenomenon; it arises from considering collections of particles. From the perspective of relativity, time is not emergent, it is baked directly into the theory through spacetime.

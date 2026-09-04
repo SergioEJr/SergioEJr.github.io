@@ -585,6 +585,22 @@ a {
   white-space: nowrap;
 }
 
+/* ...EXCEPT in a side note, which is ~266px wide in the gutter. Keeping an
+   expression and its trailing "." as one unit is right in a 760px prose column,
+   where the unit always fits; at margin-note width it forbids the break KaTeX
+   would otherwise take between its .base spans, so a long expression is thrown
+   onto a line of its own (or overflows). A stranded "." is much the lesser evil
+   here.
+
+   This surfaced when side notes stopped being MDX components: rehype runs on
+   hast, and <SideNote> used to be an mdxJsxTextElement, so the punctuation
+   plugin walked straight past its contents. Compiling side notes to real
+   elements let the plugin reach them for the first time — the rule was always
+   wrong at this width, it just had no way to apply. */
+.sidenote__body .math-punct {
+  white-space: normal;
+}
+
 /* Numbered equations: the number sits in its OWN column beside the math, never
    on top of it — the structure Wikipedia's {{NumBlk}} uses ([equation][number]
    as separate cells). Built by src/plugins/rehype-eqref.mjs, which lifts the

@@ -309,6 +309,16 @@ pixels, numerically identical to the old `width` prop; omit it to take the
 figure's default from its sidecar. Captions go through the normal pipeline, so
 `$...$` and `*emphasis*` work — no `renderInline` bypass.
 
+**Converting a component to a callout exposes its contents to the rehype
+plugins for the first time.** rehype runs on hast, and an MDX component is an
+`mdxJsxTextElement`, so `rehype-math-punctuation`, `rehype-eqref` and friends
+walked straight past anything inside `<SideNote>`, `<Figure caption>` or
+`<Derivation>`. Compiling those to real elements lets the plugins reach them —
+usually right, occasionally not: `.math-punct`'s nowrap is correct in a 760px
+column but forbids a needed break in a 266px margin note, which is why
+`.sidenote__body .math-punct` overrides it. **Expect one of these per phase**
+and check narrow containers after each conversion.
+
 **Link between posts with `[[wikilinks]]`, not site-absolute paths.** A
 `[Title](/journal/slug/)` link works on the site but is dead in Obsidian, which
 cannot resolve `/journal/...` as a vault path and offers to CREATE a note
