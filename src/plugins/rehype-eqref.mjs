@@ -187,9 +187,13 @@ export default function rehypeEqref() {
       // Empty link text ([](#eq:foo)) → fill in "(2)". An author who wrote their
       // own text ("the frame equation") keeps it. The number is emitted as real
       // text rather than CSS content so it survives copy/paste and CSS-off.
-      if (node.children.length === 0) {
-        node.children = [{ type: "text", value: `(${num})` }];
-      }
+      // The number is ALWAYS written, not just into an empty link. References
+      // used to be authored `[](#eq:foo)` precisely because an empty link was
+      // the only shape this filled — and an empty link is invisible and
+      // unclickable in every renderer that is not this one (Obsidian, chiefly).
+      // Authoring `[eq:foo](#eq:foo)` gives a legible, obviously-a-reference
+      // link everywhere, and the real number still replaces it here.
+      node.children = [{ type: "text", value: `(${num})` }];
     });
   };
 }

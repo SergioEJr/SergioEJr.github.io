@@ -48,8 +48,17 @@ npm run format:check  # prettier --check .
   with the old module — and it writes those stale renders into
   `.astro/data-store.json`, which is shared, so a *freshly started* second server
   reads the stale entry too and looks equally broken. Symptom: `npm run build`
-  is correct while dev shows the raw `> [!callout]` source. Fix: kill every
-  `astro dev`, `rm .astro/data-store.json`, restart.
+  is correct while dev shows the raw `> [!callout]` source.
+- **There are THREE caches, and `.astro/` alone is not enough.** Rendered content
+  is also cached in **`node_modules/.astro`**, which survives `rm -rf .astro` and
+  will keep serving stale renders through a full production build — the symptom
+  is a plugin that provably works in isolation and provably does nothing in
+  `npm run build`. The full reset, worth reaching for the moment a plugin change
+  seems not to apply:
+
+  ```sh
+  pkill -f "astro dev"; rm -rf .astro node_modules/.astro node_modules/.vite
+  ```
 - The MDX VS Code language server is **disabled** (`mdx.server.enable: false`)
   because it false-flags KaTeX braces. See README "Editor notes".
 
@@ -332,6 +341,15 @@ and check narrow containers after each conversion.
 cannot resolve `/journal/...` as a vault path and offers to CREATE a note
 instead. `[[slug|Title]]` resolves in both. Emphasis wraps it fine:
 `_[[slug|Title]]_`.
+
+**Label equations with `\label{eq:foo}`, reference them with
+`[eq:foo](#eq:foo)`.** `src/plugins/remark-eq-label.mjs` rewrites `\label` into
+the `\htmlId{eq:foo}{}` that KaTeX needs (KaTeX *throws* on `\label`; MathJax
+and Overleaf both want it, and neither understands `\htmlId`). The empty second
+argument is deliberate and sufficient — the id still lands and the equation still
+gets its `eqn-num`, which is all `rehype-eqref` needs. References carry visible
+text because `rehype-eqref` now always overwrites it with the number; the old
+`[](#eq:foo)` form was invisible and unclickable everywhere except this site.
 
 **Derivations are `> [!derivation]- Label`**, where Obsidian's fold marker IS
 the open/closed state: `-` collapses (the component's `open={false}` default),

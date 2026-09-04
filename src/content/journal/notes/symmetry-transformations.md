@@ -33,20 +33,19 @@ This is the most straightforward way to describe the transformation, however, it
 
 $$
 \begin{align}
- \htmlId{eq:scalar-translation}{
+ \label{eq:scalar-translation}
  \phi'(\boldsymbol{x}') = \phi(\boldsymbol{x})
  = \phi(\boldsymbol{x}' - \boldsymbol{a}).
- }
 \end{align}
 $$
 In general, if $g$ is an element of a group $G$, then the transformed scalar field $g \cdot \phi$ is
 $$
 \begin{align}
- \htmlId{eq:scalar-transform}
+ \label{eq:scalar-transform}
  (g \cdot \phi)(\boldsymbol{x}) = \phi(g^{-1} \boldsymbol{x}).
 \end{align}
 $$
-If the inverse group element is ever confusing, just remember that it comes from expressing the field and points in terms of the new reference frame as in Eq. [](#eq:scalar-translation). This is called a *pullback* -- we define the transformed field $\phi'$ by pulling the evaluation point $\boldsymbol{x}$ back to its original position $g^{-1}\boldsymbol{x}$ and evaluate the *old* function there.
+If the inverse group element is ever confusing, just remember that it comes from expressing the field and points in terms of the new reference frame as in Eq. [eq:scalar-translation](#eq:scalar-translation). This is called a *pullback* -- we define the transformed field $\phi'$ by pulling the evaluation point $\boldsymbol{x}$ back to its original position $g^{-1}\boldsymbol{x}$ and evaluate the *old* function there.
 
 ## Vector Fields
 
@@ -71,12 +70,12 @@ $$
 Letting $\boldsymbol{x}' = R \boldsymbol{x}$, we can again express this as a pullback function,
 $$
 \begin{align}
- \htmlId{eq:vector-rotation}{
+ \label{eq:vector-rotation}
  \boldsymbol{m}'(\boldsymbol{x}')
- = R\boldsymbol{m}(R^{-1}\boldsymbol{x}') }
+ = R\boldsymbol{m}(R^{-1}\boldsymbol{x}')
 \end{align}
 $$
-so that the rotated field is defined entirely in terms of the untransformed field. This reveals an important distinction between symmetry transformations on scalar fields (Eq. [](#eq:scalar-transform)) and on vector fields: for vector fields, one must transform both the inputs *and* the outputs. From Eq. [](#eq:vector-rotation), it may appear that we should just transform the vector field opposite how we transform the base space, however, we can come up with an immediate counterexample.
+so that the rotated field is defined entirely in terms of the untransformed field. This reveals an important distinction between symmetry transformations on scalar fields (Eq. [eq:scalar-transform](#eq:scalar-transform)) and on vector fields: for vector fields, one must transform both the inputs *and* the outputs. From Eq. [eq:vector-rotation](#eq:vector-rotation), it may appear that we should just transform the vector field opposite how we transform the base space, however, we can come up with an immediate counterexample.
 
 Consider now a general rigid-body transformation $\boldsymbol{x}' = R\boldsymbol{x} + \boldsymbol{a}$. Translating the magnet should certainly not change the direction of the field, so only the rotation operator should act on $\boldsymbol{m}$, giving $\boldsymbol{m}'(\boldsymbol{x}') = R \boldsymbol{m}(R^{-1}(\boldsymbol{x}' - \boldsymbol{a})).$ So, we see that the transformation acting on the vector field $\boldsymbol{m}$ is not simply the rigid body motion $g$. The proper transformation is given by the *Jacobian* of the rigid body motion $J(\boldsymbol{x}) = R$,
 
@@ -127,8 +126,8 @@ $$
 This is equivalent to
 $$
 \begin{align}
-\htmlId{eq:covector-transform}{
- \omega'_{\boldsymbol{x}} = J^{-T}(g^{-1}\boldsymbol{x}) \omega_{g^{-1}\boldsymbol{x}}}
+\label{eq:covector-transform}
+ \omega'_{\boldsymbol{x}} = J^{-T}(g^{-1}\boldsymbol{x}) \omega_{g^{-1}\boldsymbol{x}}
 \end{align}
 $$
 in index-free form.

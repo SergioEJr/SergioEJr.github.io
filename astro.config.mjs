@@ -10,6 +10,7 @@ import rehypeEqref from "./src/plugins/rehype-eqref.mjs";
 import rehypeFootnoteHistory from "./src/plugins/rehype-footnote-history.mjs";
 import rehypeMathPunctuation from "./src/plugins/rehype-math-punctuation.mjs";
 import remarkCalloutComponents from "./src/plugins/remark-callout-components.mjs";
+import remarkEqLabel from "./src/plugins/remark-eq-label.mjs";
 import remarkWikilink from "./src/plugins/remark-wikilink.mjs";
 
 // Shared by both pipelines below so Markdown and MDX behave identically.
@@ -48,6 +49,7 @@ const katexMacros = {};
 /** @type {any[]} */
 const contentRemarkPlugins = [
   remarkMath,
+  remarkEqLabel,
   remarkCalloutComponents,
   remarkWikilink,
 ];
