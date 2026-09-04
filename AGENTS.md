@@ -309,6 +309,13 @@ pixels, numerically identical to the old `width` prop; omit it to take the
 figure's default from its sidecar. Captions go through the normal pipeline, so
 `$...$` and `*emphasis*` work — no `renderInline` bypass.
 
+**Side notes are callouts too**, `> [!aside] label` for the margin-floating kind
+and `> [!note] label` for the in-column (`inline`) kind; the title is the label,
+defaulting to "Note". One caveat with no fix: `SideNote` renders as `<span>`s so
+it could sit INSIDE a paragraph, and a callout is block-level. A note that was
+mid-sentence has to be lifted out to a paragraph boundary, which moves where it
+floats — check the result at ≥1200px rather than assuming.
+
 The reasoning, and why this is NOT `remark-directive`, is in
 `docs/superpowers/specs/2026-09-04-markdown-as-ground-truth-design.md`. Short
 version: a callout is a blockquote and degrades gracefully in any renderer;

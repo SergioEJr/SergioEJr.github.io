@@ -5,19 +5,14 @@ pubDate: "2024-08-30"
 category: essays
 subject: Science
 authors:
-  - sergio-eraso
+ - sergio-eraso
 toc: true
 keywords:
-  - statistical physics
-  - thermodynamics
-  - chemistry
+ - statistical physics
+ - thermodynamics
+ - chemistry
 draft: false # set to true to unpublish
 ---
-
-import SideNote from '/src/components/SideNote.astro'
-import Figure from '/src/components/Figure.astro';
-import entropyIceMelting from '/src/assets/diagrams/entropy-ice-melting.svg?raw';
-
 
 Suppose all scientific knowledge has suddenly evaporated and you were tasked to pass along a single sentence to the next generation of scientists. What would you say? This scenario was posed to Nobel laureate and physicist Richard Feynman. His answer was the atomic hypothesis: everything is made of atoms.
 
@@ -31,16 +26,15 @@ We know large collections of atoms undergo phase transitions at specific tempera
 
 ## Balancing entropy and energy
 
-Entropy seems to make our question worse before it makes it better. If entropy always increases, shouldn't a block of ice spontaneously melt, regardless of the temperature, thus releasing its molecules into the surrounding air to increase the entropy of the universe? <SideNote label="recall"> Recall that entropy counts the number of microscopic arrangements that produce the same big-picture state, with closed systems drifting toward the state with the most arrangements. Free-roaming vapor molecules have vastly more arrangements available to them than molecules locked in an ice crystal. </SideNote>
+Entropy seems to make our question worse before it makes it better. If entropy always increases, shouldn't a block of ice spontaneously melt, regardless of the temperature, thus releasing its molecules into the surrounding air to increase the entropy of the universe?
+
+> [!aside] recall
+> Recall that entropy counts the number of microscopic arrangements that produce the same big-picture state, with closed systems drifting toward the state with the most arrangements. Free-roaming vapor molecules have vastly more arrangements available to them than molecules locked in an ice crystal.
 
 The short answer is that we have forgotten to take the conservation of energy into account. If the room is sealed off from the rest of the world, then the ice and the room together form a closed system, and their total energy must be conserved. It takes energy to rip molecules out of a rigid crystal, so the air in the room must give up some of its own heat to melt the cube, and parting with heat costs the air entropy. This competition between the energy and entropy of the system (the ice) and the environment (the room) is key to how physicists study phase transitions. To quantify the competition, physicists use a quantity known as the free energy.
 
-<Figure
-  svg={entropyIceMelting}
-  width={620}
-  alt="Two panels showing an ice cube inside an environment box absorbing heat. Left: when the environment is colder than the ice, a large downward arrow on the environment's entropy outweighs a small upward arrow on the ice's entropy, so melting is unfavorable. Right: when the environment is hotter, the arrow sizes reverse and melting is favorable."
-  caption="Heat flows from the environment into the ice, so the environment loses entropy while the ice gains entropy. A colder environment loses more entropy than the ice gains, so melting is unfavorable; a warmer environment loses less entropy, so the ice melts."
-/>
+> [!figure] Heat flows from the environment into the ice, so the environment loses entropy while the ice gains entropy. A colder environment loses more entropy than the ice gains, so melting is unfavorable; a warmer environment loses less entropy, so the ice melts.
+> ![[entropy-ice-melting.svg]]
 
 ## The free energy
 

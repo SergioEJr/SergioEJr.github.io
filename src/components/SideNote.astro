@@ -54,66 +54,8 @@ const { label = "Note", inline = false } = Astro.props;
   </span>
 </span>
 
-<style>
-  .sidenote__body {
-    display: block;
-    font-size: 0.85rem;
-    line-height: 1.5;
-    color: var(--color-text-muted);
-    text-align: left;
-    /* Subtle card: faint accent-tinted background + left border so it pops a
-       little without being loud. */
-    background: color-mix(in srgb, var(--color-accent) 7%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-accent) 18%, transparent);
-    border-left: 3px solid var(--color-accent);
-    border-radius: 8px;
-    padding: 0.65rem 0.8rem;
-    /* Narrow screens (default): block aside under the paragraph. */
-    margin: 0.7rem 0 0.95rem;
-  }
-
-  .sidenote__head {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    margin-bottom: 0.4rem;
-    color: var(--color-accent);
-  }
-  .sidenote__icon {
-    flex-shrink: 0;
-  }
-  .sidenote__label {
-    font-size: 0.68rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-  }
-  .sidenote__content {
-    display: block;
-  }
-
-  /* Wide screens: float into the right gutter beside the 760px prose column.
-     Only do this at >=1200px, where the gutter is actually wide enough for the
-     negative margin — below that the -margin would push past the viewport edge,
-     causing horizontal overflow (which also breaks the sticky navbar). */
-  @media (min-width: 1200px) {
-    .sidenote__body:not(.sidenote__body--inline) {
-      float: right;
-      clear: right;
-      /* Target width, capped by the real gutter — (100vw - 760px column)/2,
-         minus breathing room — so the note narrows near the 1200px breakpoint
-         instead of clipping at the viewport edge. */
-      --sidenote-width: min(266px, calc((100vw - 760px) / 2 - 34px));
-      width: var(--sidenote-width);
-      /* -(width + 32px gap) so it sits outside the column */
-      margin: 0 calc(-1 * (var(--sidenote-width) + 32px)) 1rem 0;
-      transition: opacity 0.2s ease;
-    }
-    /* `inline` notes keep the base in-column card even on wide screens. They read
-       full-width in the prose column, so give them a touch more breathing room. */
-    .sidenote__body--inline {
-      margin: 1.1rem 0 1.3rem;
-    }
-  }
-</style>
+<!-- Styles live in src/styles/global.css (.sidenote*), not here: the same rules
+     serve BOTH this component and the `> [!aside]` / `> [!note]` callouts that
+     remark-callout-components compiles from .md posts. One definition, so the
+     two renderings cannot drift while both paths coexist. -->
 

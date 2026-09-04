@@ -6,19 +6,14 @@ category: essays
 subject: Science
 featured: 1
 authors:
-  - sergio-eraso
+ - sergio-eraso
 toc: true
 keywords:
-  - statistical physics
-  - thermodynamics
-  - time
+ - statistical physics
+ - thermodynamics
+ - time
 draft: false # set to true to unpublish
 ---
-
-import SideNote from '/src/components/SideNote.astro';
-import Figure from '/src/components/Figure.astro';
-import coinMacrostates from '/src/assets/diagrams/coin-macrostates.svg?raw';
-
 
 Physicists like to say that there is no law more sacred than the second law of thermodynamics: the entropy of a closed system always increases. But what does it _mean?_ We’ll work through this slowly, but we have to define some terms first, stick around.
 
@@ -38,17 +33,16 @@ $$
 
 If logarithms are a distant memory, don't worry. The log is just a convenient way of writing astronomically large counts as manageable numbers; all you need for this essay is that the more microstates a macrostate contains, the higher its entropy.
 
-<Figure
-  svg={coinMacrostates}
-  width={400}
-  alt="Coin-flip sequences on the left funnel into two macrostate bins on the right: a single all-heads sequence is the only arrow into the 1,000 heads bin, while many sequences pour into the 500 heads bin."
-  caption="Entropy essentially counts the number of arrows going into each bin. Only one sequence lands in the all-heads bin, so its entropy is zero; an astronomical number land near five hundred heads, so this macrostate has a very large entropy."
-/>
+> [!figure] Entropy essentially counts the number of arrows going into each bin. Only one sequence lands in the all-heads bin, so its entropy is zero; an astronomical number land near five hundred heads, so this macrostate has a very large entropy.
+> ![[coin-macrostates.svg]]
 
 ## Majority rule
 
-Even though each sequence of heads and tails is equally likely, there is only one single sequence that produces exactly $1,000$ heads. With only one possibility, the entropy is as low as it gets: $S(\#H = 1000) = \log 1 = 0$.  
-On the other hand, there are more sequences with $500$ heads than there are atoms in the entire observable universe! <SideNote label="aside"> The number of ways to get $500$ heads from our box is $\binom{1000}{500} \approx 10^{299} $ giving an entropy of $S(\#H = 500) \approx 299 \log 10$. There are only about $10^{80}$ atoms in the entire observable universe. </SideNote> Therefore, after shaking the box, our system naturally favors the outcome with the most possiblities and on-average we see sequences with close to $500$ heads. This is the essence of the second law.
+Even though each sequence of heads and tails is equally likely, there is only one single sequence that produces exactly $1,000$ heads. With only one possibility, the entropy is as low as it gets: $S(\#H = 1000) = \log 1 = 0$.
+On the other hand, there are more sequences with $500$ heads than there are atoms in the entire observable universe! Therefore, after shaking the box, our system naturally favors the outcome with the most possiblities and on-average we see sequences with close to $500$ heads. This is the essence of the second law.
+
+> [!aside] aside
+> The number of ways to get $500$ heads from our box is $\binom{1000}{500} \approx 10^{299} $ giving an entropy of $S(\#H = 500) \approx 299 \log 10$. There are only about $10^{80}$ atoms in the entire observable universe.
 
 ## The arrow of time
 

@@ -8,6 +8,12 @@
 //   > [!figure] Entropy essentially counts the arrows into each bin.
 //   > ![[coin-macrostates.svg|400]]
 //
+//   > [!aside] recall            -> SideNote, floats into the right margin
+//   > Entropy counts microstates.
+//
+//   > [!note] Note               -> SideNote inline, stays in the reading column
+//   > A framing note too important for the margin.
+//
 // Obsidian shows a callout containing the real diagram; the site emits the same
 // <figure> markup Figure.astro produces. See
 // docs/superpowers/specs/2026-09-04-markdown-as-ground-truth-design.md.
@@ -121,6 +127,59 @@ function findEmbed(nodes) {
   return null;
 }
 
+// Lifted verbatim from SideNote.astro so the two renderings are identical.
+const SIDENOTE_ICON =
+  '<svg class="sidenote__icon" xmlns="http://www.w3.org/2000/svg" width="14"' +
+  ' height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
+  ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round"' +
+  ' aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121' +
+  ' 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path></svg>';
+
+// SideNote renders as <span>s, not <div>s, because the component had to be
+// valid INSIDE a paragraph. The compiled form keeps that markup so one set of
+// CSS serves both, even though a callout is always block-level.
+function buildSideNote(label, bodyNodes, inline) {
+  return {
+    type: "paragraph",
+    data: {
+      hName: "span",
+      hProperties: {
+        className: inline
+          ? ["sidenote__body", "sidenote__body--inline"]
+          : ["sidenote__body"],
+        "data-sidenote": inline ? "inline" : "",
+      },
+    },
+    children: [
+      {
+        type: "paragraph",
+        data: {
+          hName: "span",
+          hProperties: { className: ["sidenote__head"] },
+          hChildren: [
+            { type: "raw", value: SIDENOTE_ICON },
+            {
+              type: "element",
+              tagName: "span",
+              properties: { className: ["sidenote__label"] },
+              children: [{ type: "text", value: label }],
+            },
+          ],
+        },
+        children: [],
+      },
+      {
+        type: "paragraph",
+        data: {
+          hName: "span",
+          hProperties: { className: ["sidenote__content"] },
+        },
+        children: bodyNodes,
+      },
+    ],
+  };
+}
+
 export default function remarkCalloutComponents() {
   return (tree, file) => {
     visit(tree, "blockquote", (node, index, parent) => {
@@ -132,12 +191,47 @@ export default function remarkCalloutComponents() {
       const m = CALLOUT.exec(lead.value);
       if (!m) return;
       const type = m[1].toLowerCase();
-      if (type !== "figure") return; // other types pass through untouched
+      // Anything else passes through as the ordinary blockquote it already is.
+      if (type !== "figure" && type !== "aside" && type !== "note") return;
 
-      // Drop the "[!figure]" marker, then separate title line from body.
+      // Drop the "[!type]" marker, then separate the title line from the body.
       const children = [...first.children];
       children[0] = { ...lead, value: lead.value.slice(m[0].length) };
       const [captionNodes, bodyNodes] = splitAtFirstNewline(children);
+
+      if (type === "aside" || type === "note") {
+        // The title is the label; SideNote.astro defaults it to "Note".
+        const label =
+          captionNodes
+            .map((n) => (n.type === "text" ? n.value : ""))
+            .join("")
+            .trim() || "Note";
+        // Body = the rest of the title paragraph, plus any further blockquote
+        // children (a callout may hold several paragraphs).
+        const body = [];
+        if (bodyNodes.length) {
+          body.push({ type: "paragraph", children: bodyNodes });
+        }
+        body.push(...node.children.slice(1));
+        if (!body.length) {
+          file.fail(`[!${type}] callout has no body text.`, node);
+        }
+        // A one-paragraph note renders its text directly inside
+        // .sidenote__content, with no <p> wrapper -- which is what
+        // <SideNote>inline text</SideNote> produced. Wrapping it would add
+        // paragraph margins the component never had. Multi-paragraph bodies
+        // keep their paragraphs.
+        const content =
+          body.length === 1 && body[0].type === "paragraph"
+            ? body[0].children
+            : body;
+        parent.children.splice(
+          index,
+          1,
+          buildSideNote(label, content, type === "note"),
+        );
+        return index + 1;
+      }
 
       // The embed may sit on the title line's own paragraph (body) or, if the
       // author left a blank line, in a later child of the blockquote.
