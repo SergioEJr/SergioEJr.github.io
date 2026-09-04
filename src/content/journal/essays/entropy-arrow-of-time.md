@@ -39,10 +39,12 @@ If logarithms are a distant memory, don't worry. The log is just a convenient wa
 ## Majority rule
 
 Even though each sequence of heads and tails is equally likely, there is only one single sequence that produces exactly $1,000$ heads. With only one possibility, the entropy is as low as it gets: $S(\#H = 1000) = \log 1 = 0$.
-On the other hand, there are more sequences with $500$ heads than there are atoms in the entire observable universe! Therefore, after shaking the box, our system naturally favors the outcome with the most possiblities and on-average we see sequences with close to $500$ heads. This is the essence of the second law.
+On the other hand, there are more sequences with $500$ heads than there are atoms in the entire observable universe!
 
 > [!aside] aside
 > The number of ways to get $500$ heads from our box is $\binom{1000}{500} \approx 10^{299} $ giving an entropy of $S(\#H = 500) \approx 299 \log 10$. There are only about $10^{80}$ atoms in the entire observable universe.
+
+Therefore, after shaking the box, our system naturally favors the outcome with the most possiblities and on-average we see sequences with close to $500$ heads. This is the essence of the second law.
 
 ## The arrow of time
 
@@ -52,7 +54,7 @@ Now, record a video of the smoke starting from the corner of the room and play t
 
 ## Entropy is counting
 
-I hope entropy now feels a little less mysterious. In essence, it is counting. Shake anything, a box of coins, a room full of air, the universe, and it drifts toward the arrangement with the most possibilities. But this leaves a puzzle. If entropy always increases, why doesn't every ice cube fly apart into vapor to boost the entropy of the universe? Why do solids exist at all? That question deserves its own essay: [Why does ice melt?](/journal/why-ice-melts/)
+I hope entropy now feels a little less mysterious. In essence, it is counting. Shake anything, a box of coins, a room full of air, the universe, and it drifts toward the arrangement with the most possibilities. But this leaves a puzzle. If entropy always increases, why doesn't every ice cube fly apart into vapor to boost the entropy of the universe? Why do solids exist at all? That question deserves its own essay: [[why-ice-melts|Why does ice melt?]]
 
 [^natural]: We assume natural units $k_B = 1$, so entropy is just a number.
 [^time]: From the point of view of statistical physics, time is an emergent phenomenon; it arises from considering collections of particles. From the perspective of relativity, time is not emergent, it is baked directly into the theory through spacetime.

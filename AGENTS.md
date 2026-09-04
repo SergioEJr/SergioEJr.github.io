@@ -309,6 +309,12 @@ pixels, numerically identical to the old `width` prop; omit it to take the
 figure's default from its sidecar. Captions go through the normal pipeline, so
 `$...$` and `*emphasis*` work — no `renderInline` bypass.
 
+**Link between posts with `[[wikilinks]]`, not site-absolute paths.** A
+`[Title](/journal/slug/)` link works on the site but is dead in Obsidian, which
+cannot resolve `/journal/...` as a vault path and offers to CREATE a note
+instead. `[[slug|Title]]` resolves in both. Emphasis wraps it fine:
+`_[[slug|Title]]_`.
+
 **Side notes are callouts too**, `> [!aside] label` for the margin-floating kind
 and `> [!note] label` for the in-column (`inline`) kind; the title is the label,
 defaulting to "Note". One caveat with no fix: `SideNote` renders as `<span>`s so

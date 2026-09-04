@@ -22,7 +22,7 @@ Atoms are quite versatile. One particularly important group of atoms, the $H_2O$
 
 You may be tempted to say we have states of matter because of temperature. And you'd be right, but we can be little more fundamental than that. The essence is that a large collection of atoms is more than the sum of its parts. It doesn't make sense to melt a single H₂O molecule or to speak of a gas consisting of a single atom. We can't even talk about a phase of matter -- solid, liquid, or gas -- without considering a large number of atoms.
 
-We know large collections of atoms undergo phase transitions at specific temperatures. This feels so familiar it may seem almost trivial, but it turns out that describing the physics of phase transitions took some major scientific developments. The key player is entropy, the counting of microscopic possibilities we built up in _[Entropy and the arrow of time](/journal/entropy-arrow-of-time/)_.
+We know large collections of atoms undergo phase transitions at specific temperatures. This feels so familiar it may seem almost trivial, but it turns out that describing the physics of phase transitions took some major scientific developments. The key player is entropy, the counting of microscopic possibilities we built up in _[[entropy-arrow-of-time|Entropy and the arrow of time]]_.
 
 ## Balancing entropy and energy
 
