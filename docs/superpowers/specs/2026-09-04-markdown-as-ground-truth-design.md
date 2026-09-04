@@ -139,6 +139,28 @@ each and should be justified by friction actually felt, not done reflexively.
 - Mobile. iOS Obsidian does not follow symlinks, so `journal/` and `diagrams/`
   are absent there. Desktop is the primary surface.
 
+## Deferred: equation numbers in Obsidian
+
+Equations render unnumbered in Obsidian. Investigated 2026-09-04 and **pinned**,
+not abandoned.
+
+- **Do NOT install Auto Equation Numbering or Equation Citator.** Both write to
+  your files. The first comments out `\label{...}` as `% \label{...}` when it
+  edits, which would destroy what `remark-eq-label` reads and break every eqref
+  on the site, and it writes `\tag{n}` that KaTeX would render beside its own
+  number.
+- **A CSS counter cannot be exact.** The site numbers only unstarred
+  environments; MathJax renders `align` and `align*` identically (both
+  `mjx-mtable`), so CSS cannot tell them apart. It would be right on every post
+  except `trig-derivatives`, whose single `align*` genuinely needs alignment.
+- **The exact route** is MathJax `tags: 'ams'` — the identical starred/unstarred
+  rule KaTeX uses — which would also make `\eqref` work in Obsidian. Obsidian
+  does not expose MathJax config, so it needs a small custom plugin, and
+  reconfiguring MathJax v3 after startup is fiddly.
+
+Not worth it while references already read semantically, which was the actual
+problem. Revisit only if the missing numbers start costing something real.
+
 ## Open questions
 
 1. **`[@key]: definition` rendering in Obsidian.** It resembles a Markdown
