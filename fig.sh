@@ -56,6 +56,21 @@ sed -E \
   s/#047857\b/var(--fig-green, #047857)/gi;
   s/#64748b\b/var(--fig-muted, #64748b)/gi;
   s/currentColor/var(--color-text-main, currentColor)/g;
+' \
+| perl -0777 -pe '
+  # DETERMINISM: dvisvgm emits the @font-face blocks in a varying order between
+  # runs, so regenerating an unchanged figure produced a spurious diff and made
+  # real changes hard to see in review. The blocks are order-independent (each
+  # binds one font-family to one woff2 payload), so sorting them is safe and
+  # makes fig.sh byte-idempotent. The text.f* rules that follow are already
+  # emitted in index order and are left alone.
+  s{(<!\[CDATA\[)(.*?)(\]\]>)}{
+    my ($open, $body, $close) = ($1, $2, $3);
+    my @lines = split /\n/, $body;
+    my @face  = sort grep {  /^\@font-face/ } @lines;
+    my @rest  =      grep { !/^\@font-face/ } @lines;
+    $open . join("\n", @face, @rest) . "\n" . $close;
+  }gse;
 ' > "src/assets/diagrams/$n.svg"
 
 # --- Sidecar metadata -------------------------------------------------------

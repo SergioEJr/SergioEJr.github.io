@@ -111,11 +111,14 @@ this, and will it come back?**
   because alt prose legitimately contains colons and a "next comment line"
   heuristic would truncate on them.
 
-  **`fig.sh` is not byte-deterministic.** dvisvgm emits a figure's `@font-face`
-  blocks in a varying order, so regenerating an unchanged figure can still
-  produce a diff. The content is identical as an unordered set; verify that
-  before assuming a real change, and prefer reverting the churn to committing
-  it.
+  **`fig.sh` is byte-idempotent, and a sort step is what makes it so.** dvisvgm
+  emits a figure's `@font-face` blocks in a varying order between runs, so
+  regenerating an unchanged figure used to produce a spurious diff and bury real
+  changes in review noise. The final `perl -0777` stage sorts those blocks
+  inside the `<![CDATA[...]]>`; they are order-independent (each binds one
+  font-family to one woff2 payload), and the `text.f*` rules after them are
+  already emitted in index order and left alone. **Don't remove that stage** —
+  regenerating any figure will start producing phantom diffs again.
 - **`photos/`** is irreplaceable input. **Downscale before committing**: heroes
   render at `width={1020}` with `densities={[1,2]}`, so Astro never emits a
   variant wider than **2040px** and anything above that is discarded at build
