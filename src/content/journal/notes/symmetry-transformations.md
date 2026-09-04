@@ -14,8 +14,6 @@ keywords:
 draft: false # set to false to publish
 ---
 
-import SideNote from "/src/components/SideNote.astro"
-
 ## Scalar Fields
 
 Suppose I have a hot cup of coffee described by a temperature field $\phi(\boldsymbol{x})$, and I slide the cup by a displacement $\boldsymbol{a}$ on my desk. If physics is going to be of any use to us, then the total heat content of the coffee better not have changed. Why must this be?
@@ -80,11 +78,7 @@ $$
 $$
 so that the rotated field is defined entirely in terms of the untransformed field. This reveals an important distinction between symmetry transformations on scalar fields (Eq. [](#eq:scalar-transform)) and on vector fields: for vector fields, one must transform both the inputs *and* the outputs. From Eq. [](#eq:vector-rotation), it may appear that we should just transform the vector field opposite how we transform the base space, however, we can come up with an immediate counterexample.
 
-Consider now a general rigid-body transformation $\boldsymbol{x}' = R\boldsymbol{x} + \boldsymbol{a}$. Translating the magnet should certainly not change the direction of the field, so only the rotation operator should act on $\boldsymbol{m}$, giving
-$
-\boldsymbol{m}'(\boldsymbol{x}') = R \boldsymbol{m}(R^{-1}(\boldsymbol{x}' - \boldsymbol{a})).
-$
-So, we see that the transformation acting on the vector field $\boldsymbol{m}$ is not simply the rigid body motion $g$. The proper transformation is given by the *Jacobian* of the rigid body motion $J(\boldsymbol{x}) = R$,
+Consider now a general rigid-body transformation $\boldsymbol{x}' = R\boldsymbol{x} + \boldsymbol{a}$. Translating the magnet should certainly not change the direction of the field, so only the rotation operator should act on $\boldsymbol{m}$, giving $\boldsymbol{m}'(\boldsymbol{x}') = R \boldsymbol{m}(R^{-1}(\boldsymbol{x}' - \boldsymbol{a})).$ So, we see that the transformation acting on the vector field $\boldsymbol{m}$ is not simply the rigid body motion $g$. The proper transformation is given by the *Jacobian* of the rigid body motion $J(\boldsymbol{x}) = R$,
 
 $$
 \boldsymbol{m}'(\boldsymbol{x}) = J(g^{-1}\boldsymbol{x}) \boldsymbol{m}(g^{-1}\boldsymbol{x}).
