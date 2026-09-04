@@ -14,6 +14,12 @@
 //   > [!note] Note               -> SideNote inline, stays in the reading column
 //   > A framing note too important for the margin.
 //
+//   > [!derivation]- Why the Jacobian shows up   -> Derivation, collapsed
+//   > Let $\Phi$ be a coordinate transformation...
+//   >
+//   > > [!figure] A nested figure works
+//   > > ![[velocity-field-transform.svg]]
+//
 // Obsidian shows a callout containing the real diagram; the site emits the same
 // <figure> markup Figure.astro produces. See
 // docs/superpowers/specs/2026-09-04-markdown-as-ground-truth-design.md.
@@ -127,6 +133,91 @@ function findEmbed(nodes) {
   return null;
 }
 
+// Lifted verbatim from Derivation.astro so the two renderings are identical.
+const CHEVRON_ICON =
+  '<svg class="derivation__chevron" xmlns="http://www.w3.org/2000/svg"' +
+  ' width="14" height="14" viewBox="0 0 24 24" fill="none"' +
+  ' stroke="currentColor" stroke-width="2.5" stroke-linecap="round"' +
+  ' stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6">' +
+  "</path></svg>";
+const COLLAPSE_ICON =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"' +
+  ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"' +
+  ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<path d="m18 15-6-6-6 6"></path></svg>';
+
+// The content is ALWAYS in the DOM; collapsing only toggles `hidden`. That is
+// required so rehype-eqref and KaTeX's CSS counter see equations inside a
+// closed block -- an inner equation keeps its place in the global numbering and
+// stays referenceable from anywhere. Do not "optimise" this into <details>.
+function buildDerivation(label, bodyNodes, open, id) {
+  return {
+    type: "paragraph",
+    data: {
+      hName: "section",
+      hProperties: { className: ["derivation"], "data-derivation": "" },
+    },
+    children: [
+      {
+        type: "paragraph",
+        data: {
+          hName: "button",
+          hProperties: {
+            type: "button",
+            className: ["derivation__head"],
+            "aria-expanded": open ? "true" : "false",
+            "aria-controls": id,
+          },
+          hChildren: [
+            { type: "raw", value: CHEVRON_ICON },
+            {
+              type: "element",
+              tagName: "span",
+              properties: { className: ["derivation__label"] },
+              children: [{ type: "text", value: label }],
+            },
+          ],
+        },
+        children: [],
+      },
+      {
+        type: "paragraph",
+        data: {
+          hName: "div",
+          hProperties: {
+            className: ["derivation__content"],
+            id,
+            ...(open ? {} : { hidden: true }),
+          },
+        },
+        children: [
+          ...bodyNodes,
+          {
+            type: "paragraph",
+            data: {
+              hName: "button",
+              hProperties: {
+                type: "button",
+                className: ["derivation__collapse"],
+              },
+              hChildren: [
+                { type: "raw", value: COLLAPSE_ICON },
+                {
+                  type: "element",
+                  tagName: "span",
+                  properties: {},
+                  children: [{ type: "text", value: "Collapse" }],
+                },
+              ],
+            },
+            children: [],
+          },
+        ],
+      },
+    ],
+  };
+}
+
 // Lifted verbatim from SideNote.astro so the two renderings are identical.
 const SIDENOTE_ICON =
   '<svg class="sidenote__icon" xmlns="http://www.w3.org/2000/svg" width="14"' +
@@ -182,6 +273,10 @@ function buildSideNote(label, bodyNodes, inline) {
 
 export default function remarkCalloutComponents() {
   return (tree, file) => {
+    // Deterministic ids, unique within the page. The component used
+    // Math.random(); a counter keeps the built output reproducible.
+    let derivationSeq = 0;
+
     visit(tree, "blockquote", (node, index, parent) => {
       if (!parent || typeof index !== "number") return;
       const first = node.children?.[0];
@@ -192,12 +287,40 @@ export default function remarkCalloutComponents() {
       if (!m) return;
       const type = m[1].toLowerCase();
       // Anything else passes through as the ordinary blockquote it already is.
-      if (type !== "figure" && type !== "aside" && type !== "note") return;
+      if (!["figure", "aside", "note", "derivation"].includes(type)) return;
 
       // Drop the "[!type]" marker, then separate the title line from the body.
       const children = [...first.children];
       children[0] = { ...lead, value: lead.value.slice(m[0].length) };
       const [captionNodes, bodyNodes] = splitAtFirstNewline(children);
+
+      if (type === "derivation") {
+        const label =
+          captionNodes
+            .map((n) => (n.type === "text" ? n.value : ""))
+            .join("")
+            .trim() || "Derivation";
+        // Obsidian's fold marker IS the open/closed state: `[!x]-` collapses,
+        // bare or `[!x]+` stays open. That maps exactly onto the `open` prop.
+        const open = m[2] !== "-";
+        const body = [];
+        if (bodyNodes.length)
+          body.push({ type: "paragraph", children: bodyNodes });
+        body.push(...node.children.slice(1));
+        if (!body.length) {
+          file.fail("[!derivation] callout has no body.", node);
+        }
+        derivationSeq += 1;
+        parent.children.splice(
+          index,
+          1,
+          buildDerivation(label, body, open, `derivation-${derivationSeq}`),
+        );
+        // Return `index`, not index + 1: the replacement is re-entered so that
+        // callouts NESTED inside the derivation (a figure, typically) are still
+        // visited. The replacement is not a blockquote, so this cannot loop.
+        return index;
+      }
 
       if (type === "aside" || type === "note") {
         // The title is the label; SideNote.astro defaults it to "Note".
@@ -230,7 +353,7 @@ export default function remarkCalloutComponents() {
           1,
           buildSideNote(label, content, type === "note"),
         );
-        return index + 1;
+        return index;
       }
 
       // The embed may sit on the title line's own paragraph (body) or, if the
@@ -296,7 +419,7 @@ export default function remarkCalloutComponents() {
       }
 
       parent.children.splice(index, 1, out);
-      return index + 1;
+      return index;
     });
   };
 }

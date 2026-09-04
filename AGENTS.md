@@ -42,6 +42,14 @@ npm run format:check  # prettier --check .
 - **Dev HMR can serve stale inlined CSS** on client-side (ClientRouter)
   navigation — a style looks wrong on nav but right after a hard refresh. This is
   dev-only; verify CSS changes on `npm run preview` before trusting them.
+- **Editing a remark/rehype plugin requires RESTARTING the dev server**, and a
+  dev server left running while you edit one will actively poison the build.
+  Plugins are loaded once at server start, so a running server keeps re-rendering
+  with the old module — and it writes those stale renders into
+  `.astro/data-store.json`, which is shared, so a *freshly started* second server
+  reads the stale entry too and looks equally broken. Symptom: `npm run build`
+  is correct while dev shows the raw `> [!callout]` source. Fix: kill every
+  `astro dev`, `rm .astro/data-store.json`, restart.
 - The MDX VS Code language server is **disabled** (`mdx.server.enable: false`)
   because it false-flags KaTeX braces. See README "Editor notes".
 
@@ -324,6 +332,14 @@ and check narrow containers after each conversion.
 cannot resolve `/journal/...` as a vault path and offers to CREATE a note
 instead. `[[slug|Title]]` resolves in both. Emphasis wraps it fine:
 `_[[slug|Title]]_`.
+
+**Derivations are `> [!derivation]- Label`**, where Obsidian's fold marker IS
+the open/closed state: `-` collapses (the component's `open={false}` default),
+bare or `+` stays open. Nesting works — the figure inside one is authored as
+`> > [!figure]`. The toggle script lives in `BlogPost.astro`, not the component,
+because derivations now come from two places and the handler is delegated and
+idempotent; it also defines `window.__openDerivationFor`, which the eqref jump
+handlers call to reveal an equation inside a collapsed block.
 
 **Side notes are callouts too**, `> [!aside] label` for the margin-floating kind
 and `> [!note] label` for the in-column (`inline`) kind; the title is the label,

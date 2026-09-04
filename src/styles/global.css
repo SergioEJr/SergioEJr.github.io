@@ -823,3 +823,103 @@ html[data-theme="dark"] .figure__img--dark {
     margin: 1.1rem 0 1.3rem;
   }
 }
+
+/* --- Derivations -----------------------------------------------------------
+   Shared by BOTH renderings: the `> [!derivation]` callout that
+   remark-callout-components compiles from .md posts, and Derivation.astro,
+   which the remaining .mdx post still uses. One definition while both coexist.
+   The toggle script that drives these lives in BlogPost.astro. */
+/* Card consistent with SideNote: accent-tinted ground + left accent border,
+     themed via --color-* so it flips in dark mode. */
+.derivation {
+  display: block;
+  margin: 1.4rem 0;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 18%, transparent);
+  border-left: 3px solid var(--color-accent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-accent) 6%, transparent);
+  /* Wide equations/figures inside scroll within their own containers; clip (not
+       hidden/auto) keeps the block from becoming a scroll container that would
+       break the sticky navbar. */
+  overflow-x: clip;
+  /* Clear the sticky navbar when the bottom bar scrolls the header into view. */
+  scroll-margin-top: 6rem;
+}
+
+/* Header is a full-width button so the whole bar is clickable. */
+.derivation__head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.55rem 0.85rem;
+  border: 0;
+  background: transparent;
+  color: var(--color-accent);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  text-align: left;
+  cursor: pointer;
+}
+.derivation__head:hover {
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  border-radius: 6px;
+}
+.derivation__head:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.derivation__chevron {
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+/* Point down when expanded. */
+.derivation__head[aria-expanded="true"] .derivation__chevron {
+  transform: rotate(90deg);
+}
+
+.derivation__label {
+  display: inline-block;
+}
+
+/* Content: padded so math/figures breathe. Hidden via the `hidden` attribute
+     (Task 3 toggles it); [hidden] gets display:none from the UA sheet. */
+.derivation__content {
+  padding: 0.2rem 0.95rem 0rem;
+}
+/* First child sits right under the header without a double gap. */
+.derivation__content > :first-child {
+  margin-top: 0;
+}
+
+/* Bottom collapse bar: slim, full-width, muted until hover. */
+.derivation__collapse {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  width: 100%;
+  padding: 0.4rem;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--color-accent) 16%, transparent);
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+.derivation__collapse:hover {
+  color: var(--color-accent);
+}
+.derivation__collapse:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}

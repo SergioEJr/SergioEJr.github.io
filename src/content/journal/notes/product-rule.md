@@ -12,7 +12,6 @@ keywords:
   - visual proofs
 draft: false # set to true to unpublish
 ---
-
 We want the derivative of a product $f \cdot g$, which we can picture as the area
 of a rectangle with sides $f$ and $g$. Nudging the input by a small amount grows each
 side by its own differential, $df$ and $dg$:
