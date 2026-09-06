@@ -1882,6 +1882,20 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       transparent 60%
     );
   }
+  /* E-ink light: the grid is a ruled PLATE, not a fog. No feathering — a
+     printed grid has edges — so instead of bleeding past the panel and fading
+     it fills the panel exactly and is closed top and bottom by a hairline,
+     which turns the hard stop from a glitch into a frame. Lines are the
+     hairline grey at partial opacity: visible as graph paper, never competing
+     with the ink of the name. Both breakpoints below inherit this. */
+  :global(html:not([data-theme="dark"])) .hero-sim-grid {
+    inset: 0;
+    opacity: 0.55;
+    -webkit-mask-image: none;
+    mask-image: none;
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+  }
 
   .hero-sim-canvas {
     position: absolute;
@@ -1984,6 +1998,19 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
           transparent 100%
         );
       mask-composite: intersect;
+    }
+    /* E-ink light, desktop: still a full-bleed plate — viewport wide, panel
+       tall — with the hairlines running edge to edge. */
+    :global(html:not([data-theme="dark"])) .hero-sim-grid {
+      top: 0;
+      bottom: 0;
+      /* Re-state the full-bleed geometry: the base light rule's `inset: 0`
+         outranks the plain desktop rule above on specificity. */
+      left: calc(50% - 50vw);
+      right: auto;
+      width: 100vw;
+      -webkit-mask-image: none;
+      mask-image: none;
     }
   }
 

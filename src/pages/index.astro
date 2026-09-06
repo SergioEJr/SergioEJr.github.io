@@ -880,6 +880,22 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           );
         mask-composite: intersect;
       }
+      /* E-ink light: no melt. The photo is a PRINT — a hard-edged plate in a
+         1px ink frame, pulled in from the viewport edge so the frame has paper
+         around it (a frame flush with the screen edge reads as cropped, not
+         framed). The grayscale stays: it is what makes the photo read as ink.
+         Size comes off the width (not margin alone) so the box still fits its
+         grid track; the crop math below reads cqw/cqh off the box and follows. */
+      :global(html:not([data-theme="dark"])) .hero-card-photo {
+        --frame-inset: clamp(1rem, 4vw, 4rem);
+        width: calc(100% - var(--frame-inset));
+        margin-right: var(--frame-inset);
+      }
+      :global(html:not([data-theme="dark"])) .hero-card-photo img {
+        -webkit-mask-image: none;
+        mask-image: none;
+        border: 1px solid var(--color-rule);
+      }
       /* Keep the FACE centered SMOOTHLY as the photo column narrows. The face
          sits at ~38% of the image's width and the image (aspect 1.5) is
          height-limited under `cover` here, so its rendered width is 150cqh.
@@ -1164,8 +1180,8 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         width: 100%;
         aspect-ratio: 16 / 10;
         object-fit: cover;
-        border-radius: 10px;
-        border: 1px solid var(--color-border);
+        border-radius: calc(10px * var(--r-card));
+        border: 1px solid var(--color-rule);
         margin-bottom: 0.65rem;
       }
       /* Image cards separate themselves — no hairlines between project
@@ -1540,6 +1556,21 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
               transparent 100%
             );
           mask-composite: intersect;
+        }
+        /* E-ink light, stacked: the framed print sits inside the copy's own
+           side padding instead of running flush to the viewport. The mask is
+           cleared again here because this block re-declares it. */
+        :global(html:not([data-theme="dark"])) .hero-card-photo {
+          /* `stretch`, not the split layout's `end`: with `end` a width of
+             auto shrink-wraps the box to nothing and only the frame's edge
+             is left standing. */
+          justify-self: stretch;
+          width: auto;
+          margin: 0 1.25rem;
+        }
+        :global(html:not([data-theme="dark"])) .hero-card-photo img {
+          -webkit-mask-image: none;
+          mask-image: none;
         }
       }
 

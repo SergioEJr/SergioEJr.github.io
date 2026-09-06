@@ -9,9 +9,9 @@ export const BLOG_CATEGORY_COLORS: Record<
   string,
   { light: string; dark: string }
 > = {
-  updates: { light: "#2563eb", dark: "#60a5fa" },
-  essays: { light: "#db2777", dark: "#f472b6" },
-  notebook: { light: "#d97706", dark: "#f59e0b" },
+  updates: { light: "#2b4c7e", dark: "#60a5fa" },
+  essays: { light: "#b0246f", dark: "#f472b6" },
+  notebook: { light: "#8f560c", dark: "#f59e0b" },
 };
 
 export const BLOG_CATEGORY_LABELS: Record<string, string> = {
@@ -26,9 +26,9 @@ export const ESSAY_SUBJECT_COLORS: Record<
   string,
   { light: string; dark: string }
 > = {
-  Science: { light: "#0d9488", dark: "#2dd4bf" },
-  Math: { light: "#7c3aed", dark: "#a78bfa" },
-  Ideas: { light: "#c2410c", dark: "#fb923c" },
+  Science: { light: "#1d6b62", dark: "#2dd4bf" },
+  Math: { light: "#5a3d9c", dark: "#a78bfa" },
+  Ideas: { light: "#a34a15", dark: "#fb923c" },
 };
 
 // Project categories (Technical / Teaching). Technical echoes the Math purple,

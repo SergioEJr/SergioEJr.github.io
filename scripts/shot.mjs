@@ -61,7 +61,14 @@ const sel = opt("sel", null);
 const openSel = opt("open", null);
 const scrollY = parseInt(opt("scroll", "0"), 10);
 
-const browser = await chromium.launch();
+// Remote sandboxes ship a system Chromium at a fixed path that may not match
+// the revision this Playwright expects; fall back to it when present.
+import { existsSync } from "node:fs";
+const sysChrome =
+  process.env.PW_CHROMIUM_EXECUTABLE || "/opt/pw-browsers/chromium";
+const browser = await chromium.launch(
+  existsSync(sysChrome) ? { executablePath: sysChrome } : {},
+);
 const page = await browser.newPage({ viewport: { width, height } });
 await page.goto(url, { waitUntil: "networkidle" });
 await page.evaluate(
@@ -75,7 +82,12 @@ if (openSel) {
   );
 }
 if (scrollY) await page.evaluate((y) => window.scrollTo(0, y), scrollY);
-await page.waitForTimeout(300);
+// --eval <js>: run arbitrary page-side JS before the shot (e.g. pin a
+// scroll-driven custom property to its end state, close an intro overlay).
+const evalJs = opt("eval", null);
+if (evalJs) await page.evaluate(evalJs);
+// --wait <ms>: extra settle time for intro animations before the shot.
+await page.waitForTimeout(300 + parseInt(opt("wait", "0"), 10));
 
 if (sel) {
   await page.locator(sel).first().screenshot({ path: out });

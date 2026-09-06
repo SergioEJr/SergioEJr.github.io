@@ -319,7 +319,7 @@ const titleHtml = link.href
     border: none;
     background: none;
     cursor: zoom-in;
-    border-radius: 8px; /* matches the image, so the focus ring follows its corners */
+    border-radius: calc(8px * var(--r-card)); /* matches the image, so the focus ring follows its corners */
   }
   @media (hover: hover) and (pointer: fine) {
     .j-stop-photo-btn:hover :global(img) {
@@ -330,8 +330,8 @@ const titleHtml = link.href
     display: block;
     width: 100%;
     height: auto;
-    border-radius: 8px;
-    border: 1px solid var(--color-border);
+    border-radius: calc(8px * var(--r-card));
+    border: 1px solid var(--color-rule);
     transition: border-color 0.3s ease;
   }
   @media (max-width: 600px) {

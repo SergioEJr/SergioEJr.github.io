@@ -30,6 +30,12 @@ const { class: className = "" } = Astro.props;
       transparent 100%
     );
   }
+  /* E-ink light: a printed grid has edges. No side fade (draw() also drops
+     the downward fade and closes the plate with a rule in light). */
+  :global(html:not([data-theme="dark"])) .blueprint-grid {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
 </style>
 
 <script>
@@ -72,10 +78,18 @@ const { class: className = "" } = Astro.props;
         H = 0,
         centerX = 0;
 
-      function accent(): string {
+      function isDark(): boolean {
         return (
-          getComputedStyle(document.documentElement)
-            .getPropertyValue("--color-accent")
+          document.documentElement.getAttribute("data-theme") === "dark"
+        );
+      }
+      // Dark draws the accent (a blueprint); light draws the hairline grey
+      // (graph paper) — the accent at low alpha reads as a blue tint on paper.
+      function accent(): string {
+        const cs = getComputedStyle(document.documentElement);
+        return (
+          cs
+            .getPropertyValue(isDark() ? "--color-accent" : "--sim-grid-line")
             .trim() || "#3b82f6"
         );
       }
@@ -134,6 +148,16 @@ const { class: className = "" } = Astro.props;
         ctx!.clearRect(0, 0, W, H);
         const color = accent();
         ctx!.lineWidth = 1;
+        // E-ink light: uniform lines, no downward fade — a printed grid is the
+        // same strength everywhere — closed at the bottom by a hairline so the
+        // hard stop reads as the edge of a plate. Alphas are higher than
+        // dark's because the grey is far closer to the paper than the accent
+        // is to the slate. The intro retraction still works: it draws
+        // progressively shorter plates, rule and all.
+        const flat = !isDark();
+        const aMajor = flat ? 0.6 : 0.22;
+        const aMinor = flat ? 0.35 : 0.1;
+        const fadeAt = (y: number) => (flat ? 1 : vfade(y, vH));
 
         // Vertical lines: generated OUTWARD from centerX in both directions so
         // the pattern is mirror-symmetric and a line lands on the header center.
@@ -144,12 +168,16 @@ const { class: className = "" } = Astro.props;
           const x = centerX + k * GRID;
           if (x < -1 || x > W + 1) continue;
           const major = k % 5 === 0;
-          const a = major ? 0.22 : 0.1;
-          const grad = ctx!.createLinearGradient(0, 0, 0, vH);
-          grad.addColorStop(0, hexA(color, a));
-          grad.addColorStop(0.9, hexA(color, 0));
-          grad.addColorStop(1, hexA(color, 0));
-          ctx!.strokeStyle = grad;
+          const a = major ? aMajor : aMinor;
+          if (flat) {
+            ctx!.strokeStyle = hexA(color, a);
+          } else {
+            const grad = ctx!.createLinearGradient(0, 0, 0, vH);
+            grad.addColorStop(0, hexA(color, a));
+            grad.addColorStop(0.9, hexA(color, 0));
+            grad.addColorStop(1, hexA(color, 0));
+            ctx!.strokeStyle = grad;
+          }
           ctx!.beginPath();
           ctx!.moveTo(x, 0);
           ctx!.lineTo(x, vH);
@@ -162,7 +190,7 @@ const { class: className = "" } = Astro.props;
         let row = 0;
         for (let y = 0; y <= vH; y += GRID, row++) {
           const major = row % 5 === 0;
-          const a = (major ? 0.22 : 0.1) * vfade(y, vH);
+          const a = (major ? aMajor : aMinor) * fadeAt(y);
           if (a <= 0.001) continue;
           ctx!.globalAlpha = a;
           ctx!.beginPath();
@@ -171,6 +199,14 @@ const { class: className = "" } = Astro.props;
           ctx!.stroke();
         }
         ctx!.globalAlpha = 1;
+        if (flat) {
+          // Closing rule on the half-pixel so it renders as one crisp line.
+          ctx!.strokeStyle = hexA(color, 1);
+          ctx!.beginPath();
+          ctx!.moveTo(0, Math.round(vH) - 0.5);
+          ctx!.lineTo(W, Math.round(vH) - 0.5);
+          ctx!.stroke();
+        }
       }
 
       let introRaf = 0;

@@ -207,6 +207,16 @@ import "@pagefind/default-ui/css/ui.css";
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
   }
+  /* E-ink light: plain dimmer, and the panel is an ink-framed sheet with
+     square corners and no shadow. */
+  :global(html:not([data-theme="dark"])) .search-backdrop {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  :global(html:not([data-theme="dark"])) .search-panel {
+    border-color: var(--color-rule);
+    box-shadow: none;
+  }
   .search-panel-wrapper {
     position: relative;
     display: flex;
@@ -225,7 +235,7 @@ import "@pagefind/default-ui/css/ui.css";
     max-height: 80vh;
     background-color: var(--color-bg);
     border: 1px solid var(--color-border);
-    border-radius: 12px;
+    border-radius: calc(12px * var(--r-card));
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     display: flex;
     flex-direction: column;

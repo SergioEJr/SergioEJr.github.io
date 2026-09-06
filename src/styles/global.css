@@ -7,35 +7,49 @@
     Helvetica, Arial, sans-serif;
   --font-serif: "Georgia", "Times New Roman", Times, serif;
 
-  /* --- LIGHT THEME (Default) — "daylight lab": cool near-white ground, ink-navy
-	   text, white panels lift off the tinted bg for surface hierarchy. --- */
-  --color-bg: #f6f8fa;
-  --color-bg-offset: #ffffff;
-  --color-bg-header: rgba(246, 248, 250, 0.85);
-  --color-text-main: #18222e;
-  --color-text-muted: #49586a;
+  /* --- LIGHT THEME (Default) — "e-ink": warm paper ground, near-black ink,
+	   NO surface hierarchy. A reflective display has no backlight, so nothing
+	   glows, blurs, or casts a shadow; hierarchy comes from rules (hairlines and
+	   ink frames), weight, and geometry. Every panel sits ON the paper rather
+	   than lifting off it: --color-bg-offset is the page ground on purpose. The
+	   dark theme keeps its glass-and-glow language; the two are meant to differ
+	   in character while sharing structure. Mechanically that is three tokens:
+	   --shadow-* (none here), --r-card (a 0/1 multiplier on card radii — see
+	   below) and --color-rule (ink frames here, the soft border in dark). --- */
+  --color-bg: #f4f3ee;
+  --color-bg-offset: #f4f3ee;
+  /* Opaque: the light header is paper, not frosted glass (no backdrop blur). */
+  --color-bg-header: #f4f3ee;
+  --color-text-main: #141414;
+  --color-text-muted: #524f49;
   --color-accent: #003366;
-  /* Oxford Blue */
-  --color-accent-light: #e2ecf7;
-  --color-border: #dce3eb;
-  --color-header-border: rgba(0, 0, 0, 0.08);
-  --color-bg-mobile-menu: rgba(246, 248, 250, 0.95);
-  /* Subtle "raised surface" tint for icon-button hovers. A cool step ABOVE the
-	   header ground (never pure white — that reads as a bright halo on the tinted
-	   header). In dark this is a faint lift off the slate. */
-  --color-surface-hover: #dfe6ee;
-  /* Hero grid line color — stronger than --color-border so the blueprint grid
-	   reads on the light ground (dark falls back to --color-border). */
-  --sim-grid-line: #b3c0d0;
+  /* Oxford Blue — kept: on paper it reads as a second ink, not a glow. */
+  /* Accent fills (button hover, table header) are a pressed-paper grey rather
+	   than a blue wash — printed ink darkens the sheet, it does not tint it. */
+  --color-accent-light: #e6e4dc;
+  /* Two rule weights. --color-border is the soft hairline that divides
+	   (list rows, filter bars); --color-rule is INK, for anything that FRAMES —
+	   cards, photos, code blocks, modals. Dark maps rule back onto border. */
+  --color-border: #cdcac1;
+  --color-rule: #141414;
+  --color-header-border: rgba(0, 0, 0, 0.14);
+  --color-bg-mobile-menu: #f4f3ee;
+  /* Icon-button hover: a pressed step DOWN into the paper (never white — there
+	   is no white on this sheet). Dark: a faint lift off the slate. */
+  --color-surface-hover: #e6e4dc;
+  /* Hero grid line color: on paper the grid is a faint print, not a blueprint;
+	   the hairline color, thinned further by the grid's own opacity. */
+  --sim-grid-line: #cdcac1;
   /* Scarce "hot" mark (logo spark, jr particles, Essays register, text
 	   selection). Kept non-interactive so it stays a signature, not a theme color. */
   --color-hot: #d1268f;
 
-  /* Diagram palette (figure-only; see src/assets/diagrams/README.md). Tuned for the
-	   #f6f8fa light ground: each hue is legible, mutually distinguishable, and
-	   harmonic with the cool navy accent + magenta hot mark. fig-blue is a TRUE
-	   blue (not the old navy that collided with --color-accent); fig-red leans cool
-	   crimson toward the hot family; fig-green/fig-muted are new. */
+  /* Diagram palette (figure-only; see src/assets/diagrams/README.md).
+	   Deliberately UNCHANGED by the e-ink theme: figures are drawn once and these
+	   four hues are their whole vocabulary. Each is legible on the paper ground,
+	   mutually distinguishable, and harmonic with the navy accent + magenta hot
+	   mark. fig-blue is a TRUE blue (not the navy that collided with
+	   --color-accent); fig-red leans cool crimson toward the hot family. */
   --fig-red: #c02748;
   --fig-blue: #1d4ed8;
   --fig-orange: #b45309;
@@ -43,24 +57,27 @@
   --fig-muted: #64748b;
 
   /* Journal register colors (header + filter pill) and Essays subject accents
-	   (dot + title underline). Render-time source of truth; keep in sync with the
+	   (dot + title underline). Printed-ink versions: the same six hues as dark
+	   mode's pastels, but darkened and desaturated so they sit IN the paper like
+	   a second ink rather than lighting up on it (every one clears WCAG AA as
+	   text on --color-bg). Render-time source of truth; keep in sync with the
 	   BLOG_CATEGORY_COLORS / ESSAY_SUBJECT_COLORS maps in src/utils/categories.ts. */
-  --cat-updates: #2563eb;
-  --cat-essays: #db2777;
-  --cat-notebook: #d97706;
-  --subj-Science: #0d9488;
-  --subj-Math: #7c3aed;
-  --subj-Ideas: #c2410c;
+  --cat-updates: #2b4c7e;
+  --cat-essays: #b0246f;
+  --cat-notebook: #8f560c;
+  --subj-Science: #1d6b62;
+  --subj-Math: #5a3d9c;
+  --subj-Ideas: #a34a15;
 
   /* Project categories (Technical / Teaching), used by the Projects filter pills
-	   and card badges. Technical echoes the Math purple, Teaching the Science teal,
-	   so they read as part of the same palette. These are theme-flipping (dark,
-	   saturated in light; pastel in dark) and chosen to meet WCAG AA in every
-	   context — white text on the active pill, the color as text on the page bg,
-	   and (via the *-badge value) on the dark card-image overlay. Keep in sync with
+	   and card badges. Technical echoes the Math violet, Teaching the Science teal,
+	   so they read as part of the same palette. These are theme-flipping (ink in
+	   light; pastel in dark) and chosen to meet WCAG AA in every context — white
+	   text on the active pill, the color as text on the page bg, and (via the
+	   *-badge value) on the dark card-image overlay. Keep in sync with
 	   PROJECT_CATEGORY_COLORS in src/utils/categories.ts. */
-  --proj-technical: #7c3aed;
-  --proj-teaching: #0f766e;
+  --proj-technical: #5a3d9c;
+  --proj-teaching: #1d6b62;
   /* Card badges always sit on a dark photo overlay regardless of theme, so they
 	   use the pastel variant in BOTH themes (see --proj-*-badge usage). */
   --proj-technical-badge: #a78bfa;
@@ -72,9 +89,19 @@
      this is the value everywhere else, and what edge-bleeding components cancel. */
   --page-gutter: 1rem;
   --radius: 8px;
-  --shadow-sm: 0 1px 3px rgba(23, 42, 72, 0.05);
-  --shadow-md: 0 4px 6px rgba(23, 42, 72, 0.08);
-  --shadow-lg: 0 10px 15px rgba(23, 42, 72, 0.1);
+  /* --r-card: multiplier on the radius of every CARD-LIKE box — project cards,
+	   panels, photos, code blocks, blockquotes, modals, figure cards. Light is 0
+	   (square: a printed frame has corners), dark is 1 (each site keeps its own
+	   value). Write `border-radius: calc(16px * var(--r-card))`, not a shared
+	   radius token: the sites legitimately differ (10-20px) and a single token
+	   would have re-rounded dark mode. Small controls (pills, buttons, chips)
+	   are NOT on this scale and keep their radius in both themes. */
+  --r-card: 0;
+  /* Paper casts no shadow. Sites that hard-code a shadow (glass popovers,
+	   code blocks) get an explicit light-mode `box-shadow: none` instead. */
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
 }
 
 /* --- DARK THEME --- */
@@ -90,12 +117,14 @@
   /* Electric Blue */
   --color-accent-light: #1e3a8a;
   --color-border: #334155;
+  /* Dark has no ink-frame distinction: frames use the soft border. */
+  --color-rule: #334155;
   --color-header-border: rgba(255, 255, 255, 0.1);
   --color-bg-mobile-menu: rgba(15, 23, 42, 0.95);
   --color-hot: #f472b6;
   /* Faint lift off the slate for icon-button hovers (matches old offset look). */
   --color-surface-hover: #1e293b;
-  /* Dark grid keeps the border color (light overrides this in :root above). */
+  /* Dark grid keeps the border color (light sets its own in :root above). */
   --sim-grid-line: #334155;
 
   /* Diagrams (dark). fig-red/blue/orange unchanged; green/muted added so figures
@@ -122,6 +151,7 @@
   --proj-technical-badge: #a78bfa;
   --proj-teaching-badge: #2dd4bf;
 
+  --r-card: 1;
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
@@ -496,7 +526,7 @@ a {
   margin-top: 0.75rem;
   padding: 1rem 1.15rem;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: calc(10px * var(--r-card));
   background: var(--color-bg-offset);
 }
 .pub-panel p {
@@ -544,7 +574,7 @@ a {
 .project-card {
   background-color: var(--color-bg-offset);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: calc(var(--radius) * var(--r-card));
 }
 
 /* Dark mode optimization for images */
@@ -731,8 +761,8 @@ a.eqref:hover {
    on the card too. The border still delineates the figure. */
 .figure__img--card {
   background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border: 1px solid var(--color-rule);
+  border-radius: calc(12px * var(--r-card));
   padding: 1rem;
   box-shadow: var(--shadow-sm);
 }
@@ -778,7 +808,7 @@ html[data-theme="dark"] .figure__img--dark {
   background: color-mix(in srgb, var(--callout-color) 7%, transparent);
   border: 1px solid color-mix(in srgb, var(--callout-color) 18%, transparent);
   border-left: 3px solid var(--callout-color);
-  border-radius: 8px;
+  border-radius: calc(8px * var(--r-card));
   padding: 0.65rem 0.8rem;
   margin: 0.9rem 0 1.1rem;
 }

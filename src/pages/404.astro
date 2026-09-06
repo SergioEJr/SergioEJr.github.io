@@ -19,8 +19,8 @@ import ParticleField from "../components/ParticleField.astro";
       .nf {
         position: relative;
         overflow: hidden;
-        border: 1px solid var(--color-border);
-        border-radius: 20px;
+        border: 1px solid var(--color-rule);
+        border-radius: calc(20px * var(--r-card));
         padding: 3.5rem 2rem;
         background:
           radial-gradient(
@@ -34,6 +34,10 @@ import ParticleField from "../components/ParticleField.astro";
             var(--color-bg-offset) 100%
           );
         box-shadow: var(--shadow-md);
+      }
+      /* E-ink light: a flat framed sheet — no accent wash, no gradient. */
+      :global(html:not([data-theme="dark"])) .nf {
+        background: var(--color-bg);
       }
       .nf-inner {
         position: relative;
@@ -115,11 +119,19 @@ import ParticleField from "../components/ParticleField.astro";
       }
       .nf-suggest {
         border: 1px solid var(--color-border);
-        border-radius: 14px;
+        border-radius: calc(14px * var(--r-card));
         background: color-mix(in srgb, var(--color-bg-offset) 84%, transparent);
         backdrop-filter: blur(4px);
         -webkit-backdrop-filter: blur(4px);
         padding: 1rem;
+      }
+      :global(html:not([data-theme="dark"])) .nf-particle {
+        box-shadow: none;
+      }
+      :global(html:not([data-theme="dark"])) .nf-suggest {
+        background: var(--color-bg);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
       }
       .nf-suggest h3 {
         margin: 0 0 0.8rem;
@@ -139,7 +151,7 @@ import ParticleField from "../components/ParticleField.astro";
         display: block;
         text-decoration: none;
         border: 1px solid var(--color-border);
-        border-radius: 10px;
+        border-radius: calc(10px * var(--r-card));
         padding: 0.65rem 0.75rem;
         color: var(--color-text-main);
         background: var(--color-bg);

@@ -31,6 +31,18 @@ npm run format:check  # prettier --check .
   unless asked.
 - **Dark mode** = `data-theme="dark"` on `<html>`; colors are CSS vars
   (`--color-*`) in `src/styles/global.css`.
+- **Light mode is "e-ink" (2026-09), and it is a different character from dark
+  on purpose.** Warm paper, ink text, no shadows, no backdrop blur, no glow, no
+  gradient hairlines, square card corners; hierarchy from hairlines (`--color-border`)
+  and ink frames (`--color-rule`). Dark keeps its glass-and-glow look. The
+  mechanics: `--shadow-*` are `none` in light; card-like radii are written
+  `calc(Npx * var(--r-card))` (0 in light, 1 in dark — small controls like pills
+  stay rounded in both); anything a token can't express is a light-scoped rule,
+  `html:not([data-theme="dark"]) .x` (`:global(...)` inside a component), that
+  REMOVES an effect. Read the "Two themes" section of `DESIGN.md` before adding
+  a surface, and add both looks: a new card needs its dark radius on the
+  `--r-card` scale and its light frame on `--color-rule`. The figure palette
+  (`--fig-*`) was left untouched — diagrams are drawn once.
 - **`position: sticky` + horizontal overflow don't mix.** A sticky-navbar
   failure almost always means something overflows horizontally. Fix with
   `overflow-x: clip` (NOT `hidden`/`auto`, which create a scroll container and

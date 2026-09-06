@@ -80,10 +80,14 @@ const numberedBody = numberCitations(renderedBody);
       .hero-image img {
         display: block;
         margin: 0 auto;
-        border-radius: 12px;
+        border-radius: calc(12px * var(--r-card));
         box-shadow: var(--shadow-md);
         max-width: 100%;
         height: auto;
+      }
+      /* E-ink light: the hero is a framed print (no shadow to lift it). */
+      :global(html:not([data-theme="dark"])) .hero-image img {
+        border: 1px solid var(--color-rule);
       }
 
       .article-container {
@@ -205,10 +209,15 @@ const numberedBody = numberCitations(renderedBody);
             transparent 100%
           ),
           var(--color-bg-offset);
-        border-radius: 18px;
+        border-radius: calc(18px * var(--r-card));
         box-shadow: var(--shadow-sm);
         overflow: hidden;
         quotes: '"' '"' "'" "'";
+      }
+      /* E-ink light: no wash — a plain box on the paper with an ink rule down
+         its left edge (the accent, a second ink) and a hairline around it. */
+      :global(html:not([data-theme="dark"])) .prose :global(blockquote) {
+        background: var(--color-bg);
       }
       .prose :global(blockquote::before) {
         content: open-quote;
@@ -472,16 +481,19 @@ const numberedBody = numberCitations(renderedBody);
         content: "";
         position: absolute;
         inset: 0;
-        border-radius: 18px;
+        border-radius: calc(18px * var(--r-card));
         pointer-events: none;
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      }
+      :global(html:not([data-theme="dark"])) .prose :global(.code-block-frame::after) {
+        box-shadow: none;
       }
       .prose :global(.code-block-frame pre) {
         margin: 0;
       }
       .prose :global(pre.astro-code) {
         border: 1px solid rgba(148, 163, 184, 0.22);
-        border-radius: 18px;
+        border-radius: calc(18px * var(--r-card));
         padding: 1.2rem 1.35rem !important;
         box-shadow: 0 20px 45px rgba(15, 23, 42, 0.14);
         background-image:
@@ -496,6 +508,16 @@ const numberedBody = numberCitations(renderedBody);
             rgba(255, 255, 255, 0)
           );
         scrollbar-color: rgba(148, 163, 184, 0.75) transparent;
+      }
+      /* E-ink light: an ink-framed box printed straight on the paper. Shiki
+         inlines `background-color:#fff` on the <pre> — there is no white on this
+         sheet, so it is overridden (with !important, as the dark rule does) to
+         the page ground; no glow gradient, no shadow. */
+      html:not([data-theme="dark"]) .prose :global(pre.astro-code) {
+        border-color: var(--color-rule);
+        box-shadow: none;
+        background-image: none;
+        background-color: var(--color-bg) !important;
       }
       html[data-theme="dark"] .prose :global(pre.astro-code) {
         border-color: rgba(148, 163, 184, 0.24);
@@ -557,6 +579,17 @@ const numberedBody = numberCitations(renderedBody);
         box-shadow: var(--shadow-md);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
+      }
+      /* E-ink light: the label and copy button are paper tabs cut into the
+         frame — ink outline, no glass. The label's dot loses its halo. */
+      :global(html:not([data-theme="dark"])) .prose :global(.code-block-label),
+      :global(html:not([data-theme="dark"])) .prose :global(.copy-code-button) {
+        border-color: var(--color-rule);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
+      :global(html:not([data-theme="dark"])) .prose :global(.code-block-label::before) {
+        box-shadow: none;
       }
       .prose :global(.code-block-label) {
         left: 1rem;
@@ -642,7 +675,7 @@ const numberedBody = numberCitations(renderedBody);
       .prose :global(img) {
         max-width: 100%;
         height: auto;
-        border-radius: 12px;
+        border-radius: calc(12px * var(--r-card));
         box-shadow: var(--shadow-sm);
       }
       /* Generic prose <details> (collapsibles). The TOC bar is also a
@@ -651,7 +684,7 @@ const numberedBody = numberCitations(renderedBody);
         margin: 1.5rem 0;
         padding: 1rem 1.25rem;
         border: 1px solid var(--color-border);
-        border-radius: 12px;
+        border-radius: calc(12px * var(--r-card));
         background: var(--color-bg-offset);
       }
       .prose :global(summary:not(.toc-bar__button)) {
@@ -731,7 +764,7 @@ const numberedBody = numberCitations(renderedBody);
         }
         .prose :global(blockquote) {
           padding: 1.1rem 2.7rem 1.1rem 2.7rem;
-          border-radius: 14px;
+          border-radius: calc(14px * var(--r-card));
         }
         .prose :global(blockquote::before) {
           top: 0.45rem;
@@ -747,7 +780,7 @@ const numberedBody = numberCitations(renderedBody);
           margin: 2.3rem 0 1.8rem;
         }
         .prose :global(pre.astro-code) {
-          border-radius: 14px;
+          border-radius: calc(14px * var(--r-card));
           padding: 1rem 1rem 1.1rem !important;
         }
         .prose :global(.code-block-label) {

@@ -358,7 +358,11 @@ const { count = 46, class: className = "" } = Astro.props;
         // its contrast, taking Updates from 4.85 to 3.96 (AA pass to fail). At 0.6
         // that drops to 4.3% alpha. Dark is untouched — the `dark ? 1` branch is
         // the same value it always was.
-        const glowK = dark ? 1 : 0.6;
+        // E-ink light (2026-09): no pool at all. Paper does not glow, and even
+        // the 4.3% wash read as a grey stain behind the eyebrow on the warm
+        // ground. The particles stay — dark specks on paper read as a
+        // dot-matrix field, which is the register's texture, not its light.
+        const glowK = dark ? 1 : 0;
 
         ctx!.clearRect(0, 0, W, H);
 
@@ -409,8 +413,10 @@ const { count = 46, class: className = "" } = Astro.props;
         // more of the header the wash owned, which is the opposite of what a
         // decorative field should do. 150 pulls mobile back to ~74%.
         const outerR = dark ? LOOK.outerR : 150;
-        drawPill(outerR, LOOK.outerAlpha); // soft, extends further
-        drawPill(LOOK.innerR, LOOK.innerAlpha); // tight, anchors the source
+        if (glowK > 0) {
+          drawPill(outerR, LOOK.outerAlpha); // soft, extends further
+          drawPill(LOOK.innerR, LOOK.innerAlpha); // tight, anchors the source
+        }
 
         // Particles lit by distance to the capsule SEGMENT (not a point), so the
         // whole text line acts as the source.

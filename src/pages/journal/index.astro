@@ -1135,6 +1135,12 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
         /* Match the navbar/body theme transition so the frosted bg eases in sync. */
         transition: background-color 0.3s ease;
       }
+      /* E-ink light: opaque paper, no frost (the navbar does the same). The
+         [data-lit] switch below still turns the tint off over the glow band. */
+      :global(html:not([data-theme="dark"])) .j-filters-bar::before {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
       /* Separator: the navbar's own recipe (header::after) — a hairline that
          runs the full bleed and fades out at both ends rather than stopping on
          a hard edge. Bleeds with the frost, so the solid stretch is as long as
@@ -1157,6 +1163,12 @@ const railYears = groupByYear(updates.slice(0, FRONT_UPDATES));
           transparent 100%
         );
         opacity: 0.35;
+      }
+      /* E-ink light: a printed rule, full width, no edge fade. Still lighter
+         than the navbar's so it reads as a sub-bar. */
+      :global(html:not([data-theme="dark"])) .j-filters-bar::after {
+        background: var(--color-border);
+        opacity: 0.7;
       }
       /* 50vw counts the scrollbar, so the bleed overshoots a few px. `clip`, NOT
          hidden/auto — those create a scroll container and break the sticky

@@ -488,6 +488,13 @@ const brandLayerSecondary = layerFor("cls-2");
        force its paint order above main's via ::view-transition-group below. */
     view-transition-name: site-header;
   }
+  /* E-ink light: the header is opaque paper, not frosted glass. The blur is
+     the "glass" half of the dark theme's glass-and-glow language; here the
+     bar is just the top of the sheet. (--color-bg-header is opaque in light.) */
+  :global(html:not([data-theme="dark"])) header {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 
   /* Auto-hide on narrow screens: retracts on scroll-down, returns on scroll-up
      (set by setupAutoHide above; only ever applied below 1200px). On Journal posts
@@ -522,6 +529,12 @@ const brandLayerSecondary = layerFor("cls-2");
       transparent 100%
     );
     opacity: 0.6;
+  }
+  /* E-ink light: a printed rule runs the full width and does not fade — the
+     edge-fade is a glow idiom. */
+  :global(html:not([data-theme="dark"])) header::after {
+    background: var(--color-border);
+    opacity: 1;
   }
 
   nav {
@@ -620,6 +633,11 @@ const brandLayerSecondary = layerFor("cls-2");
     filter: drop-shadow(0 0 6px var(--brand-glow-secondary))
       drop-shadow(0 0 16px var(--brand-glow-secondary));
   }
+  /* E-ink light: ink does not glow. Hover feedback for the brand, nav links,
+     the sliding underline and the action icons is color alone. */
+  :global(html:not([data-theme="dark"])) .brand:hover .brand-layer :global(svg) {
+    filter: none;
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .brand-layer :global(svg) {
@@ -669,6 +687,9 @@ const brandLayerSecondary = layerFor("cls-2");
       0 0 6px var(--nav-glow),
       0 0 14px var(--nav-glow);
   }
+  :global(html:not([data-theme="dark"])) .internal-links :global(a:hover) {
+    text-shadow: none;
+  }
 
   /* Shared underline that slides between links. JS positions it via custom
      props; the transition makes it glide from the old link to the new one. */
@@ -693,6 +714,10 @@ const brandLayerSecondary = layerFor("cls-2");
   }
   .nav-underline.is-visible {
     opacity: 1;
+  }
+  :global(html:not([data-theme="dark"])) .nav-underline {
+    box-shadow: none;
+    border-radius: 0;
   }
   /* Skip the slide animation on first paint (before any nav happens) so the
      underline appears already in place rather than flying in from the left. */
@@ -773,6 +798,9 @@ const brandLayerSecondary = layerFor("cls-2");
     filter:
       drop-shadow(0 0 5px var(--nav-glow)) drop-shadow(0 0 12px var(--nav-glow));
   }
+  :global(html:not([data-theme="dark"])) .header-actions :global(svg) {
+    filter: none !important;
+  }
 
   .mobile-menu-header {
     display: flex;
@@ -824,6 +852,15 @@ const brandLayerSecondary = layerFor("cls-2");
       0 2px 8px rgba(0, 0, 0, 0.08);
     z-index: 200;
     animation: menuFadeIn 0.2s ease;
+  }
+  /* E-ink light: the menu is a card cut from the same paper — an ink frame,
+     square corners, no glass, no shadow. */
+  :global(html:not([data-theme="dark"])) .mobile-menu {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-color: var(--color-rule);
+    border-radius: 0;
+    box-shadow: none;
   }
   @keyframes menuFadeIn {
     from {

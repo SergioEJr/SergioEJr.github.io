@@ -307,6 +307,12 @@ const toc = headings.filter(
     transition: transform 0.28s ease;
   }
 
+  /* E-ink light: opaque paper bar, no glass (the navbar it replaces is the same). */
+  :global(html:not([data-theme="dark"])) .toc-bar {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
   .toc-bar[data-toc-shown] {
     transform: translateY(0);
   }

@@ -163,7 +163,7 @@ for (const p of projects)
         color: inherit;
         background-color: var(--color-bg-offset);
         border: 1px solid var(--color-border);
-        border-radius: 16px;
+        border-radius: calc(16px * var(--r-card));
         overflow: hidden;
         transform-style: preserve-3d;
         /* --rx/--ry/--lift drive the tilt; defaults = flat & resting.
@@ -214,6 +214,29 @@ for (const p of projects)
       :global(html[data-theme="dark"]) .project-card {
         --glare-strength: 0.05;
         --outline-accent: 130%;
+      }
+      /* E-ink light: a card is a rectangle printed on the sheet. No shadow, no
+         tilt or lift (depth cues need a shadow to read; without one a rotating
+         flat rectangle just looks broken), and none of the cursor-following
+         light — the three glow layers are switched off below. Hover is the one
+         thing paper can do: the frame goes from hairline to ink. The JS still
+         writes --rx/--ry/--lift; the transform override simply ignores them. */
+      :global(html:not([data-theme="dark"])) .project-card {
+        transform: none;
+        box-shadow: none;
+        transition:
+          border-color 0.2s ease,
+          opacity 0.3s ease,
+          filter 0.3s ease;
+      }
+      :global(html:not([data-theme="dark"])) .project-card:hover {
+        border-color: var(--color-rule);
+        box-shadow: none;
+      }
+      :global(html:not([data-theme="dark"])) .project-card::before,
+      :global(html:not([data-theme="dark"])) .project-card::after,
+      :global(html:not([data-theme="dark"])) .project-card .edge-glow {
+        display: none;
       }
       /* Glare: a soft radial light that follows the cursor, sitting above
 			   the card content but below the badges/links (z-index handled below).
@@ -404,6 +427,19 @@ for (const p of projects)
         background: rgba(15, 23, 42, 0.55);
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
+      }
+      /* E-ink light: no translucency anywhere — the chips over the image are
+         solid, and the status badge is a paper chip with no shadow. */
+      :global(html:not([data-theme="dark"])) .project-image-badge {
+        background: rgba(15, 23, 42, 0.82);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
+      :global(html:not([data-theme="dark"])) .project-badge {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        box-shadow: none;
+        border: 1px solid var(--color-rule);
       }
       .project-badge {
         position: absolute;

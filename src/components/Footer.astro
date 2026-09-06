@@ -372,6 +372,11 @@ import { url } from "../utils/paths";
     );
     opacity: 0.6;
   }
+  /* E-ink light: full-width printed rule, no edge fade (matches the header). */
+  :global(html:not([data-theme="dark"])) .site-footer::before {
+    background: var(--color-border);
+    opacity: 1;
+  }
   /* Two columns, and they stop being two at ONE declared width (see the
      --footer-stack breakpoint below). It used to be `flex-wrap: wrap` deciding
      that implicitly from content width while a `max-width: 640px` query decided
@@ -531,7 +536,7 @@ import { url } from "../utils/paths";
   .author-modal {
     padding: 2.5rem 2rem;
     border: 1px solid var(--color-border);
-    border-radius: 16px;
+    border-radius: calc(16px * var(--r-card));
     background-color: var(--color-bg);
     color: var(--color-text-main);
     max-width: 500px;
@@ -543,6 +548,14 @@ import { url } from "../utils/paths";
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+  }
+  /* E-ink light: a framed sheet over a plain dimmer (no blur). */
+  :global(html:not([data-theme="dark"])) .author-modal {
+    border-color: var(--color-rule);
+  }
+  :global(html:not([data-theme="dark"])) .author-modal::backdrop {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
   .close-btn {
     position: absolute;
