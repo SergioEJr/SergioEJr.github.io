@@ -256,10 +256,11 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
     // Outside-gas color per theme. Light mode: a mid gray (darker than before so
     // it's visible, lighter than the navy letters so the name still pops).
     const DARK_GAS = ""; // "" → use --color-text-muted
-    // Light mode: a cool blue-gray ink wash. Reads as an ambient "gas" against the
-    // daylight ground (#f6f8fa) without competing with the navy letters — and
-    // reads as ink, not white sensor-noise (the old neutral #999 problem).
-    const LIGHT_GAS = "#a3b2c2";
+    // Light mode (e-ink): a neutral warm grey — graphite dust on the paper. It
+    // used to be a cool blue-grey tuned to the old #f6f8fa ground; on warm paper
+    // that read as a blue haze around the name, i.e. a glow. Kept a step darker
+    // than --color-border (#cdcac1) so it survives the 0.25-0.4 gas alpha.
+    const LIGHT_GAS = "#a8a49b";
 
     // ---- State ----------------------------------------------------------
     // Particles are stored in parallel typed arrays (Structure-of-Arrays) rather
@@ -528,15 +529,18 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       if (t < 1020) return 0.45; // final little stutter
       return 1; // settled, fully lit
     }
-    // LIGHT-MODE intro glow envelope: a temporary neon flare that sells the "ink
-    // neon" theme during ignition, then fades to the flat ink dots. 1 while the
-    // name is igniting (through the flicker), then eases to 0 over GLOW_FADE_MS so
-    // the resting state is the flat (glow-free) light sprite. Dark ignores this.
+    // Intro glow envelope. DARK: a wider halo at ignition that fades down to the
+    // resting glow over GLOW_FADE_MS (slots 5/6). LIGHT: none — the e-ink theme
+    // is ink on paper and ink never glows, so the old "ink neon" ignition flare
+    // (slots 3/4, a glowing overlay that faded to the flat dots) is gone; the
+    // name ignites straight to its resting flat state through the flicker.
     const GLOW_HOLD_MS = 1020; // matches activatedIntroAlpha settling point
     const GLOW_FADE_MS = 1260; // fade-out duration after settle (longer = gentler)
     const GLOW_PEAK = 0.7; // max flare strength (<1 = subtler neon)
     function introGlowFade(t: number) {
       if (!isFinite(t)) return 0; // no intro / already over → no flare
+      if (document.documentElement.getAttribute("data-theme") !== "dark")
+        return 0; // light: paper does not flare
       if (t <= GLOW_HOLD_MS) return GLOW_PEAK;
       const p = clamp01((t - GLOW_HOLD_MS) / GLOW_FADE_MS); // 0→1 across the fade
       // Ease-out: (1-p)^3 drops quickly at first, then flattens as it approaches
@@ -691,17 +695,17 @@ const NAME_LINES = SITE_TITLE.toUpperCase().split(" ");
       sprites[2] = isDark
         ? bakeSprite(jrColor, GLOW, spriteCssSize, nameScale)
         : bakeSprite(jrColor, 0, spriteCssSize, nameScale);
-      // Light-only intro flare: a GLOWING version of the name/JR dots, crossfaded
-      // out as the intro settles (see glowFade + renderGL). Skipped in dark, where
-      // the resting sprites already glow.
+      // Slots 3/4 were the light-only ignition flare (glowing name/JR dots,
+      // crossfaded out as the intro settled). The e-ink light theme has no glow
+      // at any point, so they are never baked now; introGlowFade returns 0 in
+      // light and the draw calls skip null textures. Left in the slot table so
+      // the render paths stay untouched.
+      sprites[3] = null;
+      sprites[4] = null;
       if (!isDark) {
-        sprites[3] = bakeSprite(insideColor, GLOW, spriteCssSize, nameScale);
-        sprites[4] = bakeSprite(jrColor, GLOW, spriteCssSize, nameScale);
         sprites[5] = null;
         sprites[6] = null;
       } else {
-        sprites[3] = null;
-        sprites[4] = null;
         // Dark intro flare: a WIDER-halo version of the name/JR, faded down over the
         // resting glow so ignition blooms bigger then settles. Its box must be large
         // enough for GLOW_BIG's tail (same clip-avoidance pad as the resting box).
