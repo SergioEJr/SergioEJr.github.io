@@ -39,7 +39,7 @@ export function generateFallbackAvatar(name: string) {
         y="50%"
         dominant-baseline="central"
         text-anchor="middle"
-        font-family="Atkinson, Arial, sans-serif"
+        font-family="IBM Plex Sans, Arial, sans-serif"
         font-size="76"
         font-weight="700"
         letter-spacing="2"

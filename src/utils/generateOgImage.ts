@@ -4,16 +4,16 @@ import satori from "satori";
 import { html } from "satori-html";
 import { Resvg } from "@resvg/resvg-js";
 
-// Vendored Inter (latin) from @fontsource/inter — read once at module load, not
-// per image. Previously each OG image fetched Inter from Google Fonts twice
-// (~112 network requests across a full build, and the build hard-failed offline
-// or if Google's CSS format changed). Satori accepts woff, and the latin subset
-// covers every glyph these cards render (ASCII + the punctuation below).
+// Vendored IBM Plex Sans (latin) from @fontsource — the site's body face, so
+// share cards match the page. Read once at module load, not per image (an
+// earlier version fetched from Google Fonts twice per card: ~112 requests per
+// build, and the build hard-failed offline). Satori accepts woff, and the latin
+// subset covers every glyph these cards render (ASCII + the punctuation below).
 const require = createRequire(import.meta.url);
 const readFont = (file: string) =>
-  readFileSync(require.resolve(`@fontsource/inter/files/${file}`));
-const fontDataRegular = readFont("inter-latin-400-normal.woff");
-const fontDataBold = readFont("inter-latin-700-normal.woff");
+  readFileSync(require.resolve(`@fontsource/ibm-plex-sans/files/${file}`));
+const fontDataRegular = readFont("ibm-plex-sans-latin-400-normal.woff");
+const fontDataBold = readFont("ibm-plex-sans-latin-700-normal.woff");
 
 // A pill badge shown at the top-left of the OG card.
 export type OgBadge = { label: string; color?: string };
@@ -50,7 +50,7 @@ export async function generateOgImage(
   // Build the full markup as a single string. We call html() with a string
   // (not as a tagged template) so the pill markup isn't HTML-escaped.
   const markupString = `
-        <div style="background-color: #0f172a; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; font-family: 'Inter';">
+        <div style="background-color: #0f172a; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; font-family: 'IBM Plex Sans';">
 
             <div style="display: flex; position: absolute; top: -150px; right: -50px; width: 600px; height: 600px; background-image: linear-gradient(135deg, rgba(56, 189, 248, 0.4), rgba(49, 46, 129, 0)); border-radius: 50%;"></div>
             <div style="display: flex; position: absolute; bottom: -150px; left: -50px; width: 600px; height: 600px; background-image: linear-gradient(45deg, rgba(167, 139, 250, 0.4), rgba(88, 28, 135, 0)); border-radius: 50%;"></div>
@@ -87,8 +87,18 @@ export async function generateOgImage(
     width: 1200,
     height: 630,
     fonts: [
-      { name: "Inter", data: fontDataRegular, weight: 400, style: "normal" },
-      { name: "Inter", data: fontDataBold, weight: 700, style: "normal" },
+      {
+        name: "IBM Plex Sans",
+        data: fontDataRegular,
+        weight: 400,
+        style: "normal",
+      },
+      {
+        name: "IBM Plex Sans",
+        data: fontDataBold,
+        weight: 700,
+        style: "normal",
+      },
     ],
   });
 

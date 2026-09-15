@@ -1,4 +1,18 @@
 ---
+// Site faces: IBM Plex via @fontsource, latin subset only. See --font-* in
+// global.css for which weights are loaded and why.
+import "@fontsource/ibm-plex-sans/latin-400.css";
+import "@fontsource/ibm-plex-sans/latin-400-italic.css";
+import "@fontsource/ibm-plex-sans/latin-600.css";
+import "@fontsource/ibm-plex-sans/latin-700.css";
+import "@fontsource/ibm-plex-serif/latin-400.css";
+import "@fontsource/ibm-plex-serif/latin-400-italic.css";
+import "@fontsource/ibm-plex-serif/latin-600.css";
+import "@fontsource/ibm-plex-mono/latin-400.css";
+// Body regular is the one face every page paints first; preloading it (and
+// only it) removes the swap flash on the copy above the fold. The ?url import
+// resolves to the same content-hashed asset the @font-face rule references.
+import plexSansRegular from "@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff2?url";
 import "../styles/global.css";
 // Self-hosted KaTeX CSS (fonts ship from the package automatically). Bundled and
 // hashed by Astro so it always matches the installed katex renderer — no CDN,
@@ -34,8 +48,6 @@ if (currentPath === "") {
 }
 
 const { title, description, image = defaultImg } = Astro.props;
-const atkinsonRegular = url("/fonts/atkinson-regular.woff");
-const atkinsonBold = url("/fonts/atkinson-bold.woff");
 
 const resolveImage = (img: string) => {
   if (img.startsWith("http")) return img;
@@ -208,26 +220,13 @@ const imageUrl =
     default (dark), matching the :root palette in the critical CSS above. */}
 <meta name="color-scheme" content="dark light" />
 
-<style
-  is:inline
-  set:html={`
-		@font-face {
-			font-family: "Atkinson";
-			src: url("${atkinsonRegular}") format("woff");
-			font-weight: 400;
-			font-style: normal;
-			font-display: swap;
-		}
-
-		@font-face {
-			font-family: "Atkinson";
-			src: url("${atkinsonBold}") format("woff");
-			font-weight: 700;
-			font-style: normal;
-			font-display: swap;
-		}
-	`}
-></style>
+<link
+  rel="preload"
+  href={plexSansRegular}
+  as="font"
+  type="font/woff2"
+  crossorigin
+/>
 
 <link rel="canonical" href={canonicalURL} />
 

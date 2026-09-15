@@ -1,11 +1,20 @@
 /* Sergio Eraso — site theme */
 
 :root {
-  /* Typography */
+  /* Typography — IBM Plex, self-hosted via @fontsource (latin subset, woff2;
+     the @font-face rules are imported in BaseHead.astro). One superfamily so
+     prose, headings and code share x-height and stem weight; Plex Sans's
+     x-height (0.52 em) also sits within 1% of inline KaTeX at its default
+     1.21em scale, so math needs no compensating size. Loaded weights: sans
+     400/400i/600/700, serif 400/400i/600, mono 400 — a 500 request falls to
+     400 and a serif 700 to 600 by CSS font matching, no synthesis. */
   --font-sans:
-    "Atkinson", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif;
-  --font-serif: "Georgia", "Times New Roman", Times, serif;
+  --font-serif: "IBM Plex Serif", Georgia, "Times New Roman", Times, serif;
+  --font-mono:
+    "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, "Liberation Mono",
+    Menlo, monospace;
 
   /* --- LIGHT THEME (Default) — "daylight lab": cool near-white ground, ink-navy
 	   text, white panels lift off the tinted bg for surface hierarchy. --- */
@@ -293,6 +302,8 @@ h3,
 h4,
 h5 {
   font-family: var(--font-serif);
+  /* Semibold, not bold: Plex Serif 700 is a slab at display sizes. */
+  font-weight: 600;
   color: var(--color-text-main);
   line-height: 1.2;
   margin-bottom: 0.75rem;
@@ -305,7 +316,6 @@ h1 {
 
 h2 {
   font-size: 2rem;
-  font-weight: 700;
   margin-top: 2rem;
   margin-bottom: 0.9rem;
 }
