@@ -7,7 +7,7 @@ import HeroSim from "../components/HeroSim.astro";
 // kept intact at src/components/EquationCoda.astro; re-enable by restoring
 // this import and the <EquationCoda /> tag before </main>.
 // import EquationCoda from "../components/EquationCoda.astro";
-import { SITE_TITLE, SITE_DESCRIPTION, CONTACT, CV_URL, SOCIAL_LINKS } from "../consts";
+import { SITE_TITLE, SITE_DESCRIPTION } from "../consts";
 import { url } from "../utils/paths";
 import { pageFade } from "../utils/pageTransition";
 import {
@@ -16,7 +16,6 @@ import {
   getPublishedResearch,
   postLink,
 } from "../utils/posts";
-import { CV_AVAILABLE } from "../utils/cv";
 import { renderInline } from "../utils/inlineText";
 import { ESSAY_SUBJECT_COLORS } from "../utils/categories";
 
@@ -107,9 +106,6 @@ const selectedResearch = (
     : allResearch
 ).slice(0, 3);
 
-const contactEmail = CONTACT.emails[0];
-const linkedin = SOCIAL_LINKS.find((l) => l.icon === "linkedin");
-const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
 ---
 
 <!doctype html>
@@ -946,8 +942,8 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         display: grid;
         grid-template-columns: minmax(0, 1.7fr) minmax(15rem, 1fr);
         column-gap: 2.75rem;
-        /* Generous bottom margin: the newspaper feed should finish breathing
-           before the contact band takes over. */
+        /* Generous bottom margin: the newspaper feed is the last thing on
+           the page, so it should finish breathing before the footer. */
         margin: 5.5rem 0 7.5rem;
       }
       /* Lead column: two stories stacked (Research, then Journal prose). */
@@ -1247,8 +1243,8 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         .home-rail-proj {
           max-width: 18rem;
         }
-        /* No Notes group when stacked — it stood between the reader and the
-           "Get in touch" CTA on an already-long page. Notes stay reachable
+        /* No Notes group when stacked — a third group made an already-long
+           page longer for the least-scanned rail. Notes stay reachable
            through the Journal. */
         .home-rail-group--notes {
           display: none;
@@ -1256,12 +1252,12 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
       }
       /* True mobile: the rail is a single column again (auto-fit collapses
          below ~600px), so the side-by-side balance concerns vanish and the
-         road-to-CTA ones return. */
+         page-length ones return. */
       @media (max-width: 600px) {
         .home-rail-proj {
           max-width: none;
         }
-        /* Two updates instead of three — shorter road to the CTA. The full
+        /* Two updates instead of three — shorter tail on a phone. The full
            list lives at /journal#updates. */
         .home-rail-group--updates .home-rail-item:nth-child(n + 3) {
           display: none;
@@ -1374,31 +1370,6 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         .home-more:hover .home-more-arrow {
           transform: translateX(4px);
         }
-      }
-
-      /* ---- Get in touch: the ask, in the same editorial grammar as the
-         sections above it (serif h2 + hot rule, left-aligned, in the reading
-         column). Its predecessor was a centered full-bleed band on
-         --color-bg-offset, which vanished entirely in dark mode (offset ==
-         body there) and read as a template CTA strip. A first-class section
-         needs no surface to exist. ---- */
-      .home-contact {
-        margin: 0 0 5.5rem;
-      }
-      .home-contact-line {
-        margin: 0 0 1.6rem;
-        max-width: 36rem;
-        font-size: 1.1rem;
-        line-height: 1.65;
-        color: var(--color-text-main);
-      }
-      .home-contact-links {
-        display: flex;
-        gap: 2.25rem;
-        flex-wrap: wrap;
-      }
-      .home-contact-links .home-more {
-        margin-top: 0;
       }
 
       /* --- Mobile: drop the pinned scrub. Sticky pinning + the sim's
@@ -1556,9 +1527,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
       [data-reveal] .home-rail-label,
       [data-reveal] .home-row,
       [data-reveal] .home-rail-item,
-      [data-reveal] .home-more,
-      [data-reveal] .home-contact-line,
-      [data-reveal] .home-contact-links {
+      [data-reveal] .home-more {
         opacity: 0;
         transform: translateY(14px);
         transition:
@@ -1573,9 +1542,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
       [data-reveal].is-revealed .home-rail-label,
       [data-reveal].is-revealed .home-row,
       [data-reveal].is-revealed .home-rail-item,
-      [data-reveal].is-revealed .home-more,
-      [data-reveal].is-revealed .home-contact-line,
-      [data-reveal].is-revealed .home-contact-links {
+      [data-reveal].is-revealed .home-more {
         opacity: 1;
         transform: none;
       }
@@ -1623,9 +1590,7 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
         [data-reveal] .home-rail-label,
         [data-reveal] .home-row,
         [data-reveal] .home-rail-item,
-        [data-reveal] .home-more,
-        [data-reveal] .home-contact-line,
-        [data-reveal] .home-contact-links {
+        [data-reveal] .home-more {
           opacity: 1;
           transform: none;
           transition: none;
@@ -2056,53 +2021,6 @@ const cvHref = CV_AVAILABLE && CV_URL ? url(CV_URL) : null;
           }
         </aside>
       </div>
-
-      {
-        /* Get in touch: an editorial section in the page's own grammar
-           (serif h2 + hot rule, left-aligned, in the reading column) rather
-           than a centered full-bleed CTA strip. No surface needed, so it
-           reads identically in both themes. */
-      }
-      <section class="home-contact" data-reveal>
-        <h2 style="margin-top: 0;">Get in touch</h2>
-        <p class="home-contact-line">
-          I'm midway through my PhD and thinking about what comes next, in
-          research or in industry. If you work on problems where modeling and
-          simulation matter, I'd like to hear from you.
-        </p>
-          <div class="home-contact-links">
-            <a href={`mailto:${contactEmail}`} class="home-more" style="--i: 0">
-              Email<span class="home-more-arrow" aria-hidden="true">&rarr;</span>
-            </a>
-            {
-              cvHref && (
-                <a
-                  href={cvHref}
-                  target="_blank"
-                  class="home-more"
-                  style="--i: 1"
-                  data-umami-event="cv-download"
-                  data-umami-event-location="home-contact"
-                >
-                  CV<span class="home-more-arrow" aria-hidden="true">&rarr;</span>
-                </a>
-              )
-            }
-            {
-              linkedin && (
-                <a
-                  href={linkedin.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="home-more"
-                  style="--i: 2"
-                >
-                  LinkedIn<span class="home-more-arrow" aria-hidden="true">&rarr;</span>
-                </a>
-              )
-            }
-          </div>
-      </section>
 
       {
         /* Quiet epilogue, the very last thing before the footer: the equation
