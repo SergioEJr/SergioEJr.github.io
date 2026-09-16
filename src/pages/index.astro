@@ -17,35 +17,18 @@ import {
   postLink,
 } from "../utils/posts";
 import { renderInline } from "../utils/inlineText";
-import { ESSAY_SUBJECT_COLORS } from "../utils/categories";
 
-// Subject accent for the "From the Journal" lead rows only — the rail below
-// stays entirely monochrome, so the colour marks the curated picks rather than
-// becoming a second system on the page.
-//
-// Essays carry a `subject` (Science/Math/Ideas); a notebook pick shows its
-// `topic` instead. The colour must key off the CATEGORY, not the label text:
-// "A picture proof of the product rule" is a note with topic "Math", and
-// matching that string against the essay subjects painted it in the Math-essay
-// purple, so a note read as an essay. Notes take the notebook register colour
-// whatever their topic is called. Returns a theme-flipping CSS var, so
-// light/dark are handled by global.css.
+// Subject label for the "From the Journal" lead rows. Essays carry a
+// `subject` (Science/Math/Ideas); a notebook pick shows its `topic` instead.
+// Monochrome, like the rest of the meta line: the label used to take the
+// subject/register colour, which made the home page the one surface with two
+// colour systems (2026-09-16). The Journal's own views still colour them.
 const subjectLabel = (post: {
   data: { category: string; subject?: string; topic?: string };
 }) =>
   post.data.category === "essays"
     ? (post.data.subject ?? null)
     : (post.data.topic ?? null);
-const subjectColor = (post: {
-  data: { category: string; subject?: string; topic?: string };
-}) => {
-  const subject = post.data.subject;
-  return post.data.category === "essays" &&
-    subject &&
-    ESSAY_SUBJECT_COLORS[subject]
-    ? `var(--subj-${subject})`
-    : `var(--cat-${post.data.category})`;
-};
 
 const allPosts = (await getPublishedPosts()).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
@@ -1794,16 +1777,13 @@ const selectedResearch = (
                           <p class="home-row-desc">{post.data.description}</p>
                         )}
                         <div class="home-row-meta home-row-date">
-                          {/* Subject in its own color, ahead of the date —
-                              the same signal the Journal's Essays view leads
-                              with, kept quiet here: one word, no uppercase
-                              weight beyond the meta line's own. */}
+                          {/* Subject ahead of the date — the same signal the
+                              Journal's Essays view leads with, kept quiet
+                              here: one word, meta colour, no uppercase weight
+                              beyond the meta line's own. */}
                           {subjectLabel(post) && (
                             <>
-                              <span
-                                class="home-row-subject"
-                                style={`color:${subjectColor(post)}`}
-                              >
+                              <span class="home-row-subject">
                                 {subjectLabel(post)}
                               </span>
                               <span class="home-row-sep" aria-hidden="true">

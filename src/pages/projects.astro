@@ -34,6 +34,13 @@ const filterCounts: Record<string, number> = { Technical: 0, Teaching: 0 };
 for (const p of projects)
   for (const c of p.data.categories)
     filterCounts[c] = (filterCounts[c] || 0) + 1;
+
+// Both off while the page lists three projects: a filter bar over three cards
+// is chrome without a job, and the category pills on the thumbnails were
+// answering a question nobody was asking yet. The markup, CSS and the filter
+// script stay in place — flip these when the count justifies them.
+const SHOW_FILTERS = false;
+const SHOW_CATEGORY_BADGES = false;
 ---
 
 <!doctype html>
@@ -54,8 +61,12 @@ for (const p of projects)
         padding: 2rem 0;
         position: relative;
       }
-      .projects-hero h1,
-      .projects-hero p {
+      /* With no filter bar below it, the hero owns the gap to the grid that
+         .projects-filters otherwise provides. */
+      .projects-hero--no-filters {
+        margin-bottom: 3rem;
+      }
+      .projects-hero h1 {
         position: relative;
         z-index: 1;
       }
@@ -66,13 +77,6 @@ for (const p of projects)
         color: var(--color-text-main);
         letter-spacing: -0.02em;
         line-height: 1.2;
-      }
-      .projects-hero p {
-        font-size: 1.15rem;
-        color: var(--color-text-muted);
-        max-width: 700px;
-        margin: 0 auto;
-        line-height: 1.7;
       }
       /* First view per full load (class set by the inline script in the
          hero): the blueprint grid CONDENSES in — defocused and faint, then
@@ -504,7 +508,7 @@ for (const p of projects)
   <body>
     <Header />
     <main class="projects-section" transition:animate={pageFade}>
-      <div class="projects-hero">
+      <div class:list={["projects-hero", { "projects-hero--no-filters": !SHOW_FILTERS }]}>
         <BlueprintGrid />
         <!-- First view per full page load: the blueprint grid condenses in
              (fade + defocus, echoing the homepage's gas language). Same
@@ -520,26 +524,24 @@ for (const p of projects)
           }
         </script>
         <h1>Projects</h1>
-        <p>
-          Tools, teaching, and experiments I've built — most started as a
-          problem I wanted solved or an idea I wanted to understand.
-        </p>
       </div>
 
-      <div class="projects-filters" id="projects-filters">
-        {
-          FILTERS.map((c) => (
-            <button
-              class="proj-filter"
-              data-filter={c}
-              style={`--f-color:${CAT_COLORS[c]}`}
-              aria-pressed="false"
-            >
-              {c} <span class="proj-filter-count">{filterCounts[c]}</span>
-            </button>
-          ))
-        }
-      </div>
+      {
+        SHOW_FILTERS && (
+          <div class="projects-filters" id="projects-filters">
+            {FILTERS.map((c) => (
+              <button
+                class="proj-filter"
+                data-filter={c}
+                style={`--f-color:${CAT_COLORS[c]}`}
+                aria-pressed="false"
+              >
+                {c} <span class="proj-filter-count">{filterCounts[c]}</span>
+              </button>
+            ))}
+          </div>
+        )
+      }
 
       <div class="projects-grid" data-pagefind-ignore>
         {
@@ -571,7 +573,7 @@ for (const p of projects)
                   />
                   {/* Custom thumbnails get the category pills overlaid; the generated
 							    hero card already has them baked in. */}
-                  {project.data.image && (
+                  {SHOW_CATEGORY_BADGES && project.data.image && (
                     <div class="project-image-badges">
                       {project.data.categories.map((c) => (
                         <span
