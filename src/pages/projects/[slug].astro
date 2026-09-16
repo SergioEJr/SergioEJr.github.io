@@ -24,10 +24,17 @@ const resources = [
 	{ label: 'Code', href: repo, external: true, event: 'project-link', kind: 'code' },
 ].flatMap((item) => (item.href ? [{ ...item, href: item.href }] : []));
 
-const categoryBadges = categories.map((c) => ({
-	label: c,
-	color: PROJECT_CATEGORY_VARS[c] ?? 'var(--color-accent)',
-}));
+// Off (2026-09-16), in step with the pills and filter on the Projects listing:
+// one category label over three projects is chrome without a job. The layout
+// renders nothing for an empty list; flip this with SHOW_CATEGORY_BADGES in
+// projects.astro when the count justifies it.
+const SHOW_CATEGORY_BADGES = false;
+const categoryBadges = SHOW_CATEGORY_BADGES
+	? categories.map((c) => ({
+			label: c,
+			color: PROJECT_CATEGORY_VARS[c] ?? 'var(--color-accent)',
+		}))
+	: [];
 ---
 
 <BlogPost
